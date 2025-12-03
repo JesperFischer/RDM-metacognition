@@ -55,6 +55,21 @@ plot_beh_data(df,10,T)
 model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","stanmodel.stan"))
 
 fit = fit_model(df,model1,500)
+```
 
+## Getting model predictions
+```{r}
+predictions = get_model_predictions_model_1(fit)
+```
+
+
+## ploting the results
+```{r,fig.height=8,fig.width=12}
+plots = Plot_group_predictive_psycho(predictions,df,n_bins = 5)
+plots$plot_combined
+```
+
+```{r,fig.height=8,fig.width=12}
+plots$plot_preds
 ```
 

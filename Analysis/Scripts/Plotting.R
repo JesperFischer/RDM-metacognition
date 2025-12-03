@@ -524,14 +524,14 @@ Plot_group_predictive_psycho = function(predictions, df, n_bins = NULL) {
   combined_plot
   
   
-  ggsave(here::here("All_Siebe_data.tiff"),combined_plot ,dpi = 300,width = 24, height = 16, units = "cm")
+  # ggsave(here::here("All_Siebe_data.tiff"),combined_plot ,dpi = 300,width = 24, height = 16, units = "cm")
   
-  cop_cor = as_draws_df(fit$draws(c("rho_rt_conf","rho_p_rt","rho_p_conf"))) %>% 
-    select(-contains(".")) %>% 
-    pivot_longer(everything()) %>% 
-    ggplot(aes(x = value))+geom_histogram(col = "black")+facet_wrap(~name)
-  
-  ggsave(here::here("Copulas_full.tiff"),cop_cor ,dpi = 300,width = 16, height = 10, units = "cm")
+  # cop_cor = as_draws_df(fit$draws(c("rho_rt_conf","rho_p_rt","rho_p_conf"))) %>% 
+  #   select(-contains(".")) %>% 
+  #   pivot_longer(everything()) %>% 
+  #   ggplot(aes(x = value))+geom_histogram(col = "black")+facet_wrap(~name)
+  # 
+  # ggsave(here::here("Copulas_full.tiff"),cop_cor ,dpi = 300,width = 16, height = 10, units = "cm")
   
   
   #################### Probability of responding crorectly:
