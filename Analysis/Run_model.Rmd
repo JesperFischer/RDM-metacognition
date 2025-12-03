@@ -1,0 +1,60 @@
+---
+title: "Run_model"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(cmdstanr, tidyverse,posterior, bayesplot, tidybayes,
+               brms, patchwork, cowplot,ggpubr,flextable)
+
+
+invisible(lapply(
+  list.files(here::here("Analysis", "Scripts"), full.names = TRUE),
+  function(f) source(f, echo = FALSE, print.eval = FALSE)
+))
+
+```
+## Extracting the data:
+
+```{r}
+
+df <- read_csv(here::here("Data","Pilots","Siebe_2025_03_12","data.csv")) %>% 
+  mutate(resp = ifelse(resp == "down",0,1),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+  filter(Trialtype == "Main") %>% 
+  filter(SR_conf != "None") %>% 
+  mutate(SR_conf = as.numeric(SR_conf)) %>% 
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  mutate(Confidence = (SR_conf+1)/2)
+
+```
+
+
+
+## plotting the behavioral data:
+```{r, fig.height=6,fig.width=8}
+plot_beh_data(df,NULL,F)
+```
+
+
+```{r, fig.height=6,fig.width=8}
+plot_beh_data(df,10,F)
+```
+
+
+```{r, fig.height=6,fig.width=8}
+plot_beh_data(df,10,T)
+
+```
+## fit the standard model with meta-uncertainty and meta-bias
+```{r}
+model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","stanmodel.stan"))
+
+fit = fit_model(df,model1,500)
+
+```
+
