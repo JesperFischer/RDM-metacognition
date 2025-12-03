@@ -52,24 +52,64 @@ plot_beh_data(df,10,T)
 ```
 ## fit the standard model with meta-uncertainty and meta-bias
 ```{r}
-model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","stanmodel.stan"))
-
-fit = fit_model(df,model1,500)
+# model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","Single Subject,"stanmodel.stan"))
+# fit1 = fit_model(df,model1,500)
+# fit1$save_object(here::here("Savedmodels","fit1.rds"))
+# model2 = cmdstanr::cmdstan_model(here::here("Stanmodels","Single Subject,"stanmodel2.stan"))
+# fit2 = fit_model(df,model2,500)
+# fit2$save_object(here::here("Savedmodels","fit2.rds"))
+# model3 = cmdstanr::cmdstan_model(here::here("Stanmodels","Single Subject,"stanmodel3.stan"))
+# fit3 = fit_model(df,model3,500)
+# fit3$save_object(here::here("Savedmodels","fit3.rds"))
 ```
+
+## load the models
+```{r}
+fit1 <- readRDS(here::here("Savedmodels","fit1.rds"))
+fit2 <- readRDS(here::here("Savedmodels","fit2.rds"))
+fit3 <- readRDS(here::here("Savedmodels","fit3.rds"))
+```
+
+
+## compare models on approximate LOO
+```{r}
+loom1 = fit1$loo()
+loom2 = fit2$loo()
+loom3 = fit3$loo()
+loo::loo_compare(list(loom1,loom2,loom3))
+```
+
 
 ## Getting model predictions
 ```{r}
-predictions = get_model_predictions_model_1(fit)
+predictions = get_model_predictions_model_1(fit1)
 ```
 
 
 ## ploting the results
 ```{r,fig.height=8,fig.width=12}
-plots = Plot_group_predictive_psycho(predictions,df,n_bins = 5)
-plots$plot_combined
+plots = Plot_group_predictive_psycho(predictions,df,ACC = F,n_bins = 15)
+plots[[1]]
 ```
 
+## marginal posterior estimates of parameters
 ```{r,fig.height=8,fig.width=12}
-plots$plot_preds
+get_marginal_estimates(fit1)[[2]]
+get_marginal_estimates(fit2)[[2]]
+get_marginal_estimates(fit3)[[2]]
+
+rbind(get_marginal_estimates(fit1)[[1]] %>% mutate(model = "1"),
+      get_marginal_estimates(fit2)[[1]]%>% mutate(model = "2"),
+      get_marginal_estimates(fit3)[[1]]%>% mutate(model = "3")
+) %>% ggplot(aes(x = value, fill = as.factor(model)))+
+    geom_histogram(col = "black", position = "identity", alpha = 0.5)+
+    facet_wrap(~name, scales = "free")+
+    scale_y_continuous(breaks = scales::pretty_breaks(n = 3))+
+    scale_x_continuous(breaks = scales::pretty_breaks(n = 3))+
+    theme_classic(base_size = 14)+
+  theme(legend.position = "top")
+  
+
 ```
+
 

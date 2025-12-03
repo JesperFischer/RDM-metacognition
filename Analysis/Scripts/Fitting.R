@@ -8,6 +8,7 @@ fit_model = function(df, model, samples){
                   RT = df$RT,
                   Conf = df$Confidence,
                   X = df$X,
+                  interval = df$interval,
                   minRT = min(df$RT),
                   ACC = df$Correct)
   
