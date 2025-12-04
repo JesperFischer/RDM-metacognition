@@ -113,6 +113,9 @@ get_marginal_estimates = function(fit){
   )
   
   
+  
+  
+  
   df = as_draws_df(fit$draws(c("gm","rho_p_rt","rho_p_conf","rho_rt_conf"))) %>% select(-contains("."))
   
   if(length(unique(colnames(df))) == 12){
