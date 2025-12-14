@@ -1,0 +1,253 @@
+---
+title: "Metacognitive uncertainty in Correct and Error trials across inter-stimulus-intervals"
+author: Jesper Fischer Ehmsen^1^,
+        Siebe Everaets^xx^,
+        Micah G. Allen^1,2,\*^,
+        Francesca Fardo^1,3,\*^
+output:
+  word_document:
+    reference_docx: Knitting files/docx_template.docx
+  html_document: default
+  pdf_document:
+    latex_engine: xelatex
+bibliography: 
+  - "Knitting files/References.bib"
+link-citations: yes
+linkcolor: blue
+# csl: Knitting files/science-advances.csl
+always_allow_html: yes
+---
+
+::: {custom-style="Title text"}
+^1^Center of Functionally Integrative Neuroscience (CFIN), Department of Clinical Medicine, Aarhus University
+
+^2^Cambridge Psychiatry, University of Cambridge, United Kingdom
+
+^3^Danish Pain Research Center, Department of Clinical Medicine, Aarhus University
+
+^\*^Equal contributions
+
+Corresponding author: Jesper Fischer Ehmsen (jesperfischer@cfin.au.dk)
+
+:::
+
+```{r load packages, warning = F, message = F, echo = F, include=FALSE}
+knitr::opts_chunk$set(dpi=300)
+
+# seed
+set.seed(123)
+
+# packages
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load("here", "knitr","yaml")
+
+knitr::opts_chunk$set(echo = TRUE)
+
+#renv::restore(project=here::here())
+
+required_packages = c("cowplot", "magick", "tidyverse", "flextable")
+lapply(required_packages, library, character.only = TRUE)
+```
+
+
+# Abstract
+
+
+
+# Introduction
+
+Metacognition, the thinking about thinking, has been extensively studied the last couple of years, both as a tool and surgorate maker of consciousness, but also in various states of dieases where metacognition might go astray, such as in OCD XX XX. One particular way of accessing Metacognition have been the use of confidence scales in various decision making tasks, ranging domains such as memory, general knowledge and perception. With this highly focused line of research on how confidence ratings relate to the performance in such decision making tasks, several important insights have been formulated. 
+
+For starters Confidence ratings generally relate more strongly to the subjective probability of being correct and less so to the actual objective performance in the primary task, usually denoted type-1. This is brilliantly illustrated in a study by ..
+
+
+Thus Confidence ratings generally follow the subjective probability of being correct of the decision maker (actor), however what is also generally observed in the litterature is that these ratings generally contain more noisy information than the decision itself. This has in the literature been termed meta-cognitive noise, which is additional noise added to the information by the decision maker (actor) to make the type-1 decision.
+
+From a signal detection theoretic perspective these observations can easily be formalized. Here we imagine an actor making a binary choice a the type-1 response such that $a \in (-1,1)$, this may be the direction of the dots moving on a screen or whether a picture was remembered or not. This binary choice is based on the true underlying quantity d which is like the binary choice given by $D \in (-1,1)$. This means that if a = d the actor made a correct choice and if not an error. Next instead of assuming that we have a stationary true state (dots moving left or right) we vary the strength of the evidence (X) i.e. how many dots are moving left or right. This constellation of course means that as the stimulus strength increases the task for the actor gets easier as the evidence for d increases.
+
+We now assume that the actor on each trial gathers evidence from the true underlying distribution stimulus that is in proportion to the strength of the evidence with some internal normal distributed noise.
+
+$$
+e_i = \mu(D_i \cdot X_i) + \epsilon_i \\ \epsilon_i \sim \mathcal{N}(0,\sigma)
+$$
+
+We now introduce two parameters for this mean function of the evidence. $\alpha$ which allows the decision to have an initial preference for a choice option such that even when there is no stimulus evidence the actor would prefer a particular option. $beta$ will is the individuals sensitivity to the stimulus strength and thus governs the scaling of stimulus strength to internally represented internal evidence.
+
+$$
+e_i \sim \mathcal{N}(\alpha + \beta \cdot D_i \cdot X_i,\sigma)
+$$
+
+Now assuming a fixed citerion at 0, such that if the internal evidence is above 0 the actor will respond 1 and if less than or equal to 0 will respond -1 we have:
+
+$$
+a_i =
+\begin{cases}
++1 & \text{if } e_i > 0, \\
+-1 & \text{if } e_i \le 0 .
+\end{cases}
+$$
+This assumption is without loss of generality, as any constant criterion can be absorbed into the mean evidence parameter $\alpha$ (show this, but integrating around c and not having $\alpha$).
+
+
+The probability of a positive response given stimulus strength and the true category is given by
+$$
+P(a_i = +1 \mid X_i, D_i) = P(e_i > 0 \mid X_i, D_i)
+$$
+And given that:
+
+$$
+e_i \sim \mathcal N(a+b X_i D_i, \sigma)
+$$
+We can obtain this probability by integrating the normal density from zero to infinity, which amounts to marginalization over the latent evidence.
+
+$$
+P(a_i = +1 \mid X_i, D_i)= \int_{0}^{\infty}\mathcal N(e \mid a+b X_i D_i, \sigma)\, de.
+$$
+
+
+
+Standardizing the normal variable yields
+$$
+P(a_i = +1 \mid X_i, D_i)
+= 1 - \Phi\!\left(
+\frac{0 - (a+b X_i D_i)}{\sigma}
+\right)
+$$
+
+where $\Phi(\cdot)$ denotes the cumulative distribution function of the standard normal distribution.
+
+$$
+P(a_i = +1 \mid X_i, D_i)
+= \Phi\!\left(
+\frac{a + b X_i D_i}{\sigma}
+\right)
+$$
+
+
+
+which can be written as for the resulting psychometric function by first rewriting and then reparameterizing:
+
+$$
+P(a_i = +1 \mid X_i, D_i)
+= \Phi\!\left(
+\frac{a}{\sigma} + \frac{b X_i D_i}{\sigma}
+\right)
+$$
+
+Now factoring out $\frac{b}{\sigma}$
+
+$$
+P(a_i = +1 \mid X_i, D_i)
+= \Phi\!\left(
+\frac{b}{\sigma} \cdot (X_i D_i + \frac{a}{b})
+\right)
+$$
+
+now reparameterizing we get:
+$$
+\alpha = -\frac{a}{b}
+$$
+
+$$
+\beta = \frac{b}{\sigma}.
+$$
+
+
+$$
+P(a_i = +1 \mid X_i, D_i)
+= \Phi\!\left(
+\beta \cdot (X_i D_i - \alpha)
+\right)
+$$
+
+Now one can also from the same logic derive how the probability of being correct can be calculated which for ease becomes:
+
+Do the derivation
+
+$$
+P(a_i = +1 \mid X_i, D_i)
+= \Phi\!\left(
+\beta \cdot |X_i D_i - \alpha|
+\right)
+$$
+
+However to motivate metacognition we need to take a step back and look at the assumptions we made about the evidence.
+
+We start with the evidence as a random variable:
+
+
+$$
+e_i \sim \mathcal{N}(a + b \cdot D_i \cdot X_i,\sigma)
+$$
+
+Now assuming a fixed citerion at 0, such that if the internal evidence is above 0 the actor will respond 1 and if less than or equal to 0 will respond -1 we have:
+
+$$
+a_i =
+\begin{cases}
++1 & \text{if } e_i > 0, \\
+-1 & \text{if } e_i \le 0 .
+\end{cases}
+$$
+
+Now in order for the actor to be correct we need $a_i = D_i$ which happens when the product of the evidence and the true state is positive i.e. if $e_i > 0$ & $D_i > 0$ or $e_i < 0$ & $D_i < 0$. This thus gives us the following
+
+
+$$
+P(a_i = D_i \mid X_i) = P(e_i \cdot D_i > 0 \mid X_i)
+$$
+
+the probability of this can then be derived by multiplying out $D_i$ in the evidence equation:
+
+$$
+D_i \cdot e_i \sim \mathcal{N}(a \cdot D_i + b \cdot D_i \cdot D_i \cdot X_i,\sigma)
+$$
+as $D_i \in (-1,1)$ we have that $D_i^2 = 1$
+
+$$
+D_i \cdot e_i \sim \mathcal{N}(a \cdot D_i + b \cdot X_i,\sigma)
+$$
+
+Now marginalizing over the $D_i e_i$
+
+
+$$
+P(a_i = D_i \mid X_i)= \int_{0}^{\infty}\mathcal N(e_i \cdot D_i \mid a \cdot D_i + b \cdot X_i,\sigma)\, d(e_i \cdot D_i).
+$$
+
+$$
+P(a_i = D_i \mid X_i)
+= \Phi\!\left(
+\frac{a \cdot D_i + b \cdot X_i}{\sigma}
+\right)
+$$
+
+again with:
+
+$$
+\alpha = -\frac{a}{b}
+$$
+
+$$
+\beta = \frac{b}{\sigma}.
+$$
+
+we get:
+
+$$
+P(a_i = D_i \mid X_i)
+= \Phi\!\left(
+\beta \cdot (X_i - \alpha \cdot D_i)
+\right)
+$$
+
+If one examines the case where D = +1 we have that the argument $X_i - \alpha \cdot D_i$ reduces to $X_i - \alpha$ and if D = -1 we get  $X_i + \alpha$ this means that given the task is symmetrical around the threshold its only the distance between the threshold and the stimulus strength that matters i.e.
+
+$$
+P(a_i = D_i \mid X_i)
+= \Phi\!\left(
+\beta \cdot |X_i - \alpha |)
+\right)
+$$
+
+
