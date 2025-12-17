@@ -1,0 +1,208 @@
+---
+title: "Run_model"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(cmdstanr, tidyverse,posterior, bayesplot, tidybayes,
+               brms, patchwork, cowplot,ggpubr,flextable)
+
+
+invisible(lapply(
+  list.files(here::here("Analysis", "Scripts"), full.names = TRUE),
+  function(f) source(f, echo = FALSE, print.eval = FALSE)
+))
+
+```
+## Extracting the data:
+
+```{r}
+
+df1 <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_1.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+  filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  mutate(Confidence = (SR_conf+1)/2) %>% 
+  mutate(subject = 1,
+         `...22` = NULL,
+         start_conf = NULL)
+
+
+df2 <- read_csv(here::here("Data","Pilots","Jesper_2025_17_12","RDM_reportz_sub5_1.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+    filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  mutate(Confidence = (SR_conf+1)/2)%>% 
+  mutate(subject = 2,
+         `...22` = NULL,
+         start_conf = NULL)
+
+
+df3 <- read_csv(here::here("Data","Pilots","Siebe_2025_03_12","data.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+    # filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  mutate(Confidence = (SR_conf+1)/2)%>% 
+  mutate(subject = 3,
+         `...21` = NULL,
+         start_conf = NULL)
+
+
+df1 = rbind(df1,df2,df3)
+```
+
+
+
+## plotting the behavioral data:
+```{r, fig.height=6,fig.width=8}
+plot_beh_data(df,NULL,F)
+```
+
+
+```{r, fig.height=6,fig.width=8}
+plot_beh_data(df,10,F)
+```
+
+
+```{r, fig.height=6,fig.width=8}
+plot_beh_data(df,10,T)
+
+```
+## fit the standard model with meta-uncertainty and meta-bias
+```{r}
+
+df1$subject = as.numeric(as.factor(df1$subject))
+
+t_p_s = df1 %>% group_by(subject) %>% summarize(n = n())
+
+
+ends <- cumsum(t_p_s$n)
+
+# Calculate the start points
+starts <- c(1, head(ends, -1) + 1)
+
+
+datastan = list(N = nrow(df1),
+                S = length(unique(df1$subject)),
+                starts = starts,
+                minRT = df1 %>% group_by(subject) %>% summarize(minRT = min(RT)) %>% .$minRT,
+                ends = ends,
+                t_p_s = t_p_s$n,
+                X = df1$X,
+                interval = df1$interval,
+                S_id = df1$subject,
+                RT = df1$RT,
+                ACC = df1$Correct,
+                Conf = df1$Confidence,
+                binom_y = df1$Correct)
+
+
+model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","hierarchical","full_model1.stan"))
+
+
+fit1 = model1$sample(data = datastan,
+                  iter_warmup = 1000,
+                  iter_sampling = 1000,
+                  parallel_chains = 4,
+                  adapt_delta = 0.90)
+
+fit1$save_object(here::here("Savedmodels","removed_models","Hierarchical_1.rds"))
+
+
+model2 = cmdstanr::cmdstan_model(here::here("Stanmodels","hierarchical","full_model2.stan"))
+
+fit2 = model2$sample(data = datastan,
+                  iter_warmup = 1000,
+                  iter_sampling = 1000,
+                  parallel_chains = 4,
+                  adapt_delta = 0.90)
+
+fit2$save_object(here::here("Savedmodels","removed_models","Hierarchical_2.rds"))
+
+
+model3 = cmdstanr::cmdstan_model(here::here("Stanmodels","hierarchical","full_model3.stan"))
+
+
+fit3 = model3$sample(data = datastan,
+                  iter_warmup = 1000,
+                  iter_sampling = 1000,
+                  parallel_chains = 4,
+                  adapt_delta = 0.90)
+
+fit3$save_object(here::here("Savedmodels","removed_models","Hierarchical_3.rds"))
+
+```
+
+## load the models
+```{r}
+fit1 <- readRDS(here::here("Savedmodels","fit1.rds"))
+fit2 <- readRDS(here::here("Savedmodels","fit2.rds"))
+fit3 <- readRDS(here::here("Savedmodels","fit3.rds"))
+```
+
+
+## compare models on approximate LOO
+```{r}
+loom1 = fit1$loo()
+loom2 = fit2$loo()
+loom3 = fit3$loo()
+loo::loo_compare(list(loom1,loom2,loom3))
+```
+
+
+## Getting model predictions
+```{r}
+predictions = get_model_predictions_model_1(fit1)
+```
+
+
+## ploting the results
+```{r,fig.height=8,fig.width=12}
+plots = Plot_group_predictive_psycho(predictions,df,ACC = F,n_bins = 15)
+plots[[1]]
+```
+
+## marginal posterior estimates of parameters
+```{r,fig.height=8,fig.width=12}
+get_marginal_estimates(fit1)[[2]]
+get_marginal_estimates(fit2)[[2]]
+get_marginal_estimates(fit3)[[2]]
+
+rbind(get_marginal_estimates(fit1)[[1]] %>% mutate(model = "1"),
+      get_marginal_estimates(fit2)[[1]]%>% mutate(model = "2"),
+      get_marginal_estimates(fit3)[[1]]%>% mutate(model = "3")
+) %>% ggplot(aes(x = value, fill = as.factor(model)))+
+    geom_histogram(col = "black", position = "identity", alpha = 0.5)+
+    facet_wrap(~name, scales = "free")+
+    scale_y_continuous(breaks = scales::pretty_breaks(n = 3))+
+    scale_x_continuous(breaks = scales::pretty_breaks(n = 3))+
+    theme_classic(base_size = 14)+
+  theme(legend.position = "top")
+  
+
+```
+
+

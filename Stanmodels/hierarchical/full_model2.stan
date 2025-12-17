@@ -192,6 +192,7 @@ data {
   array[N] int binom_y;
   vector[N] RT;
   vector[N] Conf;
+  vector[N] interval;
 
   vector[N] X;
 
@@ -202,7 +203,7 @@ data {
 }
 
 transformed data{
-  int P = 9;
+  int P = 10;
 }
 
 parameters {
@@ -247,8 +248,9 @@ transformed parameters{
   vector[S] rt_prec = exp(param[,6]);
 
   vector[S] conf_prec = exp(param[,7]);
-  vector[S] meta_un = param[,8];
-  vector[S] meta_bias = param[,9];
+  vector[S] meta_un_int = param[,8];
+  vector[S] meta_un_beta = param[,9];
+  vector[S] meta_bias = param[,10];
 
 
   vector[N] entropy_t;
@@ -263,7 +265,7 @@ transformed parameters{
 
   entropy_t[n] = entropy(psycho_ACC(X[n], (alpha[S_id[n]]), exp(beta[S_id[n]]), lapse[S_id[n]]));
 
-  theta_conf[n] = psycho_ACC(X[n], (alpha[S_id[n]]), exp(beta[S_id[n]] + meta_un[S_id[n]]), lapse[S_id[n]]);
+  theta_conf[n] = psycho_ACC(X[n], (alpha[S_id[n]]), exp(beta[S_id[n]] + meta_un_int[S_id[n]] + meta_un_beta[S_id[n]] * interval[n]), lapse[S_id[n]]);
 
   conf_mu[n] = get_conf(ACC[n],theta_conf[n], X[n], alpha[S_id[n]]);
   }
@@ -278,8 +280,9 @@ model {
   gm[5] ~ normal(0,2); //global mean of rt slope
   gm[6] ~ normal(-1,2); //global mean of residual variance RT
   gm[7] ~ normal(3,2); //global mean of confidence precision
-  gm[8] ~ normal(0,2); //global mean of meta uncertainty
-  gm[9] ~ normal(0,2); //global mean of meta bias
+  gm[8] ~ normal(0,2); //global mean of beta
+  gm[9] ~ normal(0,0.2); //global mean of beta
+  gm[10] ~ normal(0,2); //global mean of beta
 
 
   to_vector(z_expo) ~ std_normal();
@@ -287,7 +290,7 @@ model {
   tau_u[1] ~ normal(0 , 1);
   tau_u[2] ~ normal(0 , 2);
   tau_u[3] ~ normal(0 , 3);
-  tau_u[4:9] ~ normal(0 , 2);
+  tau_u[4:10] ~ normal(0 , 2);
   L_u ~ lkj_corr_cholesky(2);
 
   rt_ndt ~ normal(0.3,0.1);

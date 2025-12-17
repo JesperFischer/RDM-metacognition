@@ -192,6 +192,7 @@ data {
   array[N] int binom_y;
   vector[N] RT;
   vector[N] Conf;
+  vector[N] interval;
 
   vector[N] X;
 
@@ -202,7 +203,7 @@ data {
 }
 
 transformed data{
-  int P = 9;
+  int P = 11;
 }
 
 parameters {
@@ -247,9 +248,11 @@ transformed parameters{
   vector[S] rt_prec = exp(param[,6]);
 
   vector[S] conf_prec = exp(param[,7]);
-  vector[S] meta_un = param[,8];
-  vector[S] meta_bias = param[,9];
-
+  vector[S] meta_un_int = param[,8];
+  vector[S] meta_un_beta = param[,9];
+  vector[S] meta_bias_int = param[,10];
+  vector[S] meta_bias_beta = param[,11];
+  
 
   vector[N] entropy_t;
 
@@ -263,7 +266,7 @@ transformed parameters{
 
   entropy_t[n] = entropy(psycho_ACC(X[n], (alpha[S_id[n]]), exp(beta[S_id[n]]), lapse[S_id[n]]));
 
-  theta_conf[n] = psycho_ACC(X[n], (alpha[S_id[n]]), exp(beta[S_id[n]] + meta_un[S_id[n]]), lapse[S_id[n]]);
+  theta_conf[n] = psycho_ACC(X[n], (alpha[S_id[n]]), exp(beta[S_id[n]] + meta_un_int[S_id[n]] + meta_un_beta[S_id[n]] * interval[n]), lapse[S_id[n]]);
 
   conf_mu[n] = get_conf(ACC[n],theta_conf[n], X[n], alpha[S_id[n]]);
   }
@@ -278,8 +281,11 @@ model {
   gm[5] ~ normal(0,2); //global mean of rt slope
   gm[6] ~ normal(-1,2); //global mean of residual variance RT
   gm[7] ~ normal(3,2); //global mean of confidence precision
-  gm[8] ~ normal(0,2); //global mean of meta uncertainty
-  gm[9] ~ normal(0,2); //global mean of meta bias
+  gm[8] ~ normal(0,2); //global mean of beta
+  gm[9] ~ normal(0,0.2); //global mean of beta
+  gm[10] ~ normal(0,2); //global mean of beta
+  gm[11] ~ normal(0,0.2); //global mean of beta
+
 
 
   to_vector(z_expo) ~ std_normal();
@@ -287,7 +293,7 @@ model {
   tau_u[1] ~ normal(0 , 1);
   tau_u[2] ~ normal(0 , 2);
   tau_u[3] ~ normal(0 , 3);
-  tau_u[4:9] ~ normal(0 , 2);
+  tau_u[4:11] ~ normal(0 , 2);
   L_u ~ lkj_corr_cholesky(2);
 
   rt_ndt ~ normal(0.3,0.1);
@@ -300,11 +306,11 @@ model {
 
     u_mix[n, 2] = lognormal_cdf(RT[n] - rt_ndt[S_id[n]] | rt_int[S_id[n]] + rt_slope[S_id[n]] * entropy_t[n], rt_prec[S_id[n]]);
 
-    u_mix[n, 3] = ord_beta_reg_cdf(Conf[n] | logit(conf_mu[n]) + meta_bias[S_id[n]], conf_prec[S_id[n]], c0[S_id[n]], c11[S_id[n]]);
+    u_mix[n, 3] = ord_beta_reg_cdf(Conf[n] | logit(conf_mu[n]) + meta_bias_int[S_id[n]] + meta_bias_beta[S_id[n]] * interval[n], conf_prec[S_id[n]], c0[S_id[n]], c11[S_id[n]]);
 
     target += lognormal_lpdf(RT[n] - rt_ndt[S_id[n]] | rt_int[S_id[n]] + rt_slope[S_id[n]] * entropy_t[n], rt_prec[S_id[n]]);
 
-    target += ord_beta_reg_lpdf(Conf[n] | logit(conf_mu[n])+ meta_bias[S_id[n]], conf_prec[S_id[n]], c0[S_id[n]], c11[S_id[n]]);
+    target += ord_beta_reg_lpdf(Conf[n] | logit(conf_mu[n])+ meta_bias_int[S_id[n]] + meta_bias_beta[S_id[n]] * interval[n], conf_prec[S_id[n]], c0[S_id[n]], c11[S_id[n]]);
 
   }
 
@@ -342,7 +348,7 @@ generated quantities {
 
     u_mixx[n, 2] = lognormal_cdf(RT[n] - rt_ndt[S_id[n]] | rt_int[S_id[n]] + rt_slope[S_id[n]] * entropy_t[n], rt_prec[S_id[n]]);
 
-    u_mixx[n, 3] = ord_beta_reg_cdf(Conf[n] | logit(conf_mu[n])+ meta_bias[S_id[n]], conf_prec[S_id[n]], c0[S_id[n]], c11[S_id[n]]);
+    u_mixx[n, 3] = ord_beta_reg_cdf(Conf[n] | logit(conf_mu[n]) + meta_bias_int[S_id[n]] + meta_bias_beta[S_id[n]] * interval[n], conf_prec[S_id[n]], c0[S_id[n]], c11[S_id[n]]);
   }
 
   vector[N] log_lik_cop;
@@ -371,7 +377,7 @@ generated quantities {
   for(n in 1:N){
     log_lik_bin[n] = binomial_lpmf(binom_y[n] | 1, get_prob_cor(theta[n], X[n]));
     log_lik_rt[n] = lognormal_lpdf(RT[n] - rt_ndt[S_id[n]] | rt_int[S_id[n]] + rt_slope[S_id[n]] * entropy_t[n], rt_prec[S_id[n]]);
-    log_lik_conf[n] = ord_beta_reg_lpdf(Conf[n] | logit(conf_mu[n]) + meta_bias[S_id[n]], conf_prec[S_id[n]], c0[S_id[n]], c11[S_id[n]]);
+    log_lik_conf[n] = ord_beta_reg_lpdf(Conf[n] | logit(conf_mu[n]) + meta_bias_int[S_id[n]] + meta_bias_beta[S_id[n]] * interval[n], conf_prec[S_id[n]], c0[S_id[n]], c11[S_id[n]]);
     log_lik[n] = log_lik_bin[n] + log_lik_rt[n] + log_lik_conf[n] + log_lik_cop[n];
   }
 
