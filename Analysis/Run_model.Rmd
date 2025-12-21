@@ -20,18 +20,18 @@ invisible(lapply(
 
 ```{r}
 
-# df <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_1.csv")) %>% 
-#   mutate(resp = ifelse(resp == "down",0,1),
-#          interval = as.numeric(interval),
-#        stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
-#   mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
-#                       ifelse(resp == 0 & stim < 0, 1,0))) %>%
-#   filter(Trialtype == "Main") %>% 
-#   filter(SR_conf != "None") %>% 
-#   filter(scale == "conf") %>% 
-#   mutate(SR_conf = as.numeric(SR_conf)) %>% 
-#   rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
-#   mutate(Confidence = (SR_conf+1)/2)
+df <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_1.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+  filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  mutate(Confidence = (SR_conf+1)/2)
 
 
 # df <- read_csv(here::here("Data","Pilots","Jesper_2025_17_12","RDM_reportz_sub5_1.csv")) %>%
@@ -48,9 +48,21 @@ invisible(lapply(
 #   mutate(Confidence = (SR_conf+1)/2)
 
 
+# df <- read_csv(here::here("Data","Pilots","Siebe_2025_03_12","data.csv")) %>%
+#   mutate(resp = ifelse(resp == "down",0,1),
+#          interval = as.numeric(interval),
+#        stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+#   mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+#                       ifelse(resp == 0 & stim < 0, 1,0))) %>%
+#   filter(Trialtype == "Main") %>%
+#   filter(SR_conf != "None") %>%
+#     # filter(scale == "conf") %>%
+#   mutate(SR_conf = as.numeric(SR_conf)) %>%
+#   rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+#   mutate(Confidence = (SR_conf+1)/2)
 
 
-df <- read_csv(here::here("Data","Pilots","Siebe_2025_03_12","data.csv")) %>%
+df <- read_csv(here::here("Data","Pilots","Siebe_2025_17_12","RDM_reportz_sub6.csv")) %>%
   mutate(resp = ifelse(resp == "down",0,1),
          interval = as.numeric(interval),
        stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
@@ -58,7 +70,7 @@ df <- read_csv(here::here("Data","Pilots","Siebe_2025_03_12","data.csv")) %>%
                       ifelse(resp == 0 & stim < 0, 1,0))) %>%
   filter(Trialtype == "Main") %>%
   filter(SR_conf != "None") %>%
-    # filter(scale == "conf") %>%
+    filter(scale == "conf") %>%
   mutate(SR_conf = as.numeric(SR_conf)) %>%
   rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
   mutate(Confidence = (SR_conf+1)/2)
@@ -86,20 +98,21 @@ plot_beh_data(df,10,T)
 ```{r}
 model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","Single Subject","stanmodel.stan"))
 fit1 = fit_model(df,model1,500)
-fit1$save_object(here::here("Savedmodels","fit1_siebe.rds"))
+fit1$save_object(here::here("Savedmodels","removed_models","fit1_siebe2.rds"))
 model2 = cmdstanr::cmdstan_model(here::here("Stanmodels","Single Subject","stanmodel2.stan"))
 fit2 = fit_model(df,model2,500)
-fit2$save_object(here::here("Savedmodels","fit2_siebe.rds"))
+fit2$save_object(here::here("Savedmodels","removed_models","fit2_siebe2.rds"))
 model3 = cmdstanr::cmdstan_model(here::here("Stanmodels","Single Subject","stanmodel3.stan"))
 fit3 = fit_model(df,model3,500)
-fit3$save_object(here::here("Savedmodels","fit3_siebe.rds"))
+fit3$save_object(here::here("Savedmodels","removed_models","fit3_siebe2.rds"))
 ```
 
 ## load the models
 ```{r}
-fit1 <- readRDS(here::here("Savedmodels","fit1.rds"))
-fit2 <- readRDS(here::here("Savedmodels","fit2.rds"))
-fit3 <- readRDS(here::here("Savedmodels","fit3.rds"))
+name = "kelly"
+fit1 <- readRDS(here::here("Savedmodels",paste0("fit1_",name,".rds")))
+fit2 <- readRDS(here::here("Savedmodels",paste0("fit2_",name,".rds")))
+fit3 <- readRDS(here::here("Savedmodels",paste0("fit3_",name,".rds")))
 ```
 
 
@@ -121,7 +134,13 @@ predictions = get_model_predictions_model_1(fit1)
 ## ploting the results
 ```{r,fig.height=8,fig.width=12}
 plots = Plot_group_predictive_psycho(predictions,df,ACC = F,n_bins = 15)
-plots[[1]]
+# jespere = plots[[1]]
+jespere
+# kelly = plots[[1]]
+kelly
+
+# siebe
+
 ```
 
 ## marginal posterior estimates of parameters
@@ -133,15 +152,16 @@ get_marginal_estimates(fit3)[[2]]
 rbind(get_marginal_estimates(fit1)[[1]] %>% mutate(model = "1"),
       get_marginal_estimates(fit2)[[1]]%>% mutate(model = "2"),
       get_marginal_estimates(fit3)[[1]]%>% mutate(model = "3")
-) %>% ggplot(aes(x = value, fill = as.factor(model)))+
+) %>%  
+  filter(name %in% c("meta_un_int","meta_un_beta","meta_bias_int","meta_bias_beta","rho_p_conf")) %>% 
+  ggplot(aes(x = value, fill = as.factor(model)))+
     geom_histogram(col = "black", position = "identity", alpha = 0.5)+
-    facet_wrap(~name, scales = "free")+
+    facet_wrap(~name, scales = "free", nrow = 1)+
     scale_y_continuous(breaks = scales::pretty_breaks(n = 3))+
     scale_x_continuous(breaks = scales::pretty_breaks(n = 3))+
     theme_classic(base_size = 14)+
   theme(legend.position = "top")
   
-
 ```
 
 

@@ -430,6 +430,41 @@ Plot_group_predictive_psycho = function(predictions, df, ACC = F, n_bins = NULL)
   
 }
 
+
+prelim_ss_plot = function(df,name){
+  fit1 <- readRDS(here::here("Savedmodels",paste0("fit1_",name,".rds")))
+  fit2 <- readRDS(here::here("Savedmodels",paste0("fit2_",name,".rds")))
+  fit3 <- readRDS(here::here("Savedmodels",paste0("fit3_",name,".rds")))
+  
+  loom1 = fit1$loo()
+  loom2 = fit2$loo()
+  loom3 = fit3$loo()
+  loo = loo::loo_compare(list(loom1,loom2,loom3))
+  
+  predictions = get_model_predictions_model_1(fit1)
+  
+  plots = Plot_group_predictive_psycho(predictions,df,ACC = F,n_bins = 15)
+  
+  
+  marginals = rbind(get_marginal_estimates(fit1)[[1]] %>% mutate(model = "1"),
+        get_marginal_estimates(fit2)[[1]]%>% mutate(model = "2"),
+        get_marginal_estimates(fit3)[[1]]%>% mutate(model = "3")
+  ) %>%  
+    filter(name %in% c("meta_un_int","meta_un_beta","meta_bias_int","meta_bias_beta","rho_p_conf")) %>% 
+    ggplot(aes(x = value, fill = as.factor(model)))+
+    geom_histogram(col = "black", position = "identity", alpha = 0.5)+
+    facet_wrap(~name, scales = "free", nrow = 1)+
+    scale_y_continuous(breaks = scales::pretty_breaks(n = 3))+
+    scale_x_continuous(breaks = scales::pretty_breaks(n = 3))+
+    theme_classic(base_size = 14)+
+    theme(legend.position = "top")
+  
+  return(list(marginals, plots,loo))
+  
+  
+}
+
+
 # this needs work (below) needs to display the actual predicted responses not the mean responses:
 
 # Plot_group_predictive_psycho = function(predictions, df, n_bins = NULL) {
