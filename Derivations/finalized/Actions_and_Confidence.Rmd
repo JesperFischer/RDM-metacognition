@@ -1,0 +1,1432 @@
+---
+title: "Decision and Confidence: Evidence-Based Policy with Metacognition"
+author: ""
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+---
+
+# Introduction
+
+This document derives a framework where decisions are based on a stochastic policy **on the evidence scale**, and confidence is formulated as the probability of being correct given the evidence and action: $P(\text{correct} \mid e, a)$.
+
+# Latent Evidence and Posterior
+
+Assume the true state of the world on a trial is $D \in \{-1,+1\}$, and the agent observes latent, noisy evidence $e$. The parameter $\mu$ represents the signal strength (e.g., coherence in a Random Dot Motion task) and must be strictly positive as the sign comes from $D$.
+
+We assume as in Signal Detection Theory (SDT) that the evidence is Gaussian:
+
+$$
+e \sim \mathcal{N}(D \cdot \mu, \sigma_e^2)
+$$
+which lead to the following probability of the state of the world given the evidence, i.e. given the previous markdown:
+
+$$
+P(D=1 \mid e) = g\Big(\frac{2 \cdot e \cdot \mu}{\sigma_e^2}\Big)
+$$
+with inverse logit transformation $g(.) = \frac{1}{1+exp(-x)}$
+
+The optimal Bayesian agent thus chooses to responds 1 when this probability is 0.5 or above and otherwise 0 which also can be formalized as when the evidence is or above 0 the agent chooses the action 1 and otherwise 0. However here we will assume that the agent isn't a Bayes optimal agent and introduce noise in the decision process.
+
+## Decision Rule
+
+In the previous markdown we explored the case where an agent had a noisy decision rule of comparing the evidence to a randomly varying criterion.
+
+$$
+a =
+\begin{cases}
+1 & \text{if } e > k \\
+-1 & \text{if } e \le k
+\end{cases}
+$$
+where $k \sim \mathcal{N}(\mu_k, \sigma_k^2)$
+
+## Probability of Choosing Action 1
+
+Now we want to find an expression for the probability of responding 1 (a = 1), given the observed evidence. Which can be written as:
+
+$$
+P(a = 1 \mid e) = P(k < e) = P(e - k > 0  \mid D)
+$$
+These two equations can give us two sets of equations, one marginalized over e & k and one marginalized just over k.
+
+## Marginalizing over evidence and criterion (Psychometric function)
+
+From above we look at the relationship
+
+$$
+P(a = 1 \mid e) = P(e - k > 0 \mid D)
+$$
+What we thus need to ask is:
+**"What is the probability that the random threshold $k$ is less than the random evidence $e$"**
+
+This is equivalent to asking: $P(e - k > 0)$ which is exactly the p(a = 1 | e)
+
+#### Setting up the random variables
+
+We have two independent random variables:
+- Evidence: $e \mid D \sim \mathcal{N}(D \cdot \mu, \sigma_e^2)$
+- Threshold: $k \sim \mathcal{N}(\mu_k, \sigma_k^2)$
+
+Since they are independent, we can work with their difference.
+
+For two independent Gaussian random variables, their difference is also Gaussian:
+
+Specifically:
+
+$$
+e - k \mid D \sim \mathcal{N}(D \cdot \mu - \mu_k, \sigma_e^2 + \sigma_k^2)
+$$
+#### Step 3: use that Phi is the cummulative distribution function for the gaussian
+
+With $e - k \mid D \sim \mathcal{N}(D \cdot \mu - \mu_k, \sigma_e^2 + \sigma_k^2)$:
+
+$$
+P(e - k > 0 \mid D) = \Phi\left(\frac{D \cdot \mu - \mu_k}{\sqrt{\sigma_e^2 + \sigma_k^2}}\right)
+$$
+
+Therefore:
+
+$$
+P(a = 1 \mid D) = \Phi\left(\frac{D \cdot \mu - \mu_k}{\sqrt{\sigma_k^2 + \sigma_e^2}}\right)
+$$
+
+
+## Marginalizing over k
+
+From above we look at the relationship
+
+$$
+P(a = 1 \mid e) = P(e > k)
+$$
+given that k is normally distributed we can obtain the probability of responding 1 given e by marginalizing over k.
+
+$$
+P(a = 1 \mid e) = \Phi\left(\frac{e - \mu_k}{\sigma_k}\right)
+$$
+
+This latter formulation is going to be important for the actual STAN implementation. 
+
+### Insights
+
+This marginalized form reveals several important properties:
+
+1. **Combined noise**: Both noise sources contribute to choice variability when conditioned on the physical stimulus ($D \cdot \mu$). The denominator $\sqrt{\sigma_k^2 + \sigma_e^2}$ shows that evidence noise ($\sigma_e$) and criterion noise ($\sigma_k$) combine to determine the slope of the psychometric function when the x-axis is the physical stimulus. However, when the x-axis is plotted as the evidence we have that only the criterion noise determines the steepness of the psychometric function.
+
+2. **Parameter identify-ability**: From choice data alone, we can only identify $\sigma_k^2 + \sigma_e^2$, not the individual parameters. Both noise sources make the psychometric curve shallower in the same way, because we only observe the physical stimulus and not the internal evidence representation.
+
+# Confidence as Probability of Being Correct without additional evidence
+
+## Definition
+
+After making a decision $a$, the agent reports their **confidence** in that decision. We define confidence as the agent's assessment of the **probability of being correct** given the evidence and the action taken:
+
+$$
+\text{confidence} = P(\text{correct} \mid e, a)
+$$
+
+This can be expanded as:
+
+$$
+P(\text{correct} \mid e, a) = P(D = a \mid e)
+$$
+
+as being correct is the same as the action being equal to the true state of the world.
+
+## Derivation
+
+we know $P(D=1 \mid e)$ from the posterior calculation, we can compute:
+
+$$
+P(\text{correct} \mid e, a) = 
+\begin{cases}
+P(D=1 \mid e) & \text{if } a = 1 \\
+P(D=-1 \mid e) = 1 - P(D=1 \mid e) & \text{if } a = -1
+\end{cases}
+$$
+
+where of course we had:
+
+$$
+P(D=1 \mid e) = g\Big(\frac{2 \cdot e \cdot \mu}{\sigma_e^2}\Big)
+$$
+
+
+# Metacognitive Noise: Noisy additional Evidence Readout
+
+## Motivation
+
+In the formulation above, confidence is based on perfect access to the decision evidence $e$. However, **metacognitive processes may not have direct access to the same evidence** that informed the decision. Instead, the metacognitive system may rely on a **noisy readout** or reconstruction of the evidence.
+
+We model this by assuming the confidence judgment is based on $\hat{e}$, a noisy estimate of the true evidence:
+
+$$
+\hat{e} \sim \mathcal{N}(e, \sigma_m^2)
+$$
+
+where $\sigma_m^2$ represents **metacognitive noise** the uncertainty or imprecision in the metacognitive system's access to the decision evidence.
+
+## Properties of Metacognitive Noise
+
+- When $\sigma_m = 0$: Perfect metacognitive access (no noise), confidence is based on true evidence $e$
+- When $\sigma_m > 0$: Imperfect metacognitive access, confidence is based on noisy $\hat{e}$
+
+Thus larger $\sigma_m$ indicates Worse metacognitive sensitivity (weaker relationship between confidence and accuracy)
+
+## Confidence Based on Noisy Evidence
+
+Below we derive the equation for estimating the probability of correct given this noisy estimate of the evidence.
+
+Given the action $a$ and the noisy evidence $\hat{e}$, we now have that confidence becomes:
+
+$$
+\text{confidence} = P(\text{correct} \mid \hat{e}, a) = P(D = a \mid \hat{e})
+$$
+
+### Distribution of $\hat{e}$ Given $D$
+
+Since both $e$ and $\hat{e}$ are Gaussian, we can derive the distribution of $\hat{e}$ given $D$ directly. We have:
+
+$$
+\begin{aligned}
+e \mid D &\sim \mathcal{N}(D \cdot \mu, \sigma_e^2) \\
+\hat{e} \mid e &\sim \mathcal{N}(e, \sigma_m^2)
+\end{aligned}
+$$
+
+This is identical to a hierarchical model where the mean of $\hat{e}$ is $e$
+.
+By properties of Gaussian distributions (sum of independent Gaussians), we can marginalize over $e$:
+
+$$
+\hat{e} \mid D \sim \mathcal{N}(D \cdot \mu, \sigma_e^2 + \sigma_m^2)
+$$
+We could thus write the above as:
+
+$$
+\begin{aligned}
+e &\sim \mathcal{N}(D \cdot \mu, \sigma_e^2) \\
+\hat{e}  &\sim \mathcal{N}(D \cdot \mu, \sigma_e^2 + \sigma_m^2)
+\end{aligned}
+$$
+
+<details style="border: 2px solid #3498db; border-radius: 5px; padding: 15px; margin: 20px 0; background-color: #f8f9fa;">
+<summary style="cursor: pointer; font-size: 1.1em; font-weight: bold; color: #2c3e50; padding: 5px;"><b>📘 Click to expand: Multivariate Normal Formulation</b></summary>
+
+<div style="margin-top: 15px;">
+
+As a side note here we might apprecitate the hierarchical nature of this model. A formal way to write this type of model is as a multivariate normal distribution, with equal means and a covariance matrix as below:
+
+$$
+\begin{bmatrix}
+e \\
+\hat{e}
+\end{bmatrix}
+\sim \mathcal{N}\left(
+\begin{bmatrix}
+D \cdot \mu \\
+D \cdot \mu
+\end{bmatrix},
+\begin{bmatrix}
+\sigma_e^2 & \sigma_e^2 \\
+\sigma_e^2 & \sigma_e^2 + \sigma_m^2
+\end{bmatrix}
+\right)
+$$
+
+The key insight here is that the **covariance** between $e$ and $\hat{e}$ is $\sigma_e^2$, not zero. This is because $\hat{e}$ is constructed as $e$ plus independent noise, so $\text{Cov}(e, \hat{e}) = \text{Cov}(e, e + \epsilon_m) = \text{Var}(e) = \sigma_e^2$. This shared variance structure means that $e$ and $\hat{e}$ are correlated with correlation coefficient:
+
+$$
+\rho = \frac{\sigma_e^2}{\sqrt{\sigma_e^2 \cdot (\sigma_e^2 + \sigma_m^2)}} = \frac{\sigma_e}{\sqrt{\sigma_e^2 + \sigma_m^2}}
+$$
+
+When $\sigma_m \to 0$, we have $\rho \to 1$ (perfect metacognitive access), and when $\sigma_m \to \infty$, we have $\rho \to 0$ (no metacognitive access to the decision evidence).
+
+### Relationship with Fleming & Daw (2017)
+
+This model is closely related to the **second-order Bayesian framework** introduced by Fleming & Daw (2017). They proposed that metacognitive judgments are based on a separate readout of evidence that is correlated with, but not identical to, the evidence used for the decision. This is formalized as two correlated samples from a bivariate normal distribution.
+
+In their framework, the decision evidence ($e_1$) and metacognitive evidence ($e_2$) are drawn from a bivariate normal with correlation $\rho$:
+
+$$
+\begin{bmatrix}
+e_1 \\
+e_2
+\end{bmatrix}
+\sim \mathcal{N}\left(
+\begin{bmatrix}
+D \cdot \mu \\
+D \cdot \mu
+\end{bmatrix},
+\begin{bmatrix}
+\sigma_1^2 & \rho \cdot \sigma_1 \cdot \sigma_2 \\
+\rho \cdot \sigma_1 \cdot \sigma_2 & \sigma_2^2
+\end{bmatrix}
+\right)
+$$
+
+This is Equivalent to the above Hierarchical Model where $\hat{e} \sim \mathcal{N}(e, \sigma_m^2)$ 
+
+- $\sigma_1^2 = \sigma_e^2$ (variance of decision evidence)
+- $\sigma_2^2 = \sigma_e^2 + \sigma_m^2$ (variance of metacognitive evidence)
+- $\rho = \frac{\sigma_e}{\sqrt{\sigma_e^2 + \sigma_m^2}}$ (correlation between the two samples)
+
+</details>
+
+The noisy evidence $\hat{e}$ has the same mean as $e$ but with **increased variance** $\sigma_e^2 + \sigma_m^2$. The metacognitive noise $\sigma_m^2$ adds to the sensory evidence noise. In the same way that we saw for the decisions and the decision and evidence noise.
+
+### Posterior Given Noisy Evidence
+
+Following the same derivation as for $P(D=1 \mid e)$, but now with $\hat{e}$ and the combined variance we get:
+
+$$
+P(D=1 \mid \hat{e}) = g\Big(\frac{2 \cdot \hat{e} \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big)
+$$
+
+Again note that the denominator now includes **both** sources of noise: decision noise ($\sigma_e^2$) and metacognitive noise ($\sigma_m^2$).
+
+Therefore, confidence can be written as:
+
+$$
+\text{confidence} = 
+\begin{cases}
+g\Big(\frac{2 \cdot \hat{e} \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big) & \text{if } a = 1 \\
+1 - g\Big(\frac{2 \cdot \hat{e} \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big) & \text{if } a = -1
+\end{cases}
+$$
+
+Unfortunately there is no solution for marginalizing out $\hat{e}$ as this is a logit-normal distribution.
+
+
+### Insights
+
+1. **Combined noise**: Both noise sources (evidence and metacognition) contribute to confidence variability. The denominator $\sqrt{\sigma_m^2 + \sigma_e^2}$ shows that evidence noise ($\sigma_e$) and metacognition noise ($\sigma_m$) combine to determine the steepness of the confidence curve.
+
+2. **Parameter identify-ability**: From Confidence data alone, we can only identify $\sigma_m^2 + \sigma_e^2$, not the individual parameters. Both noise sources make the confidence curve shallower in the same way.
+
+### Comparison: Decision vs. Confidence
+
+- **Decision**: Based on $e \sim \mathcal{N}(D \cdot \mu, \sigma_e^2)$, the subject responds 1 with:
+
+$$
+P(a = 1 \mid D) = \Phi\left(\frac{D \cdot \mu - \mu_k}{\sqrt{\sigma_k^2 + \sigma_e^2}}\right)
+$$
+or conditional on the evidence:
+
+$$
+P(a = 1 \mid e) = \Phi\left(\frac{e - \mu_k}{\sigma_k^2}\right)
+$$
+
+- **Confidence**: Based on $\hat{e} \sim \mathcal{N}(D \cdot \mu, \sigma_e^2 + \sigma_m^2)$, where we have the reported confidence being 
+
+$$
+\text{confidence} = 
+\begin{cases}
+g\Big(\frac{2 \cdot \hat{e} \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big) & \text{if } a = 1 \\
+1 - g\Big(\frac{2 \cdot \hat{e} \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big) & \text{if } a = -1
+\end{cases}
+$$
+
+## Conclusion
+With an agent that receives noisy evidence (e) on each trial from a physical stimulus ($D \cdot X$) and responds noisy, one cannot distinguish whether variability arises from sensory encoding noise or criterion noise was to blame, just given the physical stimulus, only their shared variance can be determined. However, with the addition of confidence ratings informed by the evidence or a noisy readout of the evidence used for the decision one can get another source of information on the noise of the encoding of the evidence, and if a noisy readout of the evidence is taken also that.
+
+
+
+
+# Simulations:
+
+Below we now investigate the consequences of these three main parameters of noise; encoding $\sigma_e$, choice $\sigma_k$ and metacognition $\sigma_m$
+
+## Starting simple
+
+Here we start by introducing the types of plots. Here we explicitly plot:
+
+* $\sigma_e = 1$
+* $\sigma_k = 0.5$
+* $\sigma_m = 0.6$
+* $\mu_k = 0$
+
+For 500 trials with equal amount of left (D = -1) and right (D = +1) trials with the intensity $\mu$ sampled from a positively truncated normal distribution with $\mu = 0 , \sigma = 1$  i.e. $\mu \sim \mathcal{N^+}(0,1)$
+
+```{r}
+pacman::p_load(tidyverse,posterior,bayesplot,cmdstanr,patchwork,ordbetareg,shiny)
+
+set.seed(1997)
+
+# -----------------------------
+# Set parameters
+# -----------------------------
+n_trials <- 500        # number of trials
+sigma_e <- 1           # noise on evidence (needs to be fixed for now)
+
+sigma_m = 0.6
+conf_precc = 20
+c0 = -3
+c1 = 3
+
+mu_k <- 0                  # criterion mean on the evidence scale (gaussian distribution)
+sigma_k <- 0.5                 # criterion sd on the evidence scale (gaussian distribution)
+
+rt_ndt = 0.2          # non decision time for RT
+rt_sigma = 0.5        # Residual variance of RT
+rt_e = 1            # scaling of the mean RT given evidence.
+```
+
+## Trial by trial level experimental parameters:
+
+
+```{r}
+# Coherence level (stimulus intensity)
+X <- abs(rnorm(n_trials,0,1))
+
+# stimuli (left or right)
+D <- sample(c(-1, 1), n_trials, replace = TRUE)  # true stimulus
+
+# Simulate evidence
+e <- rnorm(n_trials, mean = D * X, sd = sigma_e)
+
+# Compute posterior P(D=1|e)
+
+ehat = rnorm(n_trials,e,sigma_m)
+
+# Evidence-based stochastic policy (guassian distribution for citera)
+k_gauss <- rnorm(n_trials, mu_k, sigma_k)          # citerion on trial t
+p_gauss = pnorm((e-mu_k)/sigma_k)                  #  probability of response on trial t given the citerion
+a_gauss = rbinom(n_trials,1,p_gauss)               # binary response
+
+c_mu = ifelse(a_gauss == 1, brms::inv_logit_scaled(2*ehat*X / (sigma_e^2 + sigma_m^2)),
+              1-brms::inv_logit_scaled(2*ehat*X / (sigma_e^2 + sigma_m^2)))
+
+C = ordbetareg::rordbeta(n_trials,c_mu,conf_precc,c(c0,c1))
+
+# Dataframe
+df = data.frame(
+  e = e,
+  ehat = ehat,
+  D = D,
+  X =X,
+  ACC = ifelse(a_gauss == 0 & D == -1, 1, ifelse(a_gauss == 1 & D == 1, 1,0)),
+  c_mu = c_mu,
+  C = C,
+  rt = rlnorm(n_trials,rt_e * -abs(e),rt_sigma) + rt_ndt,
+  rt_mu = -abs(e),
+  a_gauss = a_gauss
+)
+```
+
+
+### Plotting binary choices
+
+```{r, fig.height=8,fig.width=12,message=F,warning=F}
+
+choice_given_evidence = df %>% pivot_longer(cols = c("a_gauss")) %>% mutate(value = ifelse(value < 0, 0, value)) %>% 
+  ggplot(aes(x = e, y = value)) +
+  geom_jitter(height = 0.05, alpha = 0.75, shape = 21, size = 1.5)+
+  geom_smooth(method = "glm", 
+              method.args = list(family = "binomial"), 
+              se = FALSE)+
+  labs(x = "Evidence (e)", y = "P(choice = 1)") +
+  theme_minimal() +
+  scale_x_continuous(limits = c(-4,4))+
+  theme(text = element_text(size = 14))
+
+choice_given_physical_stim = df %>% pivot_longer(cols = c("a_gauss")) %>% mutate(value = ifelse(value < 0, 0, value)) %>% 
+  ggplot(aes(x = X*D, y = value)) +
+  geom_jitter(height = 0.05, alpha = 0.75, shape = 21, size = 1.5)+
+  geom_smooth(method = "glm", 
+              method.args = list(family = "binomial"), 
+              se = FALSE)+
+  labs(x = "Signed stimulus value (X * S)", y = "P(choice = 1)") +
+  theme_minimal() +
+  scale_x_continuous(limits = c(-4,4))+
+  theme(text = element_text(size = 14))
+
+choice_given_evidence / choice_given_physical_stim
+```
+
+Here we clearly see the difference in the two above formulations of the choices i.e. the top plot being:
+
+$$
+P(a = 1 \mid e) = \Phi\left(\frac{e - \mu_k}{\sigma_k}\right)
+$$
+
+and the bottom plot being:
+
+$$
+P(a = 1 \mid D) = \Phi\left(\frac{D \cdot \mu - \mu_k}{\sqrt{\sigma_k^2 + \sigma_e^2}}\right)
+$$
+where the x-axis is plotted as $D \cdot \mu$
+
+### Plotting Confidence
+
+```{r, fig.height=8,fig.width=12,message=F,warning=F}
+conf_given_evidence = df %>%  
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = e, y = c_mu, fill = Accuracy, col = Accuracy)) +
+  geom_point(shape = 21,size = 3, col = "black", alpha = 0.5)+
+  labs(x = "Evidence (e)", y = "P(A = D)")+
+  theme_minimal() +
+  scale_x_continuous(limits = c(-3,3))+
+  scale_y_continuous(limits = c(0,1))+
+  geom_smooth(se = F, linewidth = 1.5)+
+  theme(text = element_text(size = 14))
+
+
+conf_given_physical_stim = df %>%  
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = X*D, y = c_mu, fill = Accuracy, col = Accuracy)) +
+  geom_point(shape = 21,size = 3, col = "black", alpha = 0.5)+
+  labs(x = "Signed stimulus value (X * S)", y = "P(A = D)")+
+  theme_minimal() +
+  scale_x_continuous(limits = c(-3,3))+
+  scale_y_continuous(limits = c(0,1))+
+  geom_smooth(se = F, linewidth = 1.5)+
+  theme(text = element_text(size = 14))
+
+
+conf_given_evidence / conf_given_physical_stim
+
+```
+
+
+### Response times ? 
+
+
+```{r, fig.height=8,fig.width=12,message=F,warning=F}
+rt_given_evidence = df %>%  
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = e, y = rt, fill = Accuracy, col = Accuracy)) +
+  geom_point(shape = 21,size = 3, col = "black", alpha = 0.5)+
+  labs(x = "Evidence (e)", y = "Response time (s)")+
+  theme_minimal() +
+  scale_x_continuous(limits = c(-3,3))+
+  geom_smooth(se = F, linewidth = 1.5)+
+  theme(text = element_text(size = 14))
+
+rt_given_signedstim = df %>%  
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = X*D, y = rt, fill = Accuracy, col = Accuracy)) +
+  geom_point(shape = 21,size = 3, col = "black", alpha = 0.5)+
+  labs(x = "Signed stimulus value (X * S)", y = "Response time (s)")+
+  theme_minimal() +
+  scale_x_continuous(limits = c(-3,3))+
+  geom_smooth(se = F, linewidth = 1.5)+
+  theme(text = element_text(size = 14))
+
+
+rt_given_evidence / rt_given_signedstim
+```
+
+
+
+## Interaction between Parameters
+
+Now I'll simulate across many more trials and across several different levels of the parameters, here we start with:
+
+* $\sigma_e \in (0.1,1,5)$
+* $\sigma_k \in (0.1,1,5)$
+* $\sigma_m \in (0.1,1,5)$
+* $\mu_k = 0$
+
+For 5000 trials with equal amount of left (D = -1) and right (D = +1) trials with the intensity $\mu$ sampled from a set of $\in (0.01,1,2,5,10)$
+
+
+```{r}
+set.seed(199742)
+
+n_trials <- 5000
+# sigma_e <- 1
+conf_prec <- 50
+c0 <- -3
+c1 <- 3
+
+simulate_interaction <- function(sigma_m, sigma_k,sigma_e) {
+  X <- sample(c(0.01,1,2,5), n_trials, replace = TRUE)
+  D <- sample(c(-1, 1), n_trials, replace = TRUE)
+  e <- rnorm(n_trials, mean = D * X, sd = sigma_e)
+  ehat <- rnorm(n_trials, e, sigma_m)
+  k_gauss <- rnorm(n_trials, 0, sigma_k)
+  p_gauss <- pnorm(e / sigma_k)
+  a <- rbinom(n_trials, 1, p_gauss)
+  C_mu <- ifelse(a == 1, 
+                 plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)),
+                 1 - plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)))
+  c_mu <- pmax(0.001, pmin(0.999, C_mu))
+  C <- ordbetareg::rordbeta(n_trials, c_mu, conf_prec, c(c0, c1))
+  
+  data.frame(e = e,
+             C = C,
+             C_mu = C_mu,
+             a = a,
+             X = X,
+             D=D,
+             ACC = ifelse(a == 0 & D == -1,1,ifelse(a == 1 & D == 1,1,0)))
+}
+
+df_interaction <- expand.grid(
+  sigma_m = c(0.1, 1, 5),
+  sigma_k = c(0.1, 1, 5),
+  sigma_e = c(0.1, 1, 5)
+  
+) %>%
+  rowwise() %>%
+  mutate(data = list(simulate_interaction(sigma_m, sigma_k,sigma_e))) %>% 
+  unnest(data)
+```
+
+
+### Stimulus encoding.
+
+First we start by looking at how the evidence is related to the stimulus encoding (evidence). As no surprise the evidence changes the range of evidence's the subjects recieves even across the same physical stimulus (i.e. across D and X.)
+
+```{r, fig.height=6, fig.width=10}
+df_interaction %>%
+  mutate(sigma_e = as.factor(sigma_e)) %>% 
+  ggplot(aes(x = e, fill = sigma_e)) +
+  geom_histogram(col = "black", position = "identity", alpha = 0.5)+
+  facet_grid(X~D, labeller = label_both, scales = "free") +
+  labs(x = "Evidence", y = "Count", title = "Psychometric Curves") +
+  theme_minimal()+
+  theme(text = element_text(size = 14))
+
+```
+
+From the above we have that $\sigma_e$ increases the range of evidence's collected given a "direction" D and a stimulus intensity. We also see that X just scales D such that the mean of the evidence is (X * D)
+
+
+
+
+
+
+<details style="border: 2px solid #3498db; border-radius: 5px; padding: 15px; margin: 20px 0; background-color: #f8f9fa;">
+<summary style="cursor: pointer; font-size: 1.1em; font-weight: bold; color: #2c3e50; padding: 5px;"><b>📘 Click to expand: Multivariate Normal Formulation</b></summary>
+
+<div style="margin-top: 15px;">
+
+```{r}
+set.seed(199742)
+
+n_trials <- 5000
+# sigma_e <- 1
+conf_prec <- 50
+c0 <- -3
+c1 <- 3
+
+simulate_interaction <- function(sigma_m, sigma_k,sigma_e) {
+  X <- abs(rnorm(n_trials,2,1))
+  D <- sample(c(-1, 1), n_trials, replace = TRUE)
+  e <- rnorm(n_trials, mean = D * X, sd = sigma_e)
+  ehat <- rnorm(n_trials, e, sigma_m)
+  k_gauss <- rnorm(n_trials, 0, sigma_k)
+  p_gauss <- pnorm(e / sigma_k)
+  a <- rbinom(n_trials, 1, p_gauss)
+  C_mu <- ifelse(a == 1, 
+                 plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)),
+                 1 - plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)))
+  c_mu <- pmax(0.001, pmin(0.999, C_mu))
+  C <- ordbetareg::rordbeta(n_trials, c_mu, conf_prec, c(c0, c1))
+  
+  data.frame(e = e,
+             C = C,
+             C_mu = C_mu,
+             a = a,
+             X = X,
+             D=D,
+             ACC = ifelse(a == 0 & D == -1,1,ifelse(a == 1 & D == 1,1,0)))
+}
+
+df_interaction <- expand.grid(
+  sigma_m = c(0.1, 1, 5),
+  sigma_k = c(0.1, 1, 5),
+  sigma_e = c(0.1, 1, 5)
+  
+) %>%
+  rowwise() %>%
+  mutate(data = list(simulate_interaction(sigma_m, sigma_k,sigma_e))) %>% 
+  unnest(data)
+```
+
+Now lets turn to how evidence, the physical stimulus and accuracy interacts across parameters:
+
+```{r, fig.height=6, fig.width=10,warning=F,message=F}
+
+df_interaction %>%
+    filter(sigma_e == 0.1) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = X*D, y = e, col = Accuracy)) +
+  labs(x = "Signed Stimulus", y = "Evidence") +
+  geom_point()+
+  facet_grid(sigma_m~sigma_k, scales = "free")+
+  geom_hline(yintercept = 0, linetype = 2, alpha = 0.5)+
+  geom_vline(xintercept = 0, linetype = 2, alpha = 0.5)+
+  theme_minimal()+
+  theme(text = element_text(size = 14))
+
+
+df_interaction %>%
+  filter(sigma_e == 1) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = X*D, y = e, col = Accuracy)) +
+  labs(x = "Signed Stimulus", y = "Evidence") +
+  geom_point()+
+  facet_grid(sigma_m~sigma_k, scales = "free")+
+  geom_hline(yintercept = 0, linetype = 2, alpha = 0.5)+
+  geom_vline(xintercept = 0, linetype = 2, alpha = 0.5)+
+  theme_minimal()+
+  theme(text = element_text(size = 14))
+
+
+
+df_interaction %>%
+  filter(sigma_e == 5) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = X*D, y = e, col = Accuracy)) +
+  labs(x = "Signed Stimulus", y = "Evidence") +
+  geom_point()+
+  facet_grid(sigma_m~sigma_k, scales = "free")+
+  geom_hline(yintercept = 0, linetype = 2, alpha = 0.5)+
+  geom_vline(xintercept = 0, linetype = 2, alpha = 0.5)+
+  theme_minimal()+
+  theme(text = element_text(size = 14))
+
+
+```
+
+
+</details>
+
+
+```{r}
+set.seed(199742)
+
+n_trials <- 5000
+# sigma_e <- 1
+conf_prec <- 50
+c0 <- -3
+c1 <- 3
+
+simulate_interaction <- function(sigma_m, sigma_k,sigma_e) {
+  X <- sample(c(0.01,1,2,5), n_trials, replace = TRUE)
+  D <- sample(c(-1, 1), n_trials, replace = TRUE)
+  e <- rnorm(n_trials, mean = D * X, sd = sigma_e)
+  ehat <- rnorm(n_trials, e, sigma_m)
+  k_gauss <- rnorm(n_trials, 0, sigma_k)
+  p_gauss <- pnorm(e / sigma_k)
+  a <- rbinom(n_trials, 1, p_gauss)
+  C_mu <- ifelse(a == 1, 
+                 plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)),
+                 1 - plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)))
+  c_mu <- pmax(0.001, pmin(0.999, C_mu))
+  C <- ordbetareg::rordbeta(n_trials, c_mu, conf_prec, c(c0, c1))
+  
+  data.frame(e = e,
+             C = C,
+             C_mu = C_mu,
+             a = a,
+             X = X,
+             D=D,
+             ACC = ifelse(a == 0 & D == -1,1,ifelse(a == 1 & D == 1,1,0)))
+}
+
+df_interaction <- expand.grid(
+  sigma_m = c(0.1, 1, 5),
+  sigma_k = c(0.1, 1, 5),
+  sigma_e = c(0.1, 1, 5)
+  
+) %>%
+  rowwise() %>%
+  mutate(data = list(simulate_interaction(sigma_m, sigma_k,sigma_e))) %>% 
+  unnest(data)
+```
+
+
+
+## Psychometric curves
+
+Now we can also plot how $sigma_k$ relates to the evidence and the probability of respoding ("1").
+
+```{r, fig.height=6, fig.width=10,warning=F,message=F}
+
+df_interaction %>%
+  ggplot(aes(x = e, y = a, col = as.factor(sigma_k))) +
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE) +
+  scale_x_continuous(limits = c(-10,10))+
+  labs(x = "Evidence", y = "P(choice = 1)", title = "Psychometric Curves") +
+  theme_minimal()+
+  theme(text = element_text(size = 14))
+
+```
+
+Here we clearly see the effect of $\sigma_k$ which governs the slope of the psychometric on the evidence scale. i.e. (P(a=1) | e). However we can also plot P(a = 1 | D, X). 
+
+Below i do this now with facets for each $\sigma_e$ level as the top plot and then in the bottom plot with the color and facet reveresed:
+
+
+```{r, fig.height=6, fig.width=10,warning=F,message=F}
+
+sigma_kk = df_interaction %>%
+  mutate(sigma_k = as.factor(sigma_k)) %>% 
+  ggplot(aes(x = X*D, y = a, col = sigma_k)) +
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE) +
+  scale_x_continuous(limits = c(-10,10))+
+  facet_wrap(~sigma_e, scales = "free", labeller = label_both)+
+  labs(x = "Signed Signal (D * X)", y = "P(choice = 1)", title = "Psychometric Curves") +
+  theme_minimal()+
+  theme(text = element_text(size = 14))
+
+
+
+sigma_ee = df_interaction %>%
+  mutate(sigma_e = as.factor(sigma_e)) %>% 
+  ggplot(aes(x = X*D, y = a, col = sigma_e)) +
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), se = FALSE) +
+  scale_x_continuous(limits = c(-10,10))+
+  facet_wrap(~sigma_k, scales = "free", labeller = label_both)+
+  labs(x = "Signed Signal (D * X)", y = "P(choice = 1)", title = "Psychometric Curves") +
+  theme_minimal()+
+  theme(text = element_text(size = 14))
+
+
+
+sigma_kk/sigma_ee
+```
+
+From these plots its hopefully clear that when we plot (p(a = 1) , e) we have that the range of the x-axis is defined by $\sigma_e$ and the slope of the psychometric function is defined by $\sigma_k$. When we look at (p(a = 1) , D * X) we see that both $\sigma_e$ and $\sigma_k$ govern the slope of the psychometric to the same degree.
+
+
+## Confidence curves
+
+First we fix $\sigma_k = 1$ and then we look at how $\sigma_e$ & $\sigma_m$ change confidence ratings as a function of the evidence:
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+df_interaction %>%
+  filter(sigma_k == 1) %>% 
+  mutate(e = cut(e, 10)) %>% 
+  group_by(e,ACC, sigma_e,sigma_m) %>% 
+  summarize(mean = mean(C_mu),
+            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
+            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = e, y = mean, ymin = q5, ymax = q95, col = Accuracy)) +
+    geom_pointrange(position = position_dodge(width =0.4))+
+  facet_grid( sigma_e~ sigma_m, labeller = label_both) +
+  geom_hline(yintercept = c(0.5,1), linetype = 2)+
+  labs(x = "evidence", y = "Confidence") +
+  theme_minimal()+
+  ylim(c(0,1))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+
+From the above plot we see that when we have the full range of evidences (due to a high encoding uncertainty) we end up seeing a somewhat folded X pattern (although just a flat line for the incorrect trials). This can be harder to decode in the plots with low encoding uncertainty, but that is main due to the binning of the evidence scale. Additionally we see that increasing the metacogntion uncertainty $sigma_m$ that this decreases the steepness of the confidence curve for correct trials such that it asympotete at higher evidence levels.
+
+
+To see that the evidence encoding uncertainty also flattens out the confidence curve we now only plot the correct trials:
+
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+df_interaction %>%
+  filter(sigma_k == 1 & ACC == 1) %>% 
+  mutate(e = cut(e, 10)) %>% 
+  group_by(e,ACC, sigma_e,sigma_m) %>% 
+  summarize(mean = mean(C_mu),
+            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
+            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
+  mutate(sigma_e = as.factor(sigma_e)) %>% 
+  ggplot(aes(x = e, y = mean, ymin = q5, ymax = q95, col = sigma_e)) +
+    geom_pointrange(position = position_dodge(width =0.4))+
+  facet_grid( ~ sigma_m, labeller = label_both) +
+  geom_hline(yintercept = c(0.5,1), linetype = 2)+
+  labs(x = "evidence", y = "Confidence") +
+  theme_minimal()+
+  ylim(c(0,1))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+Now we fix $\sigma_e = 1$ and then we look at how $\sigma_k$ & $\sigma_m$ change confidence ratings as a function of the evidence:
+
+Now we might want to keep the evidence scale
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+df_interaction %>%
+  filter(sigma_e == 1) %>% 
+  mutate(e = cut(e, 10)) %>% 
+  group_by(e,ACC, sigma_k,sigma_m) %>% 
+  summarize(mean = mean(C_mu),
+            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
+            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = e, y = mean, ymin = q5, ymax = q95, col = Accuracy)) +
+    geom_pointrange(position = position_dodge(width =0.4))+
+  facet_grid( sigma_k~ sigma_m, labeller = label_both) +
+  geom_hline(yintercept = c(0.5,1), linetype = 2)+
+  labs(x = "evidence", y = "Confidence") +
+  theme_minimal()+
+  ylim(c(0,1))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+Notice above that when $\sigma_k$ is bigger than or equal to $\sigma_e$ then we see a real folded-X pattern where incorrect trial decrease with increasing evidence whereas when its equal to or less than we have the pattern of constant confidence for incorrect trials. To make this more clear we can plot the ratio between the two uncertainties $\sigma = \frac{\sigma_e}{\sigma_k}$ which when below 1 should show a full folded-X pattern and when above the half-folded X.
+
+Below this is plotted for $sigma_m = 1$
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+df_interaction %>%
+  filter(sigma_m == 1) %>%
+  mutate(sigma = sigma_e/sigma_k) %>% 
+  mutate(e = cut(e, 10)) %>% 
+  group_by(e,ACC, sigma_m,sigma) %>% 
+  summarize(mean = mean(C_mu),
+            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
+            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>%
+  mutate(sigma_m = as.factor(sigma_m)) %>% 
+  ggplot(aes(x = e, y = mean, ymin = q5, ymax = q95, col = Accuracy)) +
+    geom_pointrange(position = position_dodge(width =0.4))+
+  facet_grid( ~sigma, labeller = label_both) +
+    geom_hline(yintercept = c(0.5,1), linetype = 2)+
+  labs(x = "evidence", y = "Confidence") +
+  theme_minimal()+
+  ylim(c(0,1))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+
+And now across different levels of metacognitive uncertainty.
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+df_interaction %>%
+  # filter(sigma_e == 5) %>% 
+  mutate(sigma = sigma_e/sigma_k) %>% 
+  mutate(e = cut(e, 10)) %>% 
+  group_by(e,ACC, sigma_m,sigma) %>% 
+  summarize(mean = mean(C_mu),
+            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
+            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>%
+  mutate(sigma_m = as.factor(sigma_m)) %>% 
+  ggplot(aes(x = e, y = mean, ymin = q5, ymax = q95, col = sigma_m)) +
+    geom_pointrange(position = position_dodge(width =0.4))+
+  facet_grid(Accuracy ~sigma, labeller = label_both) +
+  labs(x = "evidence", y = "Confidence") +
+  theme_minimal()+
+  ylim(c(0,1))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+
+
+
+
+Looking at all three parameters but only for correct trials
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+
+# Focus on correct trials only, vary all three
+df_interaction %>%
+      filter(ACC == 1) %>%
+  mutate(e = cut(e, 10)) %>% 
+  group_by(e,sigma_k,sigma_e,sigma_m,ACC) %>% 
+  summarize(mean = mean(C_mu),
+            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
+            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
+    ggplot(aes(x = e, y = mean, ymin = q5, ymax = q95,group = interaction(sigma_k, sigma_m, sigma_e), col = as.factor(sigma_k))) +
+    geom_pointrange(position = position_dodge(width =0.4))+
+    facet_grid(sigma_m ~ sigma_e, labeller = label_both) +
+    labs(title = "Confidence on CORRECT trials", x = "Evidence", y = "Confidence") +
+    theme_minimal() +
+    theme(legend.position = "bottom")+
+    theme_minimal()+
+  ylim(c(0,1))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+Looking at all three parameters but only for Incorrect trials
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+
+# Focus on correct trials only, vary all three
+df_interaction %>%
+      filter(ACC == 0) %>%
+  mutate(e = cut(e, 10)) %>% 
+  group_by(e,sigma_k,sigma_e,sigma_m,ACC) %>% 
+  summarize(mean = mean(C_mu),
+            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
+            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
+    ggplot(aes(x = e, y = mean, ymin = q5, ymax = q95,group = interaction(sigma_k, sigma_m, sigma_e), col = as.factor(sigma_k))) +
+    geom_pointrange(position = position_dodge(width =0.4))+
+    facet_grid(sigma_m ~ sigma_e, labeller = label_both) +
+    labs(title = "Confidence on Incorrect trials", x = "Evidence", y = "Confidence") +
+    theme_minimal() +
+    theme(legend.position = "bottom")+
+    theme_minimal()+
+  ylim(c(0,1))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+### Signed stimulus scale
+
+First we fix $\sigma_k = 1$ and then we look at how $\sigma_e$ & $\sigma_m$ change confidence ratings as a function of the evidence:
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+df_interaction %>%
+  filter(sigma_k == 1) %>% 
+  mutate(SS = D*X) %>%
+  group_by(SS,ACC, sigma_e,sigma_m) %>% 
+  summarize(mean = mean(C_mu),
+            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
+            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = SS, y = mean, ymin = q5, ymax = q95, col = Accuracy)) +
+    geom_pointrange(position = position_dodge(width =0.4))+
+  facet_grid( sigma_e~ sigma_m, labeller = label_both) +
+  geom_hline(yintercept = c(0.5,1), linetype = 2)+
+  labs(x = "Signed Stimulus", y = "Confidence") +
+  theme_minimal()+
+  ylim(c(0,1))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+
+From the above plot we see that when we plot confidence on the Signed Stimulus scale we end up with a somewhat double increase pattern, when the stimulus encoding uncertainty is high (i.e. 5). Furthermore we see a somewhat folded X as before when meta uncertainty is high (5). 
+
+Now we fix $\sigma_e = 1$ and then we look at how $\sigma_k$ & $\sigma_m$ change confidence ratings as a function of the evidence:
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+df_interaction %>%
+  filter(sigma_e == 1) %>% 
+  mutate(SS = X*D) %>% 
+  group_by(SS,ACC, sigma_k,sigma_m) %>% 
+  summarize(mean = mean(C_mu),
+            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
+            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = SS, y = mean, ymin = q5, ymax = q95, col = Accuracy)) +
+    geom_pointrange(position = position_dodge(width =0.4))+
+  facet_grid( sigma_k~ sigma_m, labeller = label_both) +
+  geom_hline(yintercept = c(0.5,1), linetype = 2)+
+  labs(x = "Signed Stimulus", y = "Confidence") +
+  theme_minimal()+
+  ylim(c(0,1))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+
+
+Notice above that for the first row that as we increase meta uncertainty at a high choice consistency (low $\sigma_k$) we go from a double increase pattern to a somewhat folded X (flat line when incorrect). Additionally when down the columns we see that we generally also move from a double increase (/ half folded X) to a real folded X. Interestingly we see for the middle row that when increasing meta uncertainty we go from a real folded X to a half-folded-X when meta-uncertainty increases.
+
+Below this is plotted for $sigma_m = 1$
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+df_interaction %>%
+  filter(sigma_m == 1) %>%
+  mutate(sigma = sigma_e/sigma_k) %>% 
+  mutate(SS = X*D) %>% 
+  group_by(SS,ACC, sigma_k,sigma,sigma_e) %>% 
+  summarize(mean = mean(C_mu),
+            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
+            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>%
+  mutate(sigma_m = as.factor(sigma_m)) %>% 
+  ggplot(aes(x = SS, y = mean, ymin = q5, ymax = q95, col = Accuracy)) +
+    geom_pointrange(position = position_dodge(width =0.4))+
+  facet_grid( sigma_e~sigma_k, labeller = label_both) +
+    geom_hline(yintercept = c(0.5,1), linetype = 2)+
+  labs(x = "Signed Stimulus", y = "Confidence") +
+  theme_minimal()+
+  ylim(c(0,1))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+
+Looking at all three parameters but only for correct trials
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+
+# Focus on correct trials only, vary all three
+df_interaction %>%
+      filter(ACC == 1) %>%
+  mutate(SS = D*X) %>% 
+  group_by(SS,sigma_k,sigma_e,sigma_m,ACC) %>% 
+  summarize(mean = mean(C_mu),
+            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
+            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
+    ggplot(aes(x = SS, y = mean, ymin = q5, ymax = q95,group = interaction(sigma_k, sigma_m, sigma_e), col = as.factor(sigma_k))) +
+    geom_pointrange(position = position_dodge(width =0.4))+
+    facet_grid(sigma_m ~ sigma_e, labeller = label_both) +
+    labs(title = "Confidence on CORRECT trials", x = "Signed Stimulus", y = "Confidence") +
+    theme_minimal() +
+      geom_hline(yintercept = c(0.5,1), linetype = 2)+
+    theme(legend.position = "bottom")+
+    theme_minimal()+
+  ylim(c(0,1))
+```
+
+Looking at all three parameters but only for Incorrect trials
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+
+# Focus on correct trials only, vary all three
+df_interaction %>%
+      filter(ACC == 0) %>%
+  mutate(SS = X*D) %>% 
+  group_by(SS,sigma_k,sigma_e,sigma_m,ACC) %>% 
+  summarize(mean = mean(C_mu),
+            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
+            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
+    ggplot(aes(x = SS, y = mean, ymin = q5, ymax = q95,group = interaction(sigma_k, sigma_m, sigma_e), col = as.factor(sigma_k))) +
+    geom_pointrange(position = position_dodge(width =0.4))+
+    facet_grid(sigma_m ~ sigma_e, labeller = label_both) +
+    labs(title = "Confidence on Incorrect trials", x = "Signed Stimulus", y = "Confidence") +
+    theme_minimal() +
+      geom_hline(yintercept = 0.5, linetype = 2)+
+    theme(legend.position = "bottom")+
+    theme_minimal()+
+  ylim(c(0,1))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+
+# Interpreting the Parameters
+
+Now that we've derived the framework, let's understand what each parameter means and how to interpret fitted values from real data.
+
+## The Three Core Noise Parameters
+
+### σₑ: Evidence Noise
+
+**What it represents:**
+- The variability in the sensory/perceptual evidence on each trial
+- How noisy the perceptual representation of the stimulus is
+- In the model: $e \sim \mathcal{N}(D \cdot \mu, \sigma_e^2)$
+- governs the variability of the evidence.
+
+**Interpretation:**
+- **Higher σₑ**: More perceptual noise, less reliable evidence
+  - Shallower psychometric curve (when plotting (P(A=1), X*D))
+  - More variable choices for the same stimulus
+  - Lower overall accuracy
+  
+---
+
+### σₖ: Criterion/Threshold Noise (Response Variability)
+
+**What it represents:**
+- Trial-to-trial variability in the decision threshold/criterion
+- In the model: $k \sim \mathcal{N}(\mu_k, \sigma_k^2)$
+
+**Interpretation:**
+- **Higher σₖ**: More variable decision threshold
+  - Same evidence leads to different choices across trials
+  - Shallower psychometric curve (when plotting (P(A=1), X*D) and (P(A=1), e))
+  - More "lapses" or unexpected choices
+
+---
+
+### σₘ: Metacognitive Noise (Confidence Imprecision)
+
+**What it represents:**
+- How noisy the metacognitive read-out of evidence is
+- The precision with which confidence estimates track actual evidence
+- In the model: $\hat{e} \sim \mathcal{N}(e, \sigma_m^2)$
+
+**Interpretation:**
+- **Higher σₘ**: Poor metacognitive access
+  - Confidence judgments are noisy relative to evidence
+  - Weaker relationship between confidence and accuracy
+
+## Parameter Interactions and Trade-offs
+
+### The σₑ vs σₖ Problem
+
+Without confidence data, these parameters are **confounded**:
+- Both make the psychometric curve shallower
+- Both increase choice variability given the physical stimulus
+- Need confidence to distinguish:
+  - High σₑ: Low confidence overall (evidence is weak)
+  - High σₖ: Confidence doesn't match accuracy (threshold is noisy)
+
+### The σₑ and σₘ Interaction
+
+These combine additivly in the confidence formula:
+$$
+P(D=1 \mid \hat{e}) = g\Big(\frac{2 \cdot \hat{e} \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big)
+$$
+
+# Shiny app
+
+In order to fully appreciate the standard deviation parameters see the shiny app in the same directory.
+
+
+# Fiting the model
+
+Before fitting the model its important to note that we add some residual variation in both confidence ratings as well as the response time. We do this by assuming that the above response times and confidence ratings come from two different marginal distributions that have the domains of the variables. So we assume the confidence ratings are ordered-beta distributed such that they keep their constraint between 0 and 1. For the response time we assume that they come from a shifted lognormal distribution.
+
+$$
+RT_t \sim log\mathcal{N}(-|e|,\sigma_{rt}) + NDT_{rt})
+$$
+
+$$
+Conf_t \sim Ordbeta(confidence_t,\kappa_{c}, C_0,C_1)
+$$
+
+
+```{r, fig.height=8,fig.width=6,message=F, warning=F}
+mod = cmdstanr::cmdstan_model(here::here("Derivations","test_conf.stan"))
+
+datastan = list(a = df$a_gauss,
+                RT = df$rt,
+                D = df$D,
+                C = df$C,
+                N = nrow(df),
+                X = df$X)
+
+
+fit = mod$sample(data = datastan,
+                 iter_warmup = 500,
+                 refresh = 0,
+                 iter_sampling = 500,
+           parallel_chains = 4)
+```
+
+
+### Checking model fit and parameter estimates:
+
+Table of the summary of the main parameters
+
+```{r, fig.height=6,fig.width=8,message=F,warning=F}
+fit$summary(c("sigma_choice","sigma_rt","mean_choice","RT_ndt","prec_conf","sigma_m","sigma_e"))
+```
+
+
+Here we take the marginal posteriors of all the parameters and plot them on top of the simulated value (red line)
+
+```{r, fig.height=6,fig.width=8,message=F,warning=F}
+as_draws_df(fit$draws(c("sigma_choice","sigma_rt","RT_ndt","mean_choice","prec_conf","sigma_m","sigma_e"))) %>% dplyr::select(-contains(".")) %>% 
+  pivot_longer(everything()) %>% 
+  mutate(simulated = ifelse(name == "RT_e",rt_e,
+                            ifelse(name == "sigma_choice",sigma_k,
+                                   ifelse(name == "sigma_rt",rt_sigma,
+                                          ifelse(name == "RT_ndt",rt_ndt,
+                                                 ifelse(name == "sigma_e",sigma_e,
+                                                        ifelse(name == "prec_conf",conf_precc,
+                                                               ifelse(name == "sigma_m",sigma_m,mu_k)))))))) %>%
+  ggplot(aes(x = value))+
+  geom_histogram(col = "black")+geom_vline(aes(xintercept = simulated), col = "red")+facet_wrap(~name, scales = "free")+theme_classic()
+
+```
+
+
+
+And now the trial by trial estimates of the observed evidence used for the decision and the confidence rating.
+
+```{r, fig.height=8,fig.width=12,message=F,warning=F}
+
+e = data.frame(fit$summary("evidence")) %>% mutate(simulated = df$e) %>% 
+  ggplot(aes(x = simulated, y = mean, ymin = q5, ymax = q95))+
+  geom_abline(col = "red")+
+  geom_pointrange(alpha = 0.5)+
+  xlab("Simulated Evidence")+
+  ylab("Estimated Evidence")+
+  theme(text = element_text(size = 14))+
+  theme_minimal()
+
+
+ehat = data.frame(fit$summary("ehat")) %>% mutate(simulated = df$ehat) %>% 
+  ggplot(aes(x = simulated, y = mean, ymin = q5, ymax = q95))+
+  geom_pointrange(alpha = 0.5)+
+  geom_abline(col = "red")+
+  xlab("Simulated Evidence for metacognition (ehat)")+
+  ylab("Estimated Evidence for metacognition (ehat)")+
+  theme(text = element_text(size = 14))+
+  theme_minimal()
+
+
+e / ehat
+
+```
+
+# Posterior Predictive Checks
+
+Now we assess how well the model captures the observed data patterns by generating predictions from the posterior distribution and comparing them to the actual data.
+
+## Generate Posterior Predictions
+
+```{r, message=F, warning=F}
+# Extract posterior samples for parameters
+post_samples <- as_draws_df(fit$draws(c("sigma_choice",
+                                        "sigma_m",
+                                        "sigma_e",
+                                        "mean_choice",
+                                        "RT_ndt",
+                                        "sigma_rt",
+                                        "prec_conf",
+                                        "c0",
+                                        "c1")))
+
+# Sample 100 posterior draws for predictions
+n_samples <- 100
+sampled_draws <- post_samples[sample(1:nrow(post_samples), 2000),]
+
+
+get_preds = function(df_pred){
+  
+  e_pred <- rnorm(nrow(df), mean = df$D * df$X, sd = df_pred$sigma_e)
+  
+  # Simulate choices
+  p_choice <- pnorm((e_pred - mu_k) / df_pred$sigma_choice)
+  pred_choices <- rbinom(nrow(df), 1, p_choice)
+  
+  # Simulate confidence
+  ehat_pred <- rnorm(nrow(df), e_pred, df_pred$sigma_m)
+  c_mu_pred <- ifelse(pred_choices == 1, 
+                      plogis(2 * ehat_pred * df$X / (df_pred$sigma_e^2 + df_pred$sigma_m^2)),
+                      1 - plogis(2 * ehat_pred * df$X / (df_pred$sigma_e^2 + df_pred$sigma_m^2)))
+  c_mu_pred <- pmax(0.001, pmin(0.999, c_mu_pred))
+  pred_confidence <- ordbetareg::rordbeta(nrow(df), c_mu_pred, df_pred$prec_conf, c(df_pred$c0, df_pred$c1))
+  
+  # Simulate RT
+  pred_rt <- rlnorm(nrow(df), -abs(e_pred), df_pred$sigma_rt) + df_pred$RT_ndt
+  
+  
+  data.frame(D = df$D,
+             X = df$X,
+             trial = 1:nrow(df),
+             e_pred = e_pred,
+             ehat_pred = ehat_pred,
+             p_choice_pred=  p_choice,
+             c_mu_pred = c_mu_pred,
+             pred_confidence = pred_confidence,
+             pred_ACC = ((pred_choices-0.5)*2) == df$D,
+             pred_choices = pred_choices,
+             pred_rt = pred_rt)
+  
+}
+draw_ids <- seq_len(n_samples)
+
+pred_list <- lapply(draw_ids, function(i) {
+  
+  df_pred <- sampled_draws[i, ]
+  
+  preds <- get_preds(df_pred)
+  preds$draw <- i
+  
+  preds
+})
+
+predictions <- do.call(rbind, pred_list)
+```
+
+
+Lets start with the confidence ratings:
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+pred_conf = fit$summary(c("mu_conf"))
+pred_rt = fit$summary(c("mu_rt"))
+pred_bin = fit$summary(c("p_action"))
+
+
+
+df %>% 
+  mutate(p_mean = pred_conf$mean,
+         p_q95 = pred_conf$q95,
+         p_q5 = pred_conf$q5) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = D*X, y = c_mu, col = Accuracy, fill = Accuracy))+
+        theme_minimal()+
+    theme(text = element_text(size = 14))+
+  labs(x = "Signed stimulus",y = "Confidence (simulated and estimated)")+
+    geom_pointrange(aes(x = D*X, y = p_mean, ymin = p_q5, ymax = p_q95))+
+    geom_point(shape = 21, col = "black")
+
+
+df %>% 
+  mutate(p_mean = pred_conf$mean,
+         p_q95 = pred_conf$q95,
+         p_q5 = pred_conf$q5) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(col = Accuracy, fill = Accuracy))+
+  geom_abline()+
+  theme_minimal()+
+  theme(text = element_text(size = 14))+
+  labs(x = "Simulated confidence means",y = "Estimated confidence means")+
+    geom_pointrange(aes(x = c_mu, y = p_mean, ymin = p_q5, ymax = p_q95))
+```
+
+Above we see that the model captures the trial-by-trial confidence means quite well. The first plot shows how the confidence data relates to the signed stimulus and then the points without error bars are the simulated mean confidence ratings and then the points with the error-bars are the model predictions on that particular trial. The second plot shows the relationship between the simulated and estimated confidence means at each trial with the identity line (y=x) shown for reference.
+
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+df %>% 
+  mutate(p_mean = pred_rt$mean,
+         p_q95 = pred_rt$q95,
+         p_q5 = pred_rt$q5) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = D*X, y = rt_mu, col = Accuracy, fill = Accuracy))+
+      theme_minimal()+
+    theme(text = element_text(size = 14))+
+  labs(x = "Signed stimulus",y = "RT-means (simulated and estimated)")+
+    geom_pointrange(aes(x = D*X, y = p_mean, ymin = p_q5, ymax = p_q95))+
+    geom_point(shape = 21, col = "black")
+
+
+df %>% 
+  mutate(p_mean = pred_rt$mean,
+         p_q95 = pred_rt$q95,
+         p_q5 = pred_rt$q5) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(col = Accuracy, fill = Accuracy))+
+  geom_abline()+
+      theme_minimal()+
+    theme(text = element_text(size = 14))+
+  labs(x = "Simulated RT-means",y = "Estimated RT-means")+
+    geom_pointrange(aes(x = rt_mu , y = p_mean, ymin = p_q5, ymax = p_q95))
+```
+
+Same but for response times. Note here that here we are plotting the mean that goes into the lognormal distribution which means that they are mostly negative.
+
+
+
+```{r, fig.height=6, fig.width=10, message=F, warning=F}
+evidence = fit$summary("evidence")
+
+
+df %>% 
+  mutate(p_mean = evidence$mean,
+         p_q95 = evidence$q95,
+         p_q5 = evidence$q5) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(col = Accuracy, fill = Accuracy))+
+    theme_minimal()+
+    theme(text = element_text(size = 14))+
+  labs(x = "Signed stimulus",y = "Estimated evidence")+
+    geom_pointrange(aes(x = X*D, y = p_mean, ymin = p_q5, ymax = p_q95))
+
+df %>% 
+  mutate(p_mean = evidence$mean,
+         p_q95 = evidence$q95,
+         p_q5 = evidence$q5) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(col = Accuracy, fill = Accuracy))+
+  theme_minimal()+
+    theme(text = element_text(size = 14))+
+  labs(x = "Simulated Evidence",y = "Estimated evidence")+
+  geom_abline()+
+  geom_pointrange(aes(x = e, y = p_mean, ymin = p_q5, ymax = p_q95))
+
+```
+
+
+Lastly we can look at the evidence (which we partly) already did.
+
+

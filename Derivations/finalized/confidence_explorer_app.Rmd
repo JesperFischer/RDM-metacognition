@@ -1,0 +1,276 @@
+---
+title: "Interactive Confidence Explorer"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+pacman::p_load(ordbetareg)
+```
+
+# Interactive Confidence Explorer
+
+Explore how the three noise parameters (σe, σk, σm) affect the relationship between evidence and confidence.
+
+```{r shiny_app, echo=FALSE}
+shinyApp(
+  
+  ui = fluidPage(
+    titlePanel("Interactive Confidence Explorer"),
+    
+    sidebarLayout(
+      sidebarPanel(
+        sliderInput("sigma_e", 
+                    "Evidence Noise (σe):", 
+                    min = 0, max = 10, value = 1, step = 0.1),
+        sliderInput("sigma_k", 
+                    "Threshold Noise (σk):", 
+                    min = 0, max = 10, value = 1, step = 0.1),
+        sliderInput("sigma_m", 
+                    "Metacognitive Noise (σm):", 
+                    min = 0, max = 10, value = 1, step = 0.1),
+        hr(),
+        h4("Summary Statistics"),
+        p("Fixed: 5000 trials per simulation"),
+        verbatimTextOutput("summary_stats")
+      ),
+      
+      mainPanel(
+        tabsetPanel(
+          tabPanel("Evidence vs Confidence", 
+                   plotOutput("plot_e_C", height = "650px")),
+          tabPanel("Stimulus vs Confidence", 
+                   plotOutput("plot_SS_C", height = "650px")),
+          tabPanel("Both Plots",
+                   plotOutput("plot_SS_C_both", height = "650px")),
+          tabPanel("Evidence vs Stimulus",
+                   plotOutput("plot_evid_stim", height = "650px"))
+        )
+      )
+    )
+  ),
+  
+  server = function(input, output, session) {
+    
+    # Reactive expression to generate simulated data whenever sliders change
+    sim_data <- reactive({
+      req(input$sigma_e, input$sigma_k, input$sigma_m)
+      
+      # Set seed for reproducibility
+      set.seed(199742)
+      
+      # Simulation parameters
+      n_trials <- 5000
+      sigma_e <- max(input$sigma_e, 0.001)
+      sigma_k <- max(input$sigma_k, 0.001)
+      sigma_m <- max(input$sigma_m, 0.001)
+      conf_prec <- 500
+      c0 <- -3
+      c1 <- 3
+      
+      # Generate data
+      X <- abs(rnorm(n_trials, 2, 1))
+      D <- sample(c(-1, 1), n_trials, replace = TRUE)
+      e <- rnorm(n_trials, mean = D * X, sd = sigma_e)
+      ehat <- rnorm(n_trials, e, sigma_m)
+      k_gauss <- rnorm(n_trials, 0, sigma_k)
+      p_gauss <- pnorm(e / sigma_k)
+      a <- rbinom(n_trials, 1, p_gauss)
+      
+      c_mu <- ifelse(a == 1, 
+                     plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)),
+                     1 - plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)))
+      c_mu <- pmax(0.001, pmin(0.999, c_mu))
+      C <- ordbetareg::rordbeta(n_trials, c_mu, conf_prec, c(c0, c1))
+      
+      ACC <- ifelse(a == 0 & D == -1, 1, ifelse(a == 1 & D == 1, 1, 0))
+      SS <- D * X
+      
+      df <- data.frame(
+        e = e,
+        ehat = ehat,
+        C = C,
+        a = a,
+        X = X,
+        D = D,
+        ACC = ACC,
+        SS = SS
+      )
+      
+      return(df)
+    })
+    
+    
+    # Plot: Evidence vs Confidence
+    output$plot_e_C <- renderPlot({
+      df <- sim_data()
+      
+      # Bin evidence into 10 bins
+      df %>%
+        mutate(e_bin = cut(e, breaks = 10, include.lowest = TRUE)) %>%
+        group_by(e_bin, ACC) %>%
+        summarize(
+          mean_C = mean(C),
+          se_C = sd(C) / sqrt(n()),
+          e_mid = mean(e),
+          .groups = "drop"
+        ) %>%
+        ggplot(aes(x = e_mid, y = mean_C, color = as.factor(ACC))) +
+        geom_point(size = 3) +
+        geom_line(linewidth = 1.5) +
+        geom_errorbar(aes(ymin = mean_C - 1.96 * se_C, 
+                         ymax = mean_C + 1.96 * se_C), 
+                     width = 0.3, linewidth = 1) +
+        scale_color_manual(
+          values = c("0" = "#D64D4D", "1" = "#4DB84D"),
+          labels = c("Incorrect", "Correct"),
+          name = "Accuracy"
+        ) +
+        labs(
+          title = "Evidence vs Confidence",
+          x = "Evidence (e)",
+          y = "Mean Confidence"
+        ) +
+        ylim(0, 1) +
+        theme_minimal(base_size = 14) +
+        theme(legend.position = "top")
+    })
+    
+    # Plot: Signed Stimulus vs Confidence
+    output$plot_SS_C <- renderPlot({
+           df <- sim_data()
+      
+      # Bin signed stimulus into 10 bins
+      df %>%
+        mutate(SS = D*X,
+               SS_bin = cut(SS, breaks = 10, include.lowest = TRUE)) %>%
+        group_by(SS_bin, ACC) %>%
+        summarize(
+          mean_C = mean(C),
+          se_C = sd(C) / sqrt(n()),
+          SS_mid = mean(SS),
+          .groups = "drop"
+        ) %>%
+        ggplot(aes(x = SS_mid, y = mean_C, color = as.factor(ACC))) +
+        geom_point(size = 3) +
+        geom_line(linewidth = 1.5) +
+        geom_errorbar(aes(ymin = mean_C - 1.96 * se_C, 
+                         ymax = mean_C + 1.96 * se_C), 
+                     width = 0.3, linewidth = 1) +
+        scale_color_manual(
+          values = c("0" = "#D64D4D", "1" = "#4DB84D"),
+          labels = c("Incorrect", "Correct"),
+          name = "Accuracy"
+        ) +
+        labs(
+          title = "Signed Stimulus vs Confidence (binned)",
+          x = "Signed Stimulus",
+          y = "Mean Confidence"
+        ) +
+        ylim(0, 1) +
+        theme_minimal(base_size = 14) +
+        theme(legend.position = "top")
+    })
+    
+
+    
+    output$plot_SS_C_both <- renderPlot({
+      req(sim_data())
+      df <- sim_data()
+      
+      p1 = df %>%
+        mutate(SS = D*X,
+               SS_bin = cut(SS, breaks = 10, include.lowest = TRUE)) %>%
+        group_by(SS_bin, ACC) %>%
+        summarize(
+          mean_C = mean(C),
+          se_C = sd(C) / sqrt(n()),
+          SS_mid = mean(SS),
+          .groups = "drop"
+        ) %>%
+        ggplot(aes(x = SS_mid, y = mean_C, color = as.factor(ACC))) +
+        geom_point(size = 3) +
+        geom_line(linewidth = 1.5) +
+        geom_errorbar(aes(ymin = mean_C - 1.96 * se_C, 
+                         ymax = mean_C + 1.96 * se_C), 
+                     width = 0.3, linewidth = 1) +
+        scale_color_manual(
+          values = c("0" = "#D64D4D", "1" = "#4DB84D"),
+          labels = c("Incorrect", "Correct"),
+          name = "Accuracy"
+        ) +
+        labs(
+          title = "Signed Stimulus vs Confidence",
+          x = "Signed Stimulus",
+          y = "Mean Confidence"
+        ) +
+        ylim(0, 1) +
+        theme_minimal(base_size = 14) +
+        theme(legend.position = "top")
+      
+      
+      p2 = df %>%
+        mutate(e_bin = cut(e, breaks = 10, include.lowest = TRUE)) %>%
+        group_by(e_bin, ACC) %>% 
+        summarize(
+          mean_C = mean(C),
+          se_C = sd(C) / sqrt(n()),
+          e_mid = mean(e),
+          .groups = "drop"
+        ) %>%
+        ggplot(aes(x = e_mid, y = mean_C, color = as.factor(ACC))) +
+        geom_point(size = 2) +
+        geom_line(linewidth = 1) +
+        geom_errorbar(aes(ymin = mean_C - 1.96 * se_C, ymax = mean_C + 1.96 * se_C), 
+                     width = 0.2) +
+        scale_color_manual(
+          values = c("0" = "#D64D4D", "1" = "#4DB84D"),
+          labels = c("Incorrect", "Correct"),
+          name = "Accuracy"
+        ) +
+        labs(title = "Evidence vs Confidence", x = "Evidence", y = "Mean Confidence") +
+        ylim(0, 1) +
+        theme_minimal() +
+        theme(legend.position = "none")
+      
+      p1|p2
+      
+    })
+    
+    # Plot: Evidence vs Stimulus (colored by accuracy)
+    output$plot_evid_stim <- renderPlot({
+      req(sim_data())
+      df <- sim_data()
+      
+      ggplot(df, aes(x = SS, y = e, color = as.factor(ACC))) +
+        geom_point(alpha = 0.6, size = 2) +
+        geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5, size = 1) +
+        geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5, size = 1) +
+        scale_color_manual(
+          values = c("0" = "#D64D4D", "1" = "#4DB84D"),
+          labels = c("Incorrect", "Correct"),
+          name = "Accuracy"
+        ) +
+        labs(
+          title = "Evidence vs Signed Stimulus by Accuracy",
+          subtitle = sprintf("σ_e = %.1f  |  σ_k = %.1f  |  σ_m = %.1f", 
+                            input$sigma_e, input$sigma_k, input$sigma_m),
+          x = "Signed Stimulus (D × X)",
+          y = "Evidence (e)"
+        ) +
+        theme_minimal(base_size = 14) +
+        theme(
+          legend.position = "top",
+          plot.subtitle = element_text(size = 12, color = "gray40")
+        )
+    })
+  },
+  
+  options = list(height = 800)
+)
+```

@@ -1,0 +1,309 @@
+---
+title: "old"
+output: html_document
+---
+
+
+
+
+
+
+
+
+
+
+We introduce two parameters for the mean function of the evidence. The parameter $\alpha$ captures any initial bias, allowing the decision maker to have a baseline preference for a choice option even when there is no stimulus evidence. The parameter $\beta$ represents the individual's sensitivity to the stimulus strength and governs the scaling of stimulus strength to the internally represented evidence.
+
+$$
+e_i \sim \mathcal{N}(\alpha + \beta \cdot D_i \cdot X_i,\sigma)
+$$
+
+Assuming a fixed criterion at 0, such that the actor responds $a = +1$ if the internal evidence is above 0 and $-1$ if the internal evidence is less than or equal to 0, we have:
+
+$$
+a_i =
+\begin{cases}
++1 & \text{if } e_i > 0, \\
+-1 & \text{if } e_i \le 0 .
+\end{cases}
+$$
+This assumption is without loss of generality, as any constant criterion can be absorbed into the bias parameter $\alpha$.
+
+
+The probability of a positive response given the stimulus strength and the true category is given by:
+$$
+P(a_i = +1 \mid X_i, D_i) = P(e_i > 0 \mid X_i, D_i)
+$$
+Given that:
+
+$$
+e_i \sim \mathcal{N}(a+b X_i D_i, \sigma)
+$$
+we can obtain this probability by integrating the normal density from zero to infinity, which amounts to marginalizing over the latent evidence:
+
+$$
+P(a_i = +1 \mid X_i, D_i)= \int_{0}^{\infty}\mathcal N(e \mid a+b X_i D_i, \sigma)\, de.
+$$
+
+
+
+Standardizing the normal variable yields:
+$$
+P(a_i = +1 \mid X_i, D_i)
+= 1 - \Phi\!\left(
+\frac{0 - (a+b X_i D_i)}{\sigma}
+\right)
+$$
+
+where $\Phi(\cdot)$ denotes the cumulative distribution function of the standard normal distribution.
+
+$$
+P(a_i = +1 \mid X_i, D_i)
+= \Phi\!\left(
+\frac{a + b X_i D_i}{\sigma}
+\right)
+$$
+
+
+
+This yields the psychometric function. By rewriting and then reparameterizing:
+
+$$
+P(a_i = +1 \mid X_i, D_i)
+= \Phi\!\left(
+\frac{a}{\sigma} + \frac{b X_i D_i}{\sigma}
+\right)
+$$
+
+Factoring $\frac{b}{\sigma}$:
+
+$$
+P(a_i = +1 \mid X_i, D_i)
+= \Phi\!\left(
+\frac{b}{\sigma} \cdot (X_i D_i + \frac{a}{b})
+\right)
+$$
+
+Reparameterizing, we define:
+$$
+\alpha = -\frac{a}{b}
+$$
+
+$$
+\beta = \frac{b}{\sigma}
+$$
+
+
+$$
+P(a_i = +1 \mid X_i, D_i)
+= \Phi\!\left(
+\beta \cdot (X_i D_i - \alpha)
+\right)
+$$
+
+Following the same logic, we can derive the probability of being correct:
+
+$$
+P(\text{correct}_i \mid X_i, D_i)
+= \Phi\!\left(
+\beta \cdot |X_i D_i - \alpha|
+\right)
+$$
+
+To motivate the metacognitive framework, we now revisit the assumptions we made about the evidence.
+
+We start with the evidence as a random variable:
+
+
+$$
+e_i \sim \mathcal{N}(a + b \cdot D_i \cdot X_i,\sigma)
+$$
+
+Assuming a fixed criterion at 0, such that the actor responds $a = +1$ if the internal evidence is above 0 and $-1$ if the internal evidence is less than or equal to 0:
+
+$$
+a_i =
+\begin{cases}
++1 & \text{if } e_i > 0, \\
+-1 & \text{if } e_i \le 0 .
+\end{cases}
+$$
+
+For the actor to be correct, we need $a_i = D_i$, which occurs when the product of the evidence and the true state is positive (i.e., when $e_i > 0$ and $D_i > 0$, or when $e_i < 0$ and $D_i < 0$). This gives us:
+
+
+$$
+P(a_i = D_i \mid X_i) = P(e_i \cdot D_i > 0 \mid X_i)
+$$
+
+The probability of this can be derived by multiplying the evidence equation by $D_i$:
+
+$$
+D_i \cdot e_i \sim \mathcal{N}(a \cdot D_i + b \cdot D_i \cdot D_i \cdot X_i,\sigma)
+$$
+Since $D_i \in \{-1,+1\}$, we have $D_i^2 = 1$:
+
+$$
+D_i \cdot e_i \sim \mathcal{N}(a \cdot D_i + b \cdot X_i,\sigma)
+$$
+
+Marginalizing over $D_i \cdot e_i$:
+
+$$
+P(a_i = D_i \mid X_i)= \int_{0}^{\infty}\mathcal{N}(e_i \cdot D_i \mid a \cdot D_i + b \cdot X_i,\sigma)\, d(e_i \cdot D_i)
+$$
+
+$$
+P(a_i = D_i \mid X_i)
+= \Phi\!\left(
+\frac{a \cdot D_i + b \cdot X_i}{\sigma}
+\right)
+$$
+
+Using the same reparameterization:
+
+$$
+\alpha = -\frac{a}{b}
+$$
+
+$$
+\beta = \frac{b}{\sigma}
+$$
+
+we obtain:
+
+$$
+P(a_i = D_i \mid X_i)
+= \Phi\!\left(
+\beta \cdot (X_i - \alpha \cdot D_i)
+\right)
+$$
+
+When $D = +1$, the argument $X_i - \alpha \cdot D_i$ reduces to $X_i - \alpha$, and when $D = -1$, we obtain $X_i + \alpha$. This demonstrates that, for a task symmetrical around the threshold, only the distance between the threshold and the stimulus strength matters:
+
+$$
+P(a_i = D_i \mid X_i)
+= \Phi\!\left(
+\beta \cdot |X_i - \alpha |)
+\right)
+$$
+
+## Metacognitive Confidence
+
+We now introduce a metacognitive rater who provides confidence ratings about the actor's decisions. The key assumption is that the rater has access to **independent noisy information** about the true state, separate from the actor's evidence.
+
+### Reparameterization for Clarity
+
+To work with interpretable parameters, we use the reparameterization from earlier. Recall that we defined:
+$$
+\alpha = -\frac{a}{b}, \quad \beta = \frac{b}{\sigma}
+$$
+
+where $\alpha$ represents the decision threshold/bias and $\beta$ represents the sensitivity. We can then work with standardized evidence:
+
+$$
+\tilde{e}_i = \frac{e_i}{\sigma} \sim \mathcal{N}(\beta \cdot (D_i \cdot X_i - \alpha), 1)
+$$
+
+Similarly, for the metacognitive rater, we define standardized metacognitive evidence with no inherent threshold bias:
+
+$$
+\tilde{m}_i \sim \mathcal{N}(\beta_m \cdot D_i \cdot X_i, 1)
+$$
+
+where:
+- $\beta_m$ represents the rater's sensitivity to the stimulus
+- Crucially, $\tilde{m}_i$ is **independent** of $\tilde{e}_i$ given $D_i$ and $X_i$
+- We assume the rater has no threshold bias (always centered at 0)
+
+This parameterization gives us directly interpretable parameters: $\beta$ and $\beta_m$ are the sensitivities, and $\alpha$ is the actor's decision threshold.
+
+### Metacognitive Bias Parameter
+
+In addition to sensitivity, we introduce a **confidence bias** parameter $\delta \in (-0.5, 0.5)$ that captures overconfidence or underconfidence. This is implemented through asymmetric priors in the Bayesian confidence computation:
+
+- Prior probability of being correct: $p_c = 0.5 + \delta$
+- Prior probability of being incorrect: $p_i = 0.5 - \delta$
+
+where:
+- $\delta > 0$: overconfident (baseline confidence above 0.5)
+- $\delta < 0$: underconfident (baseline confidence below 0.5)
+- $\delta = 0$: unbiased (baseline confidence at 0.5)
+
+This captures the intuition that some individuals may systematically rate higher or lower confidence than warranted, regardless of which option they chose.
+
+### Information Available to the Rater
+
+The rater has access to:
+- The actor's standardized evidence $\tilde{e}_i$ (the internal representation that led to the decision)
+- The actor's decision $a_i$ (determined by $\text{sign}(\tilde{e}_i)$)
+- Their own metacognitive evidence $\tilde{m}_i$
+- The stimulus strength $X_i$
+
+The rater does **not** have access to:
+- The true state $D_i$
+
+### Computing Confidence via Evidence Comparison
+
+The rater's confidence is based on the **agreement between** $\tilde{e}_i$ and $\tilde{m}_i$. The key intuition is:
+- **High alignment** → both observations likely came from the same true state → **high confidence correct**
+- **High misalignment** → the observations disagree about the true state → **high confidence incorrect**
+
+The confidence is computed using Bayes' rule with the asymmetric priors:
+
+$$
+C_i = P(a_i = D_i \mid \tilde{e}_i, \tilde{m}_i, X_i)
+$$
+
+Since $\tilde{e}_i$ and $\tilde{m}_i$ are conditionally independent given $D_i$ and $X_i$, and incorporating the asymmetric priors:
+
+$$
+C_i = \frac{p_c \cdot P(\tilde{e}_i \mid D_i = a_i, X_i) \cdot P(\tilde{m}_i \mid D_i = a_i, X_i)}{p_c \cdot P(\tilde{e}_i \mid D_i = a_i, X_i) \cdot P(\tilde{m}_i \mid D_i = a_i, X_i) + p_i \cdot P(\tilde{e}_i \mid D_i = -a_i, X_i) \cdot P(\tilde{m}_i \mid D_i = -a_i, X_i)}
+$$
+
+where $p_c = 0.5 + \delta$ and $p_i = 0.5 - \delta$.
+
+**When the actor is correct** ($D_i = a_i$):
+$$
+\tilde{e}_i \mid \text{correct} \sim \mathcal{N}(\beta \cdot (a_i \cdot X_i - \alpha), 1)
+$$
+$$
+\tilde{m}_i \mid \text{correct} \sim \mathcal{N}(\beta_m \cdot a_i \cdot X_i, 1)
+$$
+
+**When the actor is incorrect** ($D_i = -a_i$):
+$$
+\tilde{e}_i \mid \text{incorrect} \sim \mathcal{N}(\beta \cdot (-a_i \cdot X_i - \alpha), 1)
+$$
+$$
+\tilde{m}_i \mid \text{incorrect} \sim \mathcal{N}(\beta_m \cdot (-a_i) \cdot X_i, 1)
+$$
+
+Therefore, confidence is:
+
+$$
+C_i = \frac{(0.5 + \delta) \cdot \phi(\tilde{e}_i \mid \beta \cdot (a_i \cdot X_i - \alpha), 1) \cdot \phi(\tilde{m}_i \mid \beta_m \cdot a_i \cdot X_i, 1)}{(0.5 + \delta) \cdot \phi(\tilde{e}_i \mid \beta \cdot (a_i \cdot X_i - \alpha), 1) \cdot \phi(\tilde{m}_i \mid \beta_m \cdot a_i \cdot X_i, 1) + (0.5 - \delta) \cdot \phi(\tilde{e}_i \mid \beta \cdot (-a_i \cdot X_i - \alpha), 1) \cdot \phi(\tilde{m}_i \mid -\beta_m \cdot a_i \cdot X_i, 1)}
+$$
+
+where $\phi(\cdot \mid \mu, 1)$ denotes the probability density function of a standard normal distribution with mean $\mu$ and unit variance.
+
+### Key Properties
+
+This formulation captures metacognition as evidence comparison with confidence bias:
+
+1. **High confidence correct**: When $\tilde{e}_i$ and $\tilde{m}_i$ are both large and have the same sign, both observations strongly support $D_i = a_i$ → $C_i$ approaches 1 (modulated by $\delta$).
+
+2. **High confidence incorrect**: When $\tilde{e}_i$ and $\tilde{m}_i$ have opposite signs, they disagree about the true state. The metacognitive evidence suggests the opposite state → $C_i$ approaches 0 (modulated by $\delta$).
+
+3. **Uncertain**: When $|\tilde{m}_i|$ is small (weak metacognitive evidence) or when $\tilde{e}_i$ and $\tilde{m}_i$ give conflicting but weak signals → $C_i \approx 0.5 + \delta$ (the baseline confidence).
+
+4. **Metacognitive efficiency**: The parameter $\beta_m$ controls the sensitivity of the metacognitive system. When $\beta_m < \beta$, the rater has lower sensitivity than the actor, which is the hallmark of metacognitive inefficiency. When $\beta_m = \beta$, we have matched sensitivity (ideal metacognition given the confidence bias).
+
+5. **Confidence bias**: The parameter $\delta$ shifts all confidence ratings up or down uniformly:
+   - $\delta > 0$: overconfidence (rates higher confidence across all trials)
+   - $\delta < 0$: underconfidence (rates lower confidence across all trials)
+   - $\delta = 0$: unbiased (baseline confidence at 0.5 when maximally uncertain)
+   
+   This captures individuals who systematically use different parts of the confidence scale, regardless of their actual accuracy or which option they chose.
+
+6. **Evidence distance matters**: The agreement between $\tilde{e}_i$ and $\tilde{m}_i$ (their likelihood ratio under the two hypotheses) determines confidence. Perfect alignment yields maximal confidence; strong disagreement yields minimal confidence.

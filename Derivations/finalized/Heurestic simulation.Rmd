@@ -1,0 +1,141 @@
+---
+title: "Heurestic simulation"
+author: ""
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+---
+
+```{r}
+pacman::p_load(tidyverse,posterior,bayesplot,cmdstanr,patchwork,ordbetareg,shiny)
+
+
+simulate_data = function(n = 1000){
+  # -----------------------------
+  # Set parameters
+  # -----------------------------
+  n_trials <- n        # number of trials
+  sigma_e <- abs(rnorm(1,1,5))           # noise on evidence (needs to be fixed for now)
+  
+  sigma_m = abs(rnorm(1,1,5))
+  conf_prec = abs(rnorm(1,100,50))
+  c0 = -abs(rnorm(1,5,1))
+  c1 = abs(rnorm(1,5,1))
+  
+  mu_k <- 0                  # criterion mean on the evidence scale (gaussian distribution)
+  sigma_k <- abs(rnorm(1,1,5))                 # criterion sd on the evidence scale (gaussian distribution)
+  
+  
+  # Coherence level (stimulus intensity)
+  X <- abs(rnorm(n_trials,0,1))
+  
+  # stimuli (left or right)
+  D <- sample(c(-1, 1), n_trials, replace = TRUE)  # true stimulus
+  
+  # Simulate evidence
+  e <- rnorm(n_trials, mean = D * X, sd = sigma_e)
+  
+  # Compute posterior P(D=1|e)
+  
+  ehat = rnorm(n_trials,e,sigma_m)
+  
+  # Evidence-based stochastic policy (guassian distribution for citera)
+  k_gauss <- rnorm(n_trials, mu_k, sigma_k)          # citerion on trial t
+  p_gauss = pnorm((e-mu_k)/sigma_k)                  #  probability of response on trial t given the citerion
+  a_gauss = rbinom(n_trials,1,p_gauss)               # binary response
+  
+  c_mu = ifelse(a_gauss == 1, brms::inv_logit_scaled(2*ehat*X / (sigma_e^2 + sigma_m^2)),
+                1-brms::inv_logit_scaled(2*ehat*X / (sigma_e^2 + sigma_m^2)))
+  
+  
+  
+  C = ordbetareg::rordbeta(n_trials,c_mu,conf_prec,c(c0,c1))
+  
+  # Dataframe
+  df = data.frame(
+    c0 = c0,
+    c1 = c1,
+    sigma_k = sigma_k,
+    sigma_e = sigma_e,
+    conf_prec = conf_prec,
+    sigma_m = sigma_m,
+    e = e,
+    ehat = ehat,
+    D = D,
+    X =X,
+    ACC = ifelse(a_gauss == 0 & D == -1, 1, ifelse(a_gauss == 1 & D == 1, 1,0)),
+    c_mu = c_mu,
+    C = C,
+    a_gauss = a_gauss
+  )
+}  
+
+```
+
+
+```{r, fig.height=12,fig.width=8}
+df = simulate_data()
+df %>% ggplot(aes(x = X*D, y = a_gauss))+geom_point()
+df %>% ggplot(aes(x = X*D, y = C, col = as.factor(ACC)))+geom_point()+geom_smooth()
+
+
+
+fit = function(){
+  
+  df = simulate_data()
+
+  mod = cmdstanr::cmdstan_model(here::here("Derivations","heurestic.stan"))
+  
+  datastan = list(a = df$a_gauss,
+                  ACC = df$ACC,
+                  C = df$C,
+                  N = nrow(df),
+                  X = df$X * df$D)
+  
+  
+  fit = mod$sample(data = datastan,
+                   iter_warmup = 500,
+                   refresh = 100,
+                   iter_sampling = 500,
+             parallel_chains = 4)
+  
+  estimated = fit$summary("gm") %>% mutate(variable = c("beta",
+                                            "conf_prec",
+                                            "meta_un_cor",
+                                            "meta_un_inc",
+                                            "meta_bias_cor",
+                                            "meta_bias_inc"))
+  
+  estimated2 = fit$summary(c("beta",
+                                            "conf_prec",
+                                            "meta_un_cor",
+                                            "meta_un_inc",
+                                            "meta_bias_cor",
+                                            "meta_bias_inc"))
+  
+  
+  simulated = data.frame(c0 = unique(df$c0),
+                         c1 = unique(df$c1),
+                         sigma_k = unique(df$sigma_k),
+                         sigma_e =unique(df$sigma_e),
+                         sigma_m =unique(df$sigma_m),
+                         conf_prec =unique(df$conf_prec))
+  
+  result = list(simulated, estimated,estimated2,df, div = data.frame(fit$diagnostic_summary()))
+  
+  return(result)
+}
+
+qq = fit()
+
+```

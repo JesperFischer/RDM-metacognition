@@ -1,0 +1,444 @@
+---
+title: "Confidence with Accuracy Prior: Full Derivation"
+author: ""
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+---
+
+# Introduction
+
+This document derives the confidence formula when the agent has a **prior belief about their accuracy**. In the basic framework, we assumed equal priors P(D=1) = P(D=-1) = 0.5, which implies the agent believes they are equally likely to be correct or incorrect. Here, we relax this assumption and allow the agent to have a prior belief π about being correct.
+
+# Review: Confidence Without Accuracy Prior
+
+## Basic Setup
+
+- True state: $D \in \{-1, +1\}$
+- Stimulus strength: $X > 0$ (unsigned)
+- Evidence: $e \sim \mathcal{N}(D \cdot X, \sigma_e^2)$
+- Metacognitive read: $\hat{e} \sim \mathcal{N}(e, \sigma_m^2)$
+- Action taken: $a \in \{-1, +1\}$
+
+## Confidence Definition
+
+Confidence is the subjective probability of being correct:
+
+$$
+\text{confidence} = P(\text{correct} \mid \hat{e}, a) = P(D = a \mid \hat{e})
+$$
+
+## Standard Derivation (Equal Priors)
+
+With equal priors P(D=1) = P(D=-1) = 0.5, the posterior for action $a=1$ is:
+
+$$
+P(D=1 \mid \hat{e}) = \frac{P(\hat{e} \mid D=1) P(D=1)}{P(\hat{e})}
+$$
+
+Since $\hat{e} \mid D \sim \mathcal{N}(D \cdot X, \sigma_e^2 + \sigma_m^2)$, the log-odds are:
+
+$$
+\log\frac{P(D=1 \mid \hat{e})}{P(D=-1 \mid \hat{e})} = \log\frac{P(\hat{e} \mid D=1)}{P(\hat{e} \mid D=-1)} + \log\frac{P(D=1)}{P(D=-1)}
+$$
+
+The likelihood ratio:
+$$
+\log\frac{P(\hat{e} \mid D=1)}{P(\hat{e} \mid D=-1)} = \log\frac{\exp\left(-\frac{(\hat{e}-X)^2}{2(\sigma_e^2+\sigma_m^2)}\right)}{\exp\left(-\frac{(\hat{e}+X)^2}{2(\sigma_e^2+\sigma_m^2)}\right)}
+$$
+
+$$
+= \frac{(\hat{e}+X)^2 - (\hat{e}-X)^2}{2(\sigma_e^2+\sigma_m^2)} = \frac{4\hat{e}X}{2(\sigma_e^2+\sigma_m^2)} = \frac{2\hat{e}X}{\sigma_e^2+\sigma_m^2}
+$$
+
+With equal priors, the prior ratio is 0:
+$$
+\log\frac{P(D=1)}{P(D=-1)} = \log\frac{0.5}{0.5} = 0
+$$
+
+Therefore:
+$$
+P(D=1 \mid \hat{e}) = g\left(\frac{2\hat{e}X}{\sigma_e^2+\sigma_m^2}\right)
+$$
+
+where $g(\cdot) = \text{inv\_logit}(\cdot) = \frac{1}{1+\exp(-\cdot)}$
+
+# Introducing the Accuracy Prior
+
+## Motivation
+
+In reality, agents may have **biased beliefs** about their accuracy. For example:
+- Overconfident agents believe they are correct more often than they actually are
+- Underconfident agents believe they are correct less often than they actually are
+- Well-calibrated agents have accurate beliefs about their accuracy
+
+We model this with a parameter $\pi \in [0, 1]$ representing the agent's **prior belief about being correct**.
+
+## Reframing the Problem
+
+Instead of asking "What is P(D=1 | ê)?", we now ask:
+
+**"What is P(correct | ê, a)?"**
+
+where "correct" means the state matches the action (D = a).
+
+## The Prior
+
+The agent has a prior belief:
+$$
+P(\text{correct}) = \pi
+$$
+$$
+P(\text{incorrect}) = 1 - \pi
+$$
+
+This is a **meta-level prior** about accuracy, distinct from priors about stimulus direction.
+
+# Full Derivation with Accuracy Prior
+
+## Step 1: Apply Bayes' Rule
+
+For action $a$, confidence is:
+
+$$
+P(\text{correct} \mid \hat{e}, a) = \frac{P(\hat{e} \mid \text{correct}, a) \cdot P(\text{correct})}{P(\hat{e} \mid a)}
+$$
+
+By the law of total probability:
+$$
+P(\hat{e} \mid a) = P(\hat{e} \mid \text{correct}, a) \cdot P(\text{correct}) + P(\hat{e} \mid \text{incorrect}, a) \cdot P(\text{incorrect})
+$$
+
+## Step 2: Map to State Space
+
+When action $a=1$:
+- "correct" means $D=1$ → $\hat{e} \sim \mathcal{N}(X, \sigma_e^2 + \sigma_m^2)$
+- "incorrect" means $D=-1$ → $\hat{e} \sim \mathcal{N}(-X, \sigma_e^2 + \sigma_m^2)$
+
+When action $a=-1$:
+- "correct" means $D=-1$ → $\hat{e} \sim \mathcal{N}(-X, \sigma_e^2 + \sigma_m^2)$
+- "incorrect" means $D=1$ → $\hat{e} \sim \mathcal{N}(X, \sigma_e^2 + \sigma_m^2)$
+
+## Step 3: Compute Log-Odds
+
+The odds form of Bayes' rule:
+
+$$
+\frac{P(\text{correct} \mid \hat{e}, a)}{P(\text{incorrect} \mid \hat{e}, a)} = \frac{P(\hat{e} \mid \text{correct}, a)}{P(\hat{e} \mid \text{incorrect}, a)} \cdot \frac{P(\text{correct})}{P(\text{incorrect})}
+$$
+
+Taking logarithms:
+
+$$
+\log\frac{P(\text{correct} \mid \hat{e}, a)}{P(\text{incorrect} \mid \hat{e}, a)} = \log\frac{P(\hat{e} \mid \text{correct}, a)}{P(\hat{e} \mid \text{incorrect}, a)} + \log\frac{\pi}{1-\pi}
+$$
+
+### Connecting "Correct/Incorrect" to State D
+
+Now we need to express the likelihood terms using the actual state D. For action $a=1$:
+- "correct" means the state matches the action: $D = a = 1$
+- "incorrect" means the state opposes the action: $D = -a = -1$
+
+Therefore, when $a=1$:
+$$
+P(\hat{e} \mid \text{correct}, a=1) = P(\hat{e} \mid D=1)
+$$
+$$
+P(\hat{e} \mid \text{incorrect}, a=1) = P(\hat{e} \mid D=-1)
+$$
+
+**Important**: Once we condition on the true state $D$, the action $a$ provides no additional information about $\hat{e}$ (the action was already taken based on evidence, but $\hat{e}$ depends only on the true state). Hence we can drop the conditioning on $a$ from the right-hand side.
+
+Substituting back into our log-odds:
+$$
+\log\frac{P(\text{correct} \mid \hat{e}, a=1)}{P(\text{incorrect} \mid \hat{e}, a=1)} = \log\frac{P(\hat{e} \mid D=1)}{P(\hat{e} \mid D=-1)} + \log\frac{\pi}{1-\pi}
+$$
+
+## Step 4: Evaluate the Likelihood Ratio
+
+Now we evaluate the likelihood ratio using the Gaussian distributions. Since $\hat{e} \mid D \sim \mathcal{N}(D \cdot X, \sigma_e^2 + \sigma_m^2)$:
+
+For $D=1$: $\hat{e} \mid D=1 \sim \mathcal{N}(X, \sigma_e^2 + \sigma_m^2)$
+
+For $D=-1$: $\hat{e} \mid D=-1 \sim \mathcal{N}(-X, \sigma_e^2 + \sigma_m^2)$
+
+The likelihood ratio becomes:
+
+$$
+\log\frac{P(\hat{e} \mid D=1)}{P(\hat{e} \mid D=-1)} = \log\frac{\exp\left(-\frac{(\hat{e}-X)^2}{2(\sigma_e^2+\sigma_m^2)}\right)}{\exp\left(-\frac{(\hat{e}+X)^2}{2(\sigma_e^2+\sigma_m^2)}\right)}
+$$
+
+Expanding the squares:
+$$
+= \frac{(\hat{e}+X)^2 - (\hat{e}-X)^2}{2(\sigma_e^2+\sigma_m^2)}
+$$
+
+$$
+= \frac{(\hat{e}^2 + 2\hat{e}X + X^2) - (\hat{e}^2 - 2\hat{e}X + X^2)}{2(\sigma_e^2+\sigma_m^2)}
+$$
+
+$$
+= \frac{4\hat{e}X}{2(\sigma_e^2+\sigma_m^2)} = \frac{2\hat{e}X}{\sigma_e^2+\sigma_m^2}
+$$
+
+This is the **evidence term** - how much the observed $\hat{e}$ supports being correct vs incorrect.
+
+## Step 5: Evaluate the Prior Ratio
+
+The prior odds ratio is:
+$$
+\log\frac{P(\text{correct})}{P(\text{incorrect})} = \log\frac{\pi}{1-\pi} = \text{logit}(\pi)
+$$
+
+This is the **prior term** - the agent's baseline belief before considering evidence.
+
+## Step 6: Combine Terms
+
+The complete log-odds:
+
+$$
+\log\frac{P(\text{correct} \mid \hat{e}, a)}{P(\text{incorrect} \mid \hat{e}, a)} = \frac{2\hat{e}X}{\sigma_e^2+\sigma_m^2} + \text{logit}(\pi)
+$$
+
+Converting back to probability:
+
+$$
+P(\text{correct} \mid \hat{e}, a) = g\left(\frac{2\hat{e}X}{\sigma_e^2+\sigma_m^2} + \text{logit}(\pi)\right)
+$$
+
+where $g(x) = \frac{1}{1+e^{-x}}$ is the inverse logit (logistic) function.
+
+# Final Formula
+
+## For Action a=1
+
+$$
+\text{confidence} = g\left(\frac{2\hat{e}X}{\sigma_e^2+\sigma_m^2} + \text{logit}(\pi)\right)
+$$
+
+## For Action a=-1
+
+Since "correct" now means D=-1, the evidence points in the opposite direction:
+
+$$
+\text{confidence} = g\left(\frac{-2\hat{e}X}{\sigma_e^2+\sigma_m^2} + \text{logit}(\pi)\right)
+$$
+
+## Unified Formula
+
+For any action $a \in \{-1, +1\}$:
+
+$$
+\text{confidence} = g\left(\frac{2a \cdot \hat{e}X}{\sigma_e^2+\sigma_m^2} + \text{logit}(\pi)\right)
+$$
+
+# Interpretation
+
+## The Evidence Component: $\frac{2a \cdot \hat{e}X}{\sigma_e^2+\sigma_m^2}$
+
+- **Numerator**: Alignment between evidence and action
+  - Large positive: Evidence strongly supports the action → high confidence
+  - Near zero: Evidence is weak or ambiguous → low confidence
+  - Large negative: Evidence contradicts the action → low confidence
+
+- **Denominator**: Total uncertainty (evidence noise + metacognitive noise)
+  - Larger $\sigma_e^2 + \sigma_m^2$: More uncertainty → confidence less sensitive to evidence
+
+## The Prior Component: $\text{logit}(\pi)$
+
+This shifts **all** confidence judgments:
+
+| π | logit(π) | Effect |
+|---|----------|--------|
+| 0.5 | 0 | Neutral (standard model) |
+| 0.7 | 0.85 | Overconfident (+0.85 shift in log-odds) |
+| 0.8 | 1.39 | Very overconfident |
+| 0.3 | -0.85 | Underconfident |
+| 0.2 | -1.39 | Very underconfident |
+
+**Key insight**: The prior acts **additively in log-odds space**, meaning:
+- It shifts the entire confidence distribution up or down
+- The sensitivity to evidence (slope) remains unchanged
+- Only the baseline level of confidence changes
+
+## Comparison to Meta-Bias
+
+This accuracy prior π is mathematically equivalent to what we previously called "meta_bias":
+
+$$
+\text{meta\_bias} = \text{logit}(\pi)
+$$
+
+But framing it as an **accuracy prior** makes the interpretation clearer:
+- π = 0.7 means "I believe I'm correct 70% of the time"
+- meta_bias = 0.85 is just the log-odds version of this belief
+
+# Simulation Example
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+# Parameters
+sigma_e <- 1.0
+sigma_m <- 0.6
+X <- 0.8  # stimulus strength
+D <- 1    # true state
+n_trials <- 10000
+
+# Three different accuracy priors
+pi_values <- c(0.3, 0.5, 0.7)  # underconfident, calibrated, overconfident
+
+# Simulate
+results <- map_dfr(pi_values, function(pi) {
+  # Sample evidence and metacognitive read
+  e <- rnorm(n_trials, mean = D * X, sd = sigma_e)
+  ehat <- rnorm(n_trials, mean = e, sd = sigma_m)
+  
+  # Compute confidence with accuracy prior
+  evidence_term <- 2 * ehat * X / (sigma_e^2 + sigma_m^2)
+  prior_term <- qlogis(pi)  # logit(pi)
+  
+  confidence <- plogis(evidence_term + prior_term)
+  
+  tibble(
+    pi = pi,
+    ehat = ehat,
+    confidence = confidence,
+    correct = (e > 0)  # action matches state when e > 0
+  )
+})
+
+# Plot confidence distributions
+ggplot(results, aes(x = confidence, fill = as.factor(pi))) +
+  geom_histogram(alpha = 0.6, bins = 30, position = "identity") +
+  facet_wrap(~pi, labeller = label_both) +
+  labs(
+    title = "Confidence Distributions with Different Accuracy Priors",
+    x = "Confidence",
+    y = "Count",
+    fill = "Accuracy Prior (π)"
+  ) +
+  theme_minimal()
+```
+
+```{r, message=FALSE, warning=FALSE, fig.height=4, fig.width=8}
+# Plot confidence vs evidence for different priors
+results %>%
+  mutate(ehat_bin = cut(ehat, breaks = 20)) %>%
+  group_by(pi, ehat_bin) %>%
+  summarize(
+    mean_ehat = mean(ehat),
+    mean_conf = mean(confidence),
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(x = mean_ehat, y = mean_conf, color = as.factor(pi))) +
+  geom_line(size = 1.2) +
+  geom_point() +
+  labs(
+    title = "Confidence as Function of Evidence for Different Accuracy Priors",
+    x = "Metacognitive Evidence (ê)",
+    y = "Mean Confidence",
+    color = "Accuracy Prior (π)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+## Key Observations
+
+1. **Parallel curves**: Different priors shift the confidence function up/down but preserve the shape
+2. **Same slope**: Sensitivity to evidence (derivative) is unchanged
+3. **Global shift**: π affects confidence equally across all evidence levels
+
+# Implications for Modeling
+
+## Parameter Interpretation
+
+When fitting the model to data:
+
+- **σₑ** (evidence noise): Determines slope of psychometric curve
+- **σₖ** (criterion noise): Determines choice variability 
+- **σₘ** (metacognitive noise): Determines confidence-evidence coupling strength
+- **π** (accuracy prior): Determines overall confidence level (overconfidence/underconfidence)
+
+## Identifiability
+
+The accuracy prior π is **identifiable** from:
+- Mean confidence level across trials
+- Difference between confidence on easy vs hard trials
+- Calibration curves (confidence vs actual accuracy)
+
+Without π (fixing it at 0.5), any systematic over/underconfidence would be misattributed to σₘ or other parameters.
+
+## When to Include It
+
+Include π as a free parameter when:
+- Subjects show systematic over/underconfidence
+- Interest in metacognitive bias separate from metacognitive sensitivity
+- Comparing calibration across conditions or subjects
+
+Fix π = 0.5 when:
+- Subjects are well-calibrated on average
+- Reducing model complexity is important
+- Prior knowledge suggests balanced beliefs
+
+# Connection to the Full Model
+
+In your Stan model, implement this as:
+
+```stan
+parameters {
+  // ... existing parameters ...
+  real<lower=0, upper=1> accuracy_prior;  // π
+}
+
+transformed parameters {
+  real prior_logit = logit(accuracy_prior);
+  
+  for(i in 1:N) {
+    // ... evidence calculations ...
+    
+    // Confidence with accuracy prior
+    real evidence_term = 2 * a[i] * ehat[i] * X[i] / 
+                         (exp(sigma_e_log)^2 + exp(sigma_m_log)^2);
+    
+    mu_conf[i] = inv_logit(evidence_term + prior_logit);
+  }
+}
+
+model {
+  // Prior: centered at 0.5 (well-calibrated) with moderate uncertainty
+  accuracy_prior ~ beta(10, 10);
+  
+  // ... rest of model ...
+}
+```
+
+This cleanly separates:
+- **Metacognitive noise** (σₘ): How well confidence tracks evidence
+- **Metacognitive bias** (π): Overall confidence level
+
+# Summary
+
+The accuracy prior π enters the confidence formula as an **additive term in log-odds space**:
+
+$$
+\text{confidence} = g\left(\underbrace{\frac{2a \cdot \hat{e}X}{\sigma_e^2+\sigma_m^2}}_{\text{evidence}} + \underbrace{\text{logit}(\pi)}_{\text{prior}}\right)
+$$
+
+This formulation:
+1. ✅ Is mathematically principled (derived from Bayes' rule)
+2. ✅ Has clear interpretation (π = belief about accuracy rate)
+3. ✅ Separates bias from sensitivity
+4. ✅ Is identifiable from data
+5. ✅ Reduces to standard model when π = 0.5

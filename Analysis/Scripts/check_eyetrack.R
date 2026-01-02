@@ -6,7 +6,7 @@ library(tidyverse)
 source("C:/Users/au645332/Desktop/RDM metacognition/Coverter.R")
 convert_edf()
 
-folder = here::here("data","Siebe_full_v1")
+folder = here::here("Data","pilots","Jesper_2025_17_12")
 
 asc_lines <- readLines(grep(".asc",list.files(folder, full.names = T), value = T))
 
@@ -129,7 +129,9 @@ for(i in 1:length(idx_start)){
   
 }
 
-testdata = read.csv(grep("data.csv",list.files(folder,recursive = T,full.names = T),value = T)) %>% filter(Trialtype == "Main") %>% 
+testdata = read.csv(grep(here::here("Data","pilots","Jesper_2025_17_12","RDM_reportz_sub5.csv"),
+                         list.files(folder,recursive = T,full.names = T),value = T)) %>% 
+  filter(Trialtype == "Main") %>% 
   mutate(trial = 1:n())
 
 qq = inner_join(data,testdata)%>% 
@@ -137,17 +139,17 @@ qq = inner_join(data,testdata)%>%
   mutate(pupil = as.numeric(pupil))
   # mutate(pupil = interpolate_artifacts(time,pupil))
 
-# write.csv(qq,here::here("full_siebe_data.csv"))
+write.csv(qq,here::here("Data","pilots","Jesper_2025_17_12","full_jespere_data.csv"))
 
-qq <- read_csv("data/Siebe_full_v1/full_siebe_data.csv")
+# qq <- read_csv(here::here("Data","pilots","Jesper_2025_17_12","full_jespere_data.csv"))
 
 
 # qq <- qq[seq(1, nrow(qq), by = 100), ]
-# write.csv(qq,here::here("full_siebe_data_downsampled.csv"))
+# write.csv(qq,here::here("Data","pilots","Jesper_2025_17_12","full_jespere_downsampled_data.csv"))
 
 
 after_preprocessing_plot <- qq %>% 
-  filter(trial < 10) %>% 
+  filter(trial < 20) %>% 
   mutate(
     n = row_number(),
     pupil = as.numeric(pupil)
@@ -183,6 +185,8 @@ after_preprocessing_plot <- qq %>%
 after_preprocessing_plot
 
 
+
+
 qq   %>% 
   mutate(coherence_bin = cut(coherence,5)) %>% 
   group_by(trial) %>% 
@@ -197,6 +201,109 @@ qq   %>%
   geom_pointrange(aes(x = n, y = mean,ymin = mean-2*se,ymax = mean+2*se, col = as.factor(dots.direction)))+
     facet_wrap(~coherence_bin)
   
+
+
+
+qq %>% 
+  filter(resp %in% c("down","up")) %>% 
+  group_by(trial) %>% filter(trial %in% c(1:26)) %>% 
+  filter(
+    row_number() >= which(stim_start),
+    row_number() <= which(stim_end)
+  ) %>%
+  mutate(
+    n = row_number(),
+    pupil = as.numeric(pupil)-ref_mean,
+    cor = as.factor(cor)
+  ) %>% ungroup() %>% select(trial,n,pupil,cor,SR_conf) %>% 
+  drop_na() %>% group_by(n,trial,cor,SR_conf) %>% 
+  ggplot(aes(x = n, y = pupil, col = cor, group = interaction(cor,trial)))+geom_point(alpha = 0.1)+facet_wrap(~SR_conf, scales = "free")
+
+qq %>% 
+  filter(resp %in% c("down","up")) %>% 
+  group_by(trial) %>% filter(trial %in% c(1:26)) %>% 
+  filter(
+    row_number() >= which(conf_start),
+    row_number() <= which(conf_end)
+  ) %>%
+  mutate(
+    n = row_number(),
+    pupil = as.numeric(pupil)-ref_mean,
+    cor = as.factor(cor)
+  ) %>% ungroup() %>% select(trial,n,pupil,cor,SR_conf) %>% 
+  drop_na() %>% group_by(n,trial,cor,SR_conf) %>% 
+  ggplot(aes(x = n, y = pupil, col = cor, group = interaction(cor,trial)))+geom_point(alpha = 0.1)+facet_wrap(~SR_conf, scales = "free")
+
+
+
+
+qq %>% 
+  filter(resp %in% c("down","up")) %>% 
+  group_by(trial) %>% filter(trial %in% c(1:26)) %>% 
+  filter(
+    row_number() >= which(stim_start),
+    row_number() <= which(stim_end),
+    # row_number() >= which(stim_end),
+    # row_number() <= which(conf_start)
+    # row_number() <= which(conf_end)
+  ) %>%
+  mutate(
+    n = row_number(),
+    pupil = as.numeric(pupil)-ref_mean,
+    cor = as.factor(cor)
+  ) %>% 
+  ungroup() %>% select(n,pupil,cor) %>% 
+  drop_na() %>% group_by(n,cor) %>% summarise(pupil = mean(pupil)) %>% 
+  ggplot(aes(x = n, y = pupil, col = cor, group = interaction(cor)))+geom_point(alpha = 0.1)
+
+
+qq %>% 
+  filter(resp %in% c("down","up")) %>% 
+  group_by(trial) %>% filter(trial %in% c(1:26)) %>% 
+  filter(
+    # row_number() >= which(stim_start),
+    # row_number() <= which(stim_end),
+    row_number() >= which(stim_end),
+    row_number() <= which(conf_start)
+    # row_number() <= which(conf_end)
+  ) %>%
+  mutate(
+    n = row_number(),
+    pupil = as.numeric(pupil)-ref_mean,
+    cor = as.factor(cor)
+  ) %>% 
+  ungroup() %>% select(n,pupil,cor) %>% 
+  drop_na() %>% group_by(n,cor) %>% summarise(pupil = mean(pupil)) %>% 
+  ggplot(aes(x = n, y = pupil, col = cor, group = interaction(cor)))+geom_point(alpha = 0.1)
+
+
+
+
+qq %>% 
+  filter(resp %in% c("down","up")) %>% 
+  group_by(trial) %>% filter(trial %in% c(1:26)) %>% 
+  filter(
+    # row_number() >= which(stim_start),
+    # row_number() <= which(stim_end),
+    # row_number() >= which(stim_end),
+    row_number() >= which(conf_start),
+    row_number() <= which(conf_end)
+  ) %>%
+  mutate(
+    n = row_number(),
+    pupil = as.numeric(pupil)-ref_mean,
+    cor = as.factor(cor)
+  ) %>% 
+  ungroup() %>% select(n,pupil,cor) %>% 
+  drop_na() %>% group_by(n,cor) %>% summarise(pupil = mean(pupil)) %>% 
+  ggplot(aes(x = n, y = pupil, col = cor, group = interaction(cor)))+geom_point(alpha = 0.1)
+
+
+
+
+
+
+
 }
 
 
