@@ -92,6 +92,8 @@ df %>% ggplot(aes(x = X*D, y = C, col = as.factor(ACC)))+geom_point()+geom_smoot
 
 fit = function(){
   
+  qq = rnorm(1,1,1)
+  
   df = simulate_data()
 
   mod = cmdstanr::cmdstan_model(here::here("Derivations","heurestic.stan"))
@@ -105,9 +107,12 @@ fit = function(){
   
   fit = mod$sample(data = datastan,
                    iter_warmup = 500,
-                   refresh = 100,
+                   refresh = 0,
                    iter_sampling = 500,
              parallel_chains = 4)
+  
+  div1 = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq,
+                                                        time = fit$time()$total)
   
   estimated = fit$summary("gm") %>% mutate(variable = c("beta",
                                             "conf_prec",
@@ -129,13 +134,155 @@ fit = function(){
                          sigma_k = unique(df$sigma_k),
                          sigma_e =unique(df$sigma_e),
                          sigma_m =unique(df$sigma_m),
-                         conf_prec =unique(df$conf_prec))
+                         conf_prec =unique(df$conf_prec)) %>% mutate(sim = qq)
   
-  result = list(simulated, estimated,estimated2,df, div = data.frame(fit$diagnostic_summary()))
+  mod = cmdstanr::cmdstan_model(here::here("Derivations","real_simp.stan"))
+
+  datastan = list(a = df$a_gauss,
+                D = df$D,
+                C = df$C,
+                N = nrow(df),
+                X = df$X)
+
+
+  fit = mod$sample(data = datastan,
+                   iter_warmup = 500,
+                   refresh = 100,
+                   iter_sampling = 500,
+             parallel_chains = 4)
+    
+  esti_real = fit$summary(c("sigma_choice","sigma_m","sigma_e","prec_conf","c0","c1"))
+
+  
+  div2 = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq,
+                                                      time = fit$time()$total)
+  
+    
+  result = list(simulated %>% mutate(sim = qq),
+                estimated%>% mutate(sim = qq),
+                estimated2%>% mutate(sim = qq),
+                df%>% mutate(sim = qq),
+                div1 = div1,
+                div2 = div2,
+                estimated_real = esti_real%>% mutate(sim = qq))
   
   return(result)
 }
 
-qq = fit()
+# qq = fit()
+
+
+library(furrr)
+library(purrr)
+library(tidyverse)
+
+plan(multisession, workers = 10)  # Windows-friendly
+
+safe_function <- possibly(fit, otherwise = "Error")
+
+# Run 20 times in parallel
+results_list <- future_map(1:2000, ~ safe_function(), .progress = T)
+
+saveRDS(results_list,here::here("2000_rdm.RData"))
+
+results_list = results_list[-which(results_list == "Error")]
+```
+
+```{r}
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,3) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest() %>% rename(esti_conf_prec = conf_prec)
+) %>% 
+  ggplot(aes(x = beta, y = 1/sqrt(sigma_k^2+sigma_e^2)))+geom_point()+geom_abline()
+
+
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,3) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest() %>% rename(esti_conf_prec = conf_prec)
+) %>% 
+  ggplot(aes(x = meta_un_cor, y = 1/sqrt(sigma_m^2+sigma_e^2)))+geom_point()+geom_abline()
+
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,3) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest() %>% rename(esti_conf_prec = conf_prec)
+) %>% 
+  ggplot(aes(x = esti_conf_prec, y = conf_prec))+geom_point()+geom_abline()
+
+
+
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,3) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest() %>% rename(esti_conf_prec = conf_prec)
+) %>% 
+  ggplot(aes(x = meta_un_inc, y = sigma_m+sigma_e))+geom_point()+geom_abline()
+
+
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,3) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest() %>% rename(esti_conf_prec = conf_prec)
+) %>% 
+  ggplot(aes(x = meta_un_inc, y = 1/sigma_k))+geom_point()+geom_abline()
+
+
 
 ```
+
+
+```{r}
+
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,7) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest() %>% rename(esti_conf_prec = prec_conf,
+                        esti_sigma_k = sigma_choice,
+                        esti_sigma_m = sigma_m,
+                        esti_sigma_e = sigma_e,
+                        esti_c0 = c0,
+                        esti_c1 = c1)
+) %>% 
+  ggplot(aes(x = sigma_m, y = esti_sigma_m))+geom_point()+geom_abline()
+
+
+
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,7) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest() %>% rename(esti_conf_prec = prec_conf,
+                        esti_sigma_k = sigma_choice,
+                        esti_sigma_m = sigma_m,
+                        esti_sigma_e = sigma_e,
+                        esti_c0 = c0,
+                        esti_c1 = c1)
+) %>% 
+  ggplot(aes(x = sigma_e, y = esti_sigma_e))+geom_point()+geom_abline()
+
+
+
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,7) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest() %>% rename(esti_conf_prec = prec_conf,
+                        esti_sigma_k = sigma_choice,
+                        esti_sigma_m = sigma_m,
+                        esti_sigma_e = sigma_e,
+                        esti_c0 = c0,
+                        esti_c1 = c1)
+) %>% 
+  ggplot(aes(x = sigma_k, y = esti_sigma_k))+geom_point()+geom_abline()
+
+
+```
+
+
+
+```{r}
+
+
+
+```
+
