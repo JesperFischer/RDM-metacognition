@@ -102,6 +102,7 @@ shinyApp(
         SS = SS
       )
       
+      
       return(df)
     })
     
@@ -109,6 +110,20 @@ shinyApp(
     # Plot: Evidence vs Confidence
     output$plot_e_C <- renderPlot({
       df <- sim_data()
+      
+      library(statConfR)
+
+      
+      data = df %>% mutate(conf_bin = cut(C,4),
+                            stimulus  = as.factor(D),
+                            participant = 1,
+                            rating = as.numeric(as.factor(conf_bin)),
+                            correct = ACC) %>% drop_na()
+      
+      
+      
+      metad = fitMetaDprime(data)
+
       
       # Bin evidence into 10 bins
       df %>%
@@ -138,13 +153,28 @@ shinyApp(
         ) +
         ylim(0, 1) +
         theme_minimal(base_size = 14) +
-        theme(legend.position = "top")
+        theme(legend.position = "top")+
+        ggtitle(metad$Ratio)
     })
     
     # Plot: Signed Stimulus vs Confidence
     output$plot_SS_C <- renderPlot({
            df <- sim_data()
       
+           
+      
+      library(statConfR)
+
+      
+      data = df %>% mutate(conf_bin = cut(C,4),
+                            stimulus  = as.factor(D),
+                            participant = 1,
+                            rating = as.numeric(as.factor(conf_bin)),
+                            correct = ACC) %>% drop_na()
+      
+      
+      
+      metad = fitMetaDprime(data)
       # Bin signed stimulus into 10 bins
       df %>%
         mutate(SS = D*X,
@@ -174,14 +204,34 @@ shinyApp(
         ) +
         ylim(0, 1) +
         theme_minimal(base_size = 14) +
-        theme(legend.position = "top")
+        theme(legend.position = "top")+
+        ggtitle(metad$Ratio)
+
     })
     
 
     
     output$plot_SS_C_both <- renderPlot({
       req(sim_data())
+      
       df <- sim_data()
+      
+      
+      
+      
+      
+      library(statConfR)
+
+      
+      data = df %>% mutate(conf_bin = cut(C,4),
+                            stimulus  = as.factor(D),
+                            participant = 1,
+                            rating = as.numeric(as.factor(conf_bin)),
+                            correct = ACC) %>% drop_na()
+      
+      
+      
+      metad = fitMetaDprime(data)
       
       p1 = df %>%
         mutate(SS = D*X,
@@ -211,7 +261,8 @@ shinyApp(
         ) +
         ylim(0, 1) +
         theme_minimal(base_size = 14) +
-        theme(legend.position = "top")
+        theme(legend.position = "top")+
+        ggtitle(metad$Ratio)
       
       
       p2 = df %>%
@@ -236,7 +287,8 @@ shinyApp(
         labs(title = "Evidence vs Confidence", x = "Evidence", y = "Mean Confidence") +
         ylim(0, 1) +
         theme_minimal() +
-        theme(legend.position = "none")
+        theme(legend.position = "none")+
+        ggtitle(metad$Ratio)
       
       p1|p2
       
@@ -246,6 +298,21 @@ shinyApp(
     output$plot_evid_stim <- renderPlot({
       req(sim_data())
       df <- sim_data()
+      
+      
+      library(statConfR)
+
+      
+      data = df %>% mutate(conf_bin = cut(C,4),
+                            stimulus  = as.factor(D),
+                            participant = 1,
+                            rating = as.numeric(as.factor(conf_bin)),
+                            correct = ACC) %>% drop_na()
+      
+      
+      
+      metad = fitMetaDprime(data)
+      
       
       ggplot(df, aes(x = SS, y = e, color = as.factor(ACC))) +
         geom_point(alpha = 0.6, size = 2) +
@@ -267,7 +334,8 @@ shinyApp(
         theme(
           legend.position = "top",
           plot.subtitle = element_text(size = 12, color = "gray40")
-        )
+        )+
+        ggtitle(metad$Ratio)
     })
   },
   

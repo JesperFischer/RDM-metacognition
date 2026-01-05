@@ -276,7 +276,7 @@ This shifts **all** confidence judgments:
 This accuracy prior π is mathematically equivalent to what we previously called "meta_bias":
 
 $$
-\text{meta\_bias} = \text{logit}(\pi)
+\text{meta_bias} = \text{logit}(\pi)
 $$
 
 But framing it as an **accuracy prior** makes the interpretation clearer:
