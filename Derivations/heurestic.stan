@@ -2,7 +2,7 @@ functions {
 
 
   real psycho_ACC(real x, real beta){
-    return (inv_logit(beta * x));
+    return (Phi(beta * x));
    }
   real entropy(real p){
     return(-p * log(p) - (1-p) * log(1-p));

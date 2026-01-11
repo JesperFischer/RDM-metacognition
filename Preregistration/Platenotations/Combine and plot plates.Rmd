@@ -1,0 +1,70 @@
+---
+title: "Heurestic simulation"
+author: ""
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+---
+
+```{r}
+pacman::p_load(magick)
+```
+
+
+## compile plate-notation "latex-code"
+
+```{r}
+plates = list.files(here::here("Preregistration","Platenotations"), recursive = T, full.names = T)
+
+plates = plates[grepl(".tex",plates)]
+
+img = list()
+i = 0
+for(plate in plates){
+  i = i+1
+  # make the pdf with the plate
+  tinytex::latexmk(plate)
+  # load the plate:
+  img1 <- image_read_pdf(gsub(".tex",".pdf",plate), density = 600)
+  
+  img[[i]] = img1
+}
+```
+
+
+# Load platenotation and combine 
+```{r}
+# Combine the two
+# First row
+row1 <- image_append(c(img[[3]], img[[1]]))
+
+# Second row
+row2 <- image_append(c(img[[2]], img[[4]]))
+
+# Stack rows vertically
+combined <- image_append(c(row1, row2), stack = TRUE)
+
+# Write the combined images (here)
+
+# image_write(combined, here::here("Preregistration","figures", "Figure1.tiff"), format = "tiff")
+image_write(combined, here::here("Preregistration","figures", "Figure1.png"), format = "png")
+
+```
+
+
+```{r}
+# Remove the pdfs here for order!
+
+file.remove(here::here("figure_code", "Platenotation", "plate_v1.pdf"))
+file.remove(here::here("figure_code", "models_example.pdf"))
+```

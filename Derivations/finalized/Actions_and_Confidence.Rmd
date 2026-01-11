@@ -726,12 +726,24 @@ simulate_interaction <- function(sigma_m, sigma_k,sigma_e) {
   C_mu <- ifelse(a == 1, 
                  plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)),
                  1 - plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)))
+  
+  
+  # a_signed <- ifelse(a == 1, 1, -1)
+  # numerator <- 2 * X^2 * D * a_signed
+  # denominator <- sqrt((sigma_e^2 + sigma_m^2)^2 + 4 * X^2)
+  # C_mu2 <- pnorm(numerator / denominator)
+
+  
+  # Confidence depends on action
+
   c_mu <- pmax(0.001, pmin(0.999, C_mu))
   C <- ordbetareg::rordbeta(n_trials, c_mu, conf_prec, c(c0, c1))
   
   data.frame(e = e,
              C = C,
              C_mu = C_mu,
+             # C_mu2 = C_mu2,
+             ehat = ehat,
              a = a,
              X = X,
              D=D,
@@ -749,6 +761,9 @@ df_interaction <- expand.grid(
   unnest(data)
 ```
 
+```{r, include = F}
+df_interaction %>% filter(sigma_e == 1, sigma_k == 1, ehat < 0.1 & ehat > -0.1) %>% group_by(sigma_m,a) %>% summarize(D = mean(D)) %>% ggplot(aes(x = sigma_m, y = D, col = as.factor(a)))+geom_jitter()+geom_smooth()
+```
 
 
 ## Psychometric curves

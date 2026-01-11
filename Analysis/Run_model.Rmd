@@ -20,7 +20,7 @@ invisible(lapply(
 
 ```{r}
 
-df <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_1.csv")) %>%
+df <- read_csv(here::here("Data","pilots","Arthur_2025_09_01","RDM_reportz_sub10.csv")) %>%
   mutate(resp = ifelse(resp == "down",0,1),
          interval = as.numeric(interval),
        stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
@@ -30,8 +30,7 @@ df <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_1
   filter(SR_conf != "None") %>%
   filter(scale == "conf") %>%
   mutate(SR_conf = as.numeric(SR_conf)) %>%
-  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
-  mutate(Confidence = (SR_conf+1)/2)
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp, Confidence = SR_conf) 
 
 
 # df <- read_csv(here::here("Data","Pilots","Jesper_2025_17_12","RDM_reportz_sub5_1.csv")) %>%

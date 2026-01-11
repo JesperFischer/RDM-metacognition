@@ -37,7 +37,7 @@ df1 <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_
          start_conf = NULL)
 
 
-df2 <- read_csv(here::here("Data","Pilots","Jesper_2025_17_12","RDM_reportz_sub5_1.csv")) %>%
+df2 <- read_csv(here::here("Data","Pilots","Jesper_2025_17_12","RDM_reportz_sub5.csv")) %>%
   mutate(resp = ifelse(resp == "down",0,1),
          interval = as.numeric(interval),
        stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%

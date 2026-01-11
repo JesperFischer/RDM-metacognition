@@ -540,7 +540,7 @@ df4 <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_
   filter(RT < 2.5) %>% 
   mutate(Confidence = (SR_conf+1)/2) %>% 
   dplyr::select(Y,RT,D,Confidence,coherence,RTrating,X) %>% 
-  mutate(Subject = 4)
+  mutate(Subject = 1)
 
 
 
@@ -595,34 +595,39 @@ df1 <- read_csv(here::here("Data","Pilots","Siebe_2025_17_12","RDM_reportz_sub6.
   mutate(Confidence = (SR_conf+1)/2)  %>% 
   filter(RT < 2.5) %>% 
   dplyr::select(Y,RT,D,Confidence,coherence,RTrating,X) %>% 
-  mutate(Subject = 1) %>% 
+  mutate(Subject = 4) %>% 
   drop_na()
 
 
-dd = rbind(df1,df2,df3,df4)
+dd = rbind(df4,df2,df3)
 
 
-mod = cmdstanr::cmdstan_model(here::here("Derivations","Hierarchical","nort.stan"))
+# mod = cmdstanr::cmdstan_model(here::here("Derivations","Hierarchical","full.stan")) This is the fit version atm
+
+# mod = cmdstanr::cmdstan_model(here::here("Derivations","Hierarchical","nort_gamma.stan"))
+mod = cmdstanr::cmdstan_model(here::here("Derivations","Hierarchical","gamma_full.stan"))
 
 
 datastan = list(a = dd$Y,
                 D = dd$D,
                 C = dd$Confidence,
                 N = nrow(dd),
+                RT = dd$RT,
+                minRT = dd %>% group_by(Subject) %>% summarise(minRT = min(RT))%>% .$minRT,
                 X = dd$coherence,
                 S = length(unique(dd$Subject)),
                 S_id = dd$Subject)
 
 
-fit = mod$sample(data = datastan,
-                 iter_warmup = 500,
+fit_gamma = mod$sample(data = datastan,
+                 iter_warmup = 1000,
                  refresh = 100,
-                 adapt_delta = 0.90,
+                 adapt_delta = 0.99,
                  max_treedepth = 12,
-                 iter_sampling = 500,
+                 iter_sampling = 1000,
            parallel_chains = 4)
 
-fit$save_object(here::here("Savedmodels","removed_models","fit1_hier_mec.rds"))
+fit_gamma$save_object(here::here("Savedmodels","removed_models","fit1_hier_mec_all_gamma_15tree.rds"))
 
 
 parameters = c("gm","tau_u")

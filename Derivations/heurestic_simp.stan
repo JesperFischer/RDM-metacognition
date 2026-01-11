@@ -1,0 +1,179 @@
+functions {
+
+
+  real psycho_ACC(real x, real beta){
+    return (Phi(beta * x));
+   }
+  real entropy(real p){
+    return(-p * log(p) - (1-p) * log(1-p));
+  }
+
+
+  // ordered beta function
+  real ord_beta_reg_lpdf(real y, real mu, real phi, real cutzero, real cutone) {
+
+    vector[2] thresh;
+    thresh[1] = cutzero;
+    thresh[2] = cutzero + exp(cutone);
+
+  if(y==0) {
+      return log1m_inv_logit(mu - thresh[1]);
+    } else if(y==1) {
+      return log_inv_logit(mu  - thresh[2]);
+    } else {
+      return log_diff_exp(log_inv_logit(mu - thresh[1]), log_inv_logit(mu - thresh[2])) +
+                beta_lpdf(y|exp(log_inv_logit(mu) + log(phi)),exp(log1m_inv_logit(mu) + log(phi)));
+    }
+  }
+
+  real induced_dirichlet_lpdf(real nocut, vector alpha, real phi, int cutnum, real cut1, real cut2) {
+    int K = num_elements(alpha);
+    vector[K-1] c = [cut1, cut1 + exp(cut2)]';
+    vector[K - 1] sigma = inv_logit(phi - c);
+    vector[K] p;
+    matrix[K, K] J = rep_matrix(0, K, K);
+
+    if(cutnum==1) {
+
+    // Induced ordinal probabilities
+    p[1] = 1 - sigma[1];
+    for (k in 2:(K - 1))
+      p[k] = sigma[k - 1] - sigma[k];
+    p[K] = sigma[K - 1];
+
+    // Baseline column of Jacobian
+    for (k in 1:K) J[k, 1] = 1;
+
+    // Diagonal entries of Jacobian
+    for (k in 2:K) {
+      real rho = sigma[k - 1] * (1 - sigma[k - 1]);
+      J[k, k] = - rho;
+      J[k - 1, k] = rho;
+    }
+
+    // divide in half for the two cutpoints
+
+    // don't forget the ordered transformation
+
+      return   dirichlet_lpdf(p | alpha)
+           + log_determinant(J) + cut2;
+    } else {
+      return(0);
+    }
+  }
+
+}
+
+
+data {
+  int<lower=0> N;
+
+  array[N] int a;
+  vector[N] C;
+
+  vector[N] X;
+
+
+  vector[N] ACC; // Vector of deltaBPM values that match the binary response
+
+}
+
+transformed data{
+  int P = 4;
+}
+
+parameters {
+  vector[P] gm;
+
+  real c0;
+  real c11;
+
+}
+
+transformed parameters{
+
+
+  real beta1 = gm[1];
+
+  real conf_prec1 = gm[2];
+  real meta_un_cor1 = gm[3];
+  real meta_un_inc1 = gm[4];
+
+
+  vector[N] conf_mu;
+  vector[N] theta;
+  vector[N] theta_conf;
+
+  profile("likelihood") {
+  for (n in 1:N) {
+  theta[n] = psycho_ACC(X[n], exp(beta1)) ;
+
+  if(ACC[n] == 1){
+    theta_conf[n] = psycho_ACC(abs(X[n]), exp(beta1 + meta_un_cor1));
+  }else if(ACC[n] == 0){
+    theta_conf[n] = psycho_ACC(abs(X[n]), exp(beta1 + meta_un_inc1));
+  }
+  
+  }
+  
+  }
+
+}
+model {
+  gm[1] ~ normal(0,3); //global mean of threshold 
+  gm[2] ~ normal(2,2); //global mean of slope
+  gm[3] ~ normal(0,2); //global mean of confidence precision
+  gm[4] ~ normal(0,2); //global mean of meta uncertainty
+
+
+
+
+  for (n in 1:N) {
+    target += binomial_lpmf(a[n] | 1, theta[n]);
+
+    if(ACC[n] == 1){
+      target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);
+    }else if(ACC[n] == 0){
+    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);
+    }
+
+    // target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n])+ meta_bias, exp(conf_prec), c0, c11);
+
+
+  }
+
+    c0 ~ induced_dirichlet([1,10,1]', 0, 1, c0, c11);
+    c11 ~ induced_dirichlet([1,10,1]', 0, 2, c0, c11);
+
+}
+
+generated quantities {
+
+  real c1 = c0 + exp(c11);
+  real beta = exp(beta1);
+
+  real conf_prec = exp(conf_prec1);
+  real meta_un_cor = exp(beta1 + meta_un_cor1);
+  real meta_un_inc = exp(beta1 + meta_un_inc1);  
+  
+  
+  vector[N] log_lik_bin = rep_vector(0,N);
+  vector[N] log_lik_conf = rep_vector(0,N);
+  vector[N] log_lik = rep_vector(0,N);
+
+
+  for(n in 1:N){
+    log_lik_bin[n] = binomial_lpmf(a[n] | 1, theta[n]);
+    
+    if(ACC[n] == 1){
+     log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);
+    }else if(ACC[n] == 0){
+     log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);
+    }
+    // log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias, exp(conf_prec), c0, c11);
+    log_lik[n] = log_lik_conf[n] + log_lik_bin[n];
+  }
+
+
+
+}
