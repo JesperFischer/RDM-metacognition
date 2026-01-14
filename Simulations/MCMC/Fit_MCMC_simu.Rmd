@@ -93,7 +93,7 @@ plan(multisession, workers = 2)  # Windows-friendly
 safe_function <- possibly(fit, otherwise = "Error")
 
 # Run 20 times in parallel
-results_list <- future_map(1:10, ~ safe_function(200), .progress = T)
+results_list <- future_map(1:50, ~ safe_function(200), .progress = T)
 
 saveRDS(results_list,here::here("1500_no_metabias_phi_thight_rdm_metad.RData"))
 
@@ -101,14 +101,14 @@ results_list = results_list[-which(results_list == "Error")]
 ```
 
 ```{r}
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,3) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest() %>% rename(esti_conf_prec = conf_prec)
-) %>% 
-  ggplot(aes(x = beta, y = 1/sqrt(sigma_k^2+sigma_e^2)))+geom_point()+geom_abline()
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
+  ggplot(aes(x = simulated, y = mean, ymin = q5, ymax = q95, col = div))+geom_pointrange()+
+  geom_abline()+facet_wrap(~variable, scales = "free")
+```
 
 
+```{r}
 inner_join(
   map_dfr(results_list,1), 
   map_dfr(results_list,3) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
