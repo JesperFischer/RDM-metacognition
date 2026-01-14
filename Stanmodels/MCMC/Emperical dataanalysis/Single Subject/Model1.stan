@@ -89,9 +89,11 @@ transformed parameters{
   
   for(i in 1:N){
     evidence[i] = mean_choice + X[i] * D[i] + exp(sigma_e_log) * evidence_std[i];
+    // evidence[i] = X[i] * D[i] + exp(sigma_e_log) * evidence_std[i];
     ehat[i] = evidence[i] + exp(sigma_m_log) * evidence_ind[i];
     
     p_action[i] = Phi((evidence[i])/exp(sigma_choice_log));
+    
     if(a[i] == 1){
       mu_conf[i] = inv_logit(2*ehat[i]*X[i] / (exp(sigma_e_log)^2 + exp(sigma_m_log)^2));
     }else if(a[i] == 0){
@@ -101,9 +103,10 @@ transformed parameters{
 }
 
 model {
-  sigma_choice_log ~ normal(0, 2);
-  sigma_e_log ~ normal(0, 2);
-  sigma_m_log ~ normal(0, 2);
+  
+  sigma_choice_log ~ normal(-1, 1);
+  sigma_e_log ~  normal(-1, 1);
+  sigma_m_log ~  normal(-1, 1);
   prec_conf_log ~ normal(3, 3);
   mean_choice ~ normal(0, 0.3);
   

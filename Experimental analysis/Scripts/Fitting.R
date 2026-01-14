@@ -36,13 +36,28 @@ fit_model_ss = function(df, model,samples){
 }
 
 
-dia = function(fit){
+dia = function(fit,df){
+  
+  if(length(fit) > 1 & is.list(fit)){
+    out <- lapply(names(fit), function(nm) {
+      dia(fit[[nm]], df %>% filter(ID == nm))
+    })
+  
+    return(out)
+      
+    }
+    
+
   
   parameters = c("sigma_choice","mean_choice","prec_conf","sigma_m","sigma_e")
-  sum = fit$summary(c(parameters))
   
-  plot = mcmc_pairs(fit$draws(c(parameters)),np = nuts_params(fit))
-  plot2 = mcmc_trace(fit$draws(c(parameters)),np = nuts_params(fit))
+  available <- names(as_draws_df(fit$draws()))
+  params <- intersect(parameters, available)
+  
+  sum = fit$summary(params) %>% mutate(ID = unique(df$ID))
+
+  plot = mcmc_pairs(fit$draws(c(params)),np = nuts_params(fit))+ ggtitle(unique(df$ID))
+  plot2 = mcmc_trace(fit$draws(c(params)),np = nuts_params(fit))+ ggtitle(unique(df$ID))
   
   return(list(sum,plot,plot2, fit$diagnostic_summary()))
   

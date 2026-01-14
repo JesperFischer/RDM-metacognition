@@ -103,9 +103,9 @@ transformed parameters{
 }
 
 model {
-  sigma_choice_log ~ normal(0, 2);
-  sigma_e_log ~ normal(0, 2);
-  sigma_m_log ~ normal(0, 2);
+  sigma_choice_log ~ normal(-1, 1);
+  sigma_e_log ~ normal(-1, 1);
+  sigma_m_log ~ normal(-1, 1);
   prec_conf_log ~ normal(3, 3);
   mean_choice ~ normal(0, 0.3);
   
@@ -117,10 +117,7 @@ model {
   
   
   for(i in 1:N){
-    
     target += ord_beta_reg_lpdf(C[i] | logit(mu_conf[i]), exp(prec_conf_log), c0, c11);
-
-    
   }
   
   c0 ~ induced_dirichlet([1,10,1]', 0, 1, c0, c11);

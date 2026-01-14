@@ -103,9 +103,9 @@ transformed parameters{
 }
 
 model {
-  sigma_choice_log ~ normal(0, 2);
-  sigma_e_log ~ normal(0, 2);
-  sigma_m_log ~ normal(0, 2);
+   sigma_choice_log ~ normal(-1, 1);
+  sigma_e_log ~  normal(-1, 1);
+  sigma_m_log ~  normal(-1, 1);
   prec_conf_log ~ normal(3, 3);
   mean_choice ~ normal(0, 0.3);
   sigma_m_log_beta ~ normal(0,0.1);

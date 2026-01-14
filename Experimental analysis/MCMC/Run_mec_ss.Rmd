@@ -42,6 +42,7 @@ plot_beh_data(df,NULL,F)
 ## fit the standard model with meta-uncertainty and meta-bias
 ```{r}
 model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","MCMC","Emperical dataanalysis","Single Subject","Model1.stan"))
+
 dd = df %>% 
   mutate(subject = as.numeric(as.factor(subject))) %>% 
   filter(Trialtype == "Main", scale == "conf") %>% drop_na()
@@ -49,33 +50,24 @@ dd = df %>%
 dd_by_subj <- split(dd, dd$subject)
 
 fits <- lapply(dd_by_subj, function(d) {
-  fit_model(d, model1, 500)
+  fit_model_ss(d, model1, 500)
 })
 
-```
+models = list.files(here::here("Experimental analysis","MCMC","saved models","No_threshold"), full.names = T)
 
+fits = list()
+for(model in models){
+  fit = readRDS(model)
+  fits[[str_remove(str_remove(str_split(model, "/")[[1]][10],".rds"),"fit_")]] = fit  
+}
 
-
-
-```{r, fig.width=8,fig.height=6}
-dia(fit_kelly)
-```
-
-
-```{r, fig.width=8,fig.height=6}
-dia(fit_jesper)
 ```
 
 
 ```{r, fig.width=8,fig.height=6}
-dia(fit_siebe)
+dia(fits, dd)
 ```
 
-
-
-```{r, fig.width=8,fig.height=6}
-dia(fit_siebe2)
-```
 
 ```{r}
 df <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_1.csv")) %>%

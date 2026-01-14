@@ -5,15 +5,15 @@ simulate_data = function(n = 1000){
   # Set parameters
   # -----------------------------
   n_trials <- n        # number of trials
-  sigma_e <- 1
-  sigma_m = 0.8
+  sigma_e <- abs(rnorm(1,1,2)) 
+  sigma_m = abs(rnorm(1,1,2)) 
   conf_prec = abs(rnorm(1,100,50))
   c0 = -abs(rnorm(1,5,1))
   c1 = abs(rnorm(1,5,1))
   
   mu_k <- 0                  # criterion mean on the evidence scale (gaussian distribution)
   sigma_k <- abs(rnorm(1,1,2))                 # criterion sd on the evidence scale (gaussian distribution)
-  sigma_k <- 1.4
+  # sigma_k <- 1.4
   
   
   # Coherence level (stimulus intensity)
