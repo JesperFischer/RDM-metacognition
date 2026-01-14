@@ -62,7 +62,6 @@ data {
   array[N] int<lower=-1, upper=1> D;   // true stimulus
   array[N] int<lower=0, upper=1> a;   // observed choice
   vector[N] X;                         // stimulus strength
-  // vector[N] RT;                         // stimulus strength
   vector[N] C;                         // stimulus strength
   
   

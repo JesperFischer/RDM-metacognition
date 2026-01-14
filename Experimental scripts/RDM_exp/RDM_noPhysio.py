@@ -19,7 +19,6 @@ from psychopy import visual as vis
 from psychopy import event, core, data
 from psychopy.hardware import keyboard
 from psychopy.data import QuestPlusHandler
-from scipy.stats import truncnorm
 import questplus as qp
 import concurrent.futures
 import math
@@ -28,6 +27,7 @@ import os
 #import pylink
 import sys
 import instructions_1 as ins
+from scipy.stats import norm, truncnorm
 
 #sys.path.append("Eyelink")
 #ser = serial.Serial('COM7', 115200, timeout=1)
@@ -461,12 +461,16 @@ coherence = 0.3 # Set fixed value to find dotlife (task difficulty) where thresh
 #def weibull_cdf(x, alpha, beta, gamma =0.5, lapse =0):
     #return 1 - lapse - (1 - gamma - lapse) * (np.exp(-(x / alpha)**beta))
  
+threshold_prior = norm.pdf(np.linspace(5, 50, 50), loc=30, scale=20)
+threshold_prior = threshold_prior / threshold_prior.sum()  # normalize
 
+slope_prior = norm.pdf(np.linspace(1, 10, 10), loc=5, scale=2)
+slope_prior = slope_prior / slope_prior.sum()  # normalize
 
 # STAIRCASE (https://questplus.readthedocs.io/en/latest/qp.html)
-SC = QuestPlusHandler(nTrials = n_SC1, intensityVals = list(range(0, 101, 5)), 
-                      thresholdVals = np.linspace(0,100,50), slopeVals=np.linspace(1,10,10),lowerAsymptoteVals = 0.5, lapseRateVals=0,
-                      responseVals = [1,0], prior = {"threshold": np.ones(50)/50, "slope": np.ones(10)/10}, psychometricFunc = "weibull", startIntensity = 30,
+SC = QuestPlusHandler(nTrials = n_SC1, intensityVals = list(range(5, 50, 2)), 
+                      thresholdVals = np.linspace(5,50,50), slopeVals=np.linspace(1,10,10),lowerAsymptoteVals = 0.5, lapseRateVals=0,
+                      responseVals = [1,0], prior={"threshold": threshold_prior, "slope": slope_prior}, psychometricFunc = "weibull", startIntensity = 29,
                       stimScale="linear", stimSelectionMethod="minEntropy", paramEstimationMethod = "mean")
 
 if SC_dotlife:
@@ -733,12 +737,20 @@ a = standard(lower,inter_t_mean,inter_t_sd); b = standard(upper, inter_t_mean,in
 means = [2.375, 4.125]; sds = [0.05, 0.5] #variables distributions Part 2 
 pairs = list(itertools.product(means, sds)); repeat = n_blocks // len(pairs); conditions = repeat * pairs; np.random.shuffle(conditions) #conditions for Part 2
 
+
+
+threshold_prior = norm.pdf(np.linspace(0.01, 1, 50), loc=0.3, scale=0.2)
+threshold_prior = threshold_prior / threshold_prior.sum()  # normalize
+
+slope_prior = norm.pdf(np.linspace(1, 10, 10),  loc=4, scale=2)
+slope_prior = slope_prior / slope_prior.sum()  # normalize
+
 # STAIRCASE (https://questplus.readthedocs.io/en/latest/qp.html)
 SC = qp.QuestPlus(stim_domain= {"intensity": np.linspace(0.01,1,50)}, 
                  func="weibull",
-                 stim_scale="log10",
+                 stim_scale="linear",
                  param_domain= {"threshold": np.linspace(0.01,1,50), "slope": np.linspace(1,10,50), "lower_asymptote": 0.5, "lapse_rate": 0.05},
-                 prior = {"threshold": np.ones(50)/50, "slope": np.ones(50)/50},
+                 prior = {"threshold": threshold_prior, "slope": slope_prior},
                  outcome_domain={"response": [1, 0]},
                  stim_selection_method="min_n_entropy",
                  stim_selection_options = {"n": 1, "max_consecutive_reps": 20},

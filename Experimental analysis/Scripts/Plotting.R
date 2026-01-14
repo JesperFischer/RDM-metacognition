@@ -1,6 +1,23 @@
 
 
 plot_beh_data = function(df,n_bins,ACC = F){
+    subjects = unique(df$subject)
+    IDs = unique(df$ID)
+    # If more than one subject → apply function per subject
+    if(length(subjects) != 1){
+      
+      df_split = split(df, df$subject)
+      
+      out = lapply(df_split, function(d){
+        plot_beh_data(d, n_bins = n_bins, ACC = ACC)
+      })
+      
+      for(i in 1:length(out)){
+        out[[i]] = out[[i]] + ggtitle(IDs[i])
+      }      
+      return(out)
+    }
+
   
   # Prepare observed data
   if (!is.null(n_bins)) {
@@ -23,7 +40,7 @@ plot_beh_data = function(df,n_bins,ACC = F){
   if(ACC){
     bin = df %>%
       mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
-      group_by(X) %>%
+      group_by(X,ID) %>%
       summarize(
         name = "Type-1",
         mean = mean(ACC),
@@ -34,7 +51,7 @@ plot_beh_data = function(df,n_bins,ACC = F){
   }else{
     bin = df %>%
       mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
-      group_by(X) %>%
+      group_by(X,ID) %>%
       summarize(
         name = "Type-1",
         mean = mean(Y),
@@ -60,7 +77,7 @@ plot_beh_data = function(df,n_bins,ACC = F){
     
     df %>%
       mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
-      group_by(X, Correct) %>%
+      group_by(X, Correct,ID) %>%
       summarize(name = "Confidence",
                 mean = mean(Confidence),
                 q5 = mean(Confidence) - 2 * (sd(Confidence) / sqrt(n())),
@@ -70,7 +87,7 @@ plot_beh_data = function(df,n_bins,ACC = F){
   
   
   # Plot 1: Expected means (main plot)
-  plot_mean = df1 %>%
+  plot_mean = df1 %>% 
     ggplot() +
    geom_pointrange(data = df1, aes(x = X, y = mean, ymin = q5, ymax = q95, fill = Correct),
                     shape = 21, color = "black", alpha = 0.5) +
@@ -83,10 +100,7 @@ plot_beh_data = function(df,n_bins,ACC = F){
     labs(color = "Correct", fill = "Correct",
          y = "Value") +
     geom_vline(xintercept = 0, linetype = 2) +
-    theme(legend.position = "top",
-          axis.title.x = element_blank(),
-          axis.text.x = element_blank())
-
+    theme(legend.position = "top")
   
   
   

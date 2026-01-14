@@ -30,14 +30,14 @@ def Intro(win):
     )
     img = vis.ImageStim(
         win,
-        image= r"C:\Users\User\OneDrive\Documenten\RDM_metacognition\Experiment\RDM_exp\keyboard.png",   
+        image="keyboard.png",   
         pos=(450, -250),              
         size=(700, 250)                
     )
 
     hand = vis.ImageStim(
         win,
-        image= r"C:\Users\User\OneDrive\Documenten\RDM_metacognition\Experiment\RDM_exp\hand.png",   
+        image="hand.png",   
         pos=(50, -250),              
         size=(175,175)             
     )
@@ -369,21 +369,21 @@ def Main5(win):
 
     img = vis.ImageStim(
         win,
-        image= r"C:\Users\User\OneDrive\Documenten\RDM_metacognition\Experiment\RDM_exp\keyboard(1).png",   
+        image="keyboard(1).png",   
         pos=(0, 60),              
         size=(700, 250)             
     )
 
     hand = vis.ImageStim(
         win,
-        image= r"C:\Users\User\OneDrive\Documenten\RDM_metacognition\Experiment\RDM_exp\hand.png",   
+        image="hand.png",   
         pos=(-450, 60),              
         size=(175,175)             
     )
 
     hand_1 = vis.ImageStim(
         win,
-        image= r"C:\Users\User\OneDrive\Documenten\RDM_metacognition\Experiment\RDM_exp\hand(1).png",   
+        image="hand(1).png",   
         pos=(450, -70),              
         size=(175,175)             
     )

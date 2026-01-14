@@ -16,6 +16,7 @@ load_data = function(){
       mutate(ID = subjectID) %>% 
         mutate(resp = ifelse(resp == "down",0,1),
                interval = as.numeric(interval),
+               D = ifelse(dots.direction == 270,-1,1),
                stim = ifelse(dots.direction == 270, -coherence,coherence)) %>%
       mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
                           ifelse(resp == 0 & stim < 0, 1,0))) %>%
@@ -24,7 +25,7 @@ load_data = function(){
       # filter(scale == "conf") %>%
       mutate(SR_conf = as.numeric(SR_conf)) %>%
       rename(X = stim, RT = RTdec, Correct = cor, Y = resp, Confidence = SR_conf) %>% 
-      select(X,ACC,Y,RT,Confidence,scale,dots.direction, coherence,Trialtype,
+      select(X,Correct,Y,RT,Confidence,scale,D, coherence,Trialtype,
              interval,interTrial.interval,
              subject,age,gender,ID,handedness)
     
@@ -34,6 +35,7 @@ load_data = function(){
     mutate(ID = subjectID) %>% 
       mutate(resp = ifelse(resp == "down",0,1),
              interval = as.numeric(interval),
+             D = ifelse(dots.direction == 270,-1,1),
            stim = ifelse(dots.direction == 270, -coherence,coherence)) %>%
       mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
                           ifelse(resp == 0 & stim < 0, 1,0))) %>%
@@ -43,7 +45,7 @@ load_data = function(){
       mutate(SR_conf = as.numeric(SR_conf)) %>%
       rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
       mutate(Confidence = (SR_conf+1)/2) %>% 
-      select(X,ACC,Y,RT,Confidence,scale,dots.direction, coherence,Trialtype,
+      select(X,Correct,Y,RT,Confidence,scale,D, coherence,Trialtype,
              interval,interTrial.interval,
              subject,age,gender,ID,handedness)
     

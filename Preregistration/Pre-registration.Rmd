@@ -463,7 +463,7 @@ df_interaction %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-Notice above that for the first row that as we increase meta uncertainty at a high choice consistency (low $\sigma_k$) we go from a double increase pattern to a somewhat folded X (flat line when incorrect). Additionally when down the columns we see that we generally also move from a double increase to a real folded X.
+Notice above that for the first row that as we increase meta uncertainty at a high choice consistency (low $\sigma_k$) we go from a double increase pattern to a somewhat folded X (flat line when incorrect). Additionally, we see that down the columns we generally move from a double increase to a real folded X.
 
 lastly we might plot $sigma_m = 1$
 
@@ -472,7 +472,7 @@ df_interaction %>%
   filter(sigma_m == 1) %>%
   mutate(sigma = sigma_e/sigma_k) %>% 
   mutate(SS = X*D) %>% 
-  group_by(SS,ACC, sigma_k,sigma,sigma_e) %>% 
+  group_by(SS,ACC, sigma_k,sigma,sigma_e,sigma_m) %>% 
   summarize(mean = mean(C_mu),
             q5 = mean - 2 * sd(C_mu) / sqrt(n()),
             q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
@@ -488,112 +488,15 @@ df_interaction %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-This plot makes it clear that the model ascribes to a double increase pattern and what it ascribes to a folded X and everything inbetween. From the diagonal where $\sigma_e = \sigma_k$ we see that there generally is a half-folded X, with incorrect trials being flat or not decreasing with stimulus strength to the same degree as correct trials. Going to the upper triangle we move into the space where $\sigma_k > \sigma_e$ where we see folded-X patterns of varying "strengths". Moving to the lower triangle we see the oppisite pattern with double increase patterns emerging again with varying "strengths". 
+This plot makes it clear that the model ascribes to a double increase pattern and what it ascribes to a folded X (and everything in between). From the diagonal where $\sigma_e = \sigma_k$ we see that there generally is a half-folded X, with incorrect trials being flat or not decreasing with stimulus strength to the same degree as correct trials. Going to the upper triangle we move into the space where $\sigma_k > \sigma_e$ where we see folded-X patterns of varying "strengths". Moving to the lower triangle we see the opposite pattern with double increase patterns emerging again with varying "strengths". 
 
-This means that from the models perspective double increase and Folded-X patterns of metacognition arise from the ratio of uncertainty in the encoding of the stimulus and the choice variability. When choice variability is high compared to stimulus encoding a folded X pattern arises whereas choice variability is low compared to stimulus encoding a double increase pattern arises. $\sigma_m$, meta uncertainty is agnostic to the accuracy of the rater and as it increases just makes the curves of the confidence ratings more flat when increased.
-
-
-
-
-And now across different levels of metacognitive uncertainty.
-
-```{r, fig.height=6, fig.width=10, message=F, warning=F}
-df_interaction %>%
-  filter(ACC == 0) %>% 
-  mutate(sigma = sigma_e/sigma_k) %>% 
-  mutate(XD = X*D,
-    XD = cut(XD, 10)) %>% 
-  group_by(XD,ACC, sigma_m,sigma) %>% 
-  summarize(mean = mean(C_mu),
-            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
-            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
-  mutate(Accuracy = as.factor(ACC)) %>%
-  mutate(sigma_m = as.factor(sigma_m)) %>% 
-  ggplot(aes(x = XD, y = mean, ymin = q5, ymax = q95, col = sigma_m)) +
-    geom_pointrange(position = position_dodge(width =0.4))+
-  facet_wrap(Accuracy ~sigma, labeller = label_both, nrow = 3) +
-  labs(x = "evidence", y = "Confidence") +
-  theme_minimal()+
-  ylim(c(0,1))+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-```
-
-
-
-```{r, fig.height=6, fig.width=10, message=F, warning=F}
-df_interaction %>%
-  filter(ACC == 1) %>% 
-  mutate(sigma = sigma_e/sigma_m) %>% 
-  mutate(XD = X*D,
-    XD = cut(XD, 10)) %>% 
-  group_by(XD,ACC, sigma_k,sigma) %>% 
-  summarize(mean = mean(C_mu),
-            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
-            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
-  mutate(Accuracy = as.factor(ACC)) %>%
-  mutate(sigma_m = as.factor(sigma_m)) %>% 
-  ggplot(aes(x = XD, y = mean, ymin = q5, ymax = q95, col = sigma_k)) +
-    geom_pointrange(position = position_dodge(width =0.4))+
-  facet_wrap(Accuracy ~sigma, labeller = label_both, nrow = 3) +
-  labs(x = "evidence", y = "Confidence") +
-  theme_minimal()+
-  ylim(c(0,1))+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-```
-
-
-Looking at all three parameters but only for correct trials
-
-```{r, fig.height=6, fig.width=10, message=F, warning=F}
-
-# Focus on correct trials only, vary all three
-df_interaction %>%
-      filter(ACC == 1) %>%
-  mutate(SS = D*X) %>% 
-  group_by(SS,sigma_k,sigma_e,sigma_m,ACC) %>% 
-  summarize(mean = mean(C_mu),
-            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
-            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
-    ggplot(aes(x = SS, y = mean, ymin = q5, ymax = q95,group = interaction(sigma_k, sigma_m, sigma_e), col = as.factor(sigma_k))) +
-    geom_pointrange(position = position_dodge(width =0.4))+
-    facet_grid(sigma_m ~ sigma_e, labeller = label_both) +
-    labs(title = "Confidence on CORRECT trials", x = "Signed Stimulus", y = "Confidence") +
-    theme_minimal() +
-      geom_hline(yintercept = c(0.5,1), linetype = 2)+
-    theme(legend.position = "bottom")+
-    theme_minimal()+
-  ylim(c(0,1))
-```
-
-Looking at all three parameters but only for Incorrect trials
-
-```{r, fig.height=6, fig.width=10, message=F, warning=F}
-
-# Focus on correct trials only, vary all three
-df_interaction %>%
-      filter(ACC == 0) %>%
-  mutate(SS = X*D) %>% 
-  group_by(SS,sigma_k,sigma_e,sigma_m,ACC) %>% 
-  summarize(mean = mean(C_mu),
-            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
-            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
-    ggplot(aes(x = SS, y = mean, ymin = q5, ymax = q95,group = interaction(sigma_k, sigma_m, sigma_e), col = as.factor(sigma_k))) +
-    geom_pointrange(position = position_dodge(width =0.4))+
-    facet_grid(sigma_m ~ sigma_e, labeller = label_both) +
-    labs(title = "Confidence on Incorrect trials", x = "Signed Stimulus", y = "Confidence") +
-    theme_minimal() +
-      geom_hline(yintercept = 0.5, linetype = 2)+
-    theme(legend.position = "bottom")+
-    theme_minimal()+
-  ylim(c(0,1))+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-```
-
-
-
-
+This means that from the models perspective double increase and Folded-X patterns of meta cognition arise from the ratio of uncertainty in the encoding of the stimulus and the choice variability. When choice variability is high compared to stimulus encoding a folded X pattern arises whereas choice variability is low compared to stimulus encoding a double increase pattern arises. $\sigma_m$, meta uncertainty is agnostic to the accuracy of the rater and as it increases it makes the curves of the confidence ratings more flat when increased.
 
 ## Fitting
+
+In order to fit this model we will be using full bayesian inference using the NUTS MCMC sampler of Stan. Here we will treat the latent evidences for action and confidence as latent parameters that gets estimated together with the varabilities $\sigma's$. 
+
+
 
 
 ## Practical considerations and A heurestic model

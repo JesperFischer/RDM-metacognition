@@ -62,7 +62,6 @@ data {
   array[N] int<lower=-1, upper=1> D;   // true stimulus
   array[N] int<lower=0, upper=1> a;   // observed choice
   vector[N] X;                         // stimulus strength
-  // vector[N] RT;                         // stimulus strength
   vector[N] C;                         // stimulus strength
   
   
@@ -71,7 +70,7 @@ data {
 
 parameters {
   vector[N] evidence_std;
-  vector[N] evidence_ind;
+  vector[N] sigma_dhat_std;
   real sigma_choice_log;              // decision bias
   real sigma_m_log;              // decision bias
   real prec_conf_log;              // decision bias
@@ -85,18 +84,20 @@ parameters {
 transformed parameters{
   vector[N] evidence;
   vector[N] p_action;
-  vector[N] ehat;
+  vector[N] sigma_dhat;
   vector[N] mu_conf;
   
   for(i in 1:N){
     evidence[i] = mean_choice + X[i] * D[i] + exp(sigma_e_log) * evidence_std[i];
-    ehat[i] = evidence[i] + exp(sigma_m_log) * evidence_ind[i];
-    
+    sigma_dhat[i] = exp(sigma_e_log + exp(sigma_m_log) * sigma_dhat_std[i]);
+
     p_action[i] = Phi((evidence[i])/exp(sigma_choice_log));
+    
     if(a[i] == 1){
-      mu_conf[i] = inv_logit(2*ehat[i]*X[i] / (exp(sigma_e_log)^2 + exp(sigma_m_log)^2));
+      mu_conf[i] = Phi((evidence[i])/(sigma_dhat[i]));
+    ;
     }else if(a[i] == 0){
-      mu_conf[i] = 1- inv_logit(2*ehat[i]*X[i] / (exp(sigma_e_log)^2 + exp(sigma_m_log)^2));
+      mu_conf[i] = 1 - Phi((evidence[i])/(sigma_dhat[i]));
     }
   }
 }
@@ -109,7 +110,7 @@ model {
   mean_choice ~ normal(0, 0.3);
   
   evidence_std ~ std_normal();
-  evidence_ind ~ std_normal();
+  sigma_dhat_std ~ std_normal();
   
   
   a ~ bernoulli(p_action);

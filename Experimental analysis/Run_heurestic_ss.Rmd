@@ -18,27 +18,17 @@ invisible(lapply(
 ```
 ## Extracting the data:
 
-```{r}
+```{r, warning=F, message=F}
 df = load_data()
 ```
 
 
 
 ## plotting the behavioral data:
-```{r, fig.height=6,fig.width=8}
+```{r, fig.height=6,fig.width=8, message=F,warning=F}
 plot_beh_data(df,NULL,F)
 ```
 
-
-```{r, fig.height=6,fig.width=8}
-plot_beh_data(df,10,F)
-```
-
-
-```{r, fig.height=6,fig.width=8}
-plot_beh_data(df,10,T)
-
-```
 ## fit the standard model with meta-uncertainty and meta-bias
 ```{r}
 model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","Single Subject","stanmodel.stan"))
