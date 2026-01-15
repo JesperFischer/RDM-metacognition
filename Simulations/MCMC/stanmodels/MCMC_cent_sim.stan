@@ -69,8 +69,8 @@ data {
 
 
 parameters {
-  vector[N] evidence_std;
-  vector[N] evidence_ind;
+  vector[N] evidence;
+  vector[N] ehat;
   real sigma_choice_log;              // decision bias
   real sigma_m_log;              // decision bias
   real prec_conf_log;              // decision bias
@@ -82,15 +82,14 @@ parameters {
 
 
 transformed parameters{
-  vector[N] evidence;
+  // vector[N] evidence;
   vector[N] p_action;
-  vector[N] ehat;
+  // vector[N] ehat;
   vector[N] mu_conf;
   
   for(i in 1:N){
-    evidence[i] = mean_choice + X[i] * D[i] + exp(sigma_e_log) * evidence_std[i];
     // evidence[i] = X[i] * D[i] + exp(sigma_e_log) * evidence_std[i];
-    ehat[i] = evidence[i] + exp(sigma_m_log) * evidence_ind[i];
+    // ehat[i] = evidence[i] + exp(sigma_m_log) * evidence_ind[i];
     
     p_action[i] = Phi((evidence[i])/exp(sigma_choice_log));
     
@@ -111,7 +110,10 @@ model {
   mean_choice ~ normal(0, 0.3);
   
   evidence_std ~ std_normal();
-  evidence_ind ~ std_normal();
+  
+  
+  evidence ~ normal(mean_choice + X[i] * D[i], exp(sigma_e_log));
+  ehat ~ normal(evidence[i], exp(sigma_m_log));
   
   a ~ bernoulli(p_action);
   
