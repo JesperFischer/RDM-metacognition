@@ -40,8 +40,6 @@ abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
 
-
-
 ################################################################################################################################ 
 # Experiment variables
 ################################################################################################################################ 
@@ -49,6 +47,7 @@ os.chdir(dname)
 keyboard_type = "qwerty" # azerty
 pilot = 1
 SC_dotlife = 1
+SC_coherence = 1
 training = 0
 training_2 = 1
 instructions = 1
@@ -71,13 +70,19 @@ des_mean_rt = 2 # desired mean reaction time --> for training if percetage is lo
 coherence = .80 # coherence for first training block 
 coherence_hard = .40 # coherence for second training block (staircase sets it for main exp)
 max_dur_conf = 3 # maximum duration for confidence scale 
+accVals = np.asarray([0.51, 0.6, 0.7, 0.8, 0.99]) # array of accuracy we want to stimulate at 
+repeats = [1,2,3,2,1] # Number of times the coherence values repeat in 1 sequence
+max_cons = 4 # Number of maximum consecutive reps for up/down
+
+n_seq = 3 # number of times you want to present the sequence 
+len_seq = 2*sum(repeats)
 
 # main blocks
 if not pilot:
-    n_trials = 46 # Number of trials per testing block Note: this should be an even number
-    n_blocks = 8 # Number of testing blocks 
+    n_trials = n_seq*len_seq # Number of trials per testing block Note: this should be an even number
+    n_blocks = 6 # Number of testing blocks 
 else:
-    n_trials = 10
+    n_trials = 9
     n_blocks = 4
 
 block = 0 # starting block number (for training/staircase)
@@ -304,6 +309,37 @@ def standard(val, mean,sd):
     Z = (val-mean)/sd
     return Z
 
+# Psychometric weibull
+def weibull_cdf(x, alpha, beta, gamma =0.5, lapse =0):
+    return 1 - lapse - (1 - gamma - lapse) * (np.exp(-(x / alpha)**beta))
+
+# Inverse weibull
+def inv_weibull(y,alpha,beta):
+    return alpha * (-np.log(2 * (1 - y)))**(1/beta)
+
+
+# Function to get equal amount of up and down but with max consecutive reps 
+def generate_balanced_up_down(n_trials, max_repeats=3):
+    n0 = n_trials // 2
+    n1 = n_trials - n0
+    sequence = [0]*n0 + [1]*n1
+    
+    while True:
+        np.random.shuffle(sequence)
+        # Check consecutive repeats
+        counts = 1
+        valid = True
+        for i in range(1, n_trials):
+            if sequence[i] == sequence[i-1]:
+                counts += 1
+                if counts > max_repeats:
+                    valid = False
+                    break
+            else:
+                counts = 1
+        if valid:
+            return np.array(sequence)
+
 ################################################################################################################################ 
 # Training 1
 ################################################################################################################################ 
@@ -475,7 +511,7 @@ SC = QuestPlusHandler(nTrials = n_SC1, intensityVals = list(range(5, 50, 2)),
 
 if SC_dotlife:
         # training: 50% left and right
-        condition_direction = np.repeat(range(2),[math.floor(n_SC1*0.5), math.ceil(n_SC1*0.5)]); random.shuffle(condition_direction) #Creates an equal amount of left/right trials
+        condition_direction = generate_balanced_up_down(n_SC1,max_cons) #Creates an equal amount of left/right trials
 
         #Empty lists of accuracy and reaction times for training data  
         acc = [0] * n_SC1 
@@ -573,8 +609,140 @@ if SC_dotlife:
             thisExp.addData("dotlife", DotMotion.dotLife)
             thisExp.nextEntry()
 
+################################################################################################################################ 
+# Staircase Coherence
+################################################################################################################################ 
+TrialType = "SC coherence" # Trialtype
+block += 1
+n_SC2 = 80   # number of trials in staircase
+dotLife = SC.paramEstimate["threshold"] # Set fixed value dotlife (task difficulty) to find coherence values
 print(SC.paramEstimate["threshold"])
-dotLife = SC.paramEstimate["threshold"]
+
+#alpha = 0.3
+#beta = 2
+
+threshold_prior = norm.pdf(np.arange(0, 1, 0.02), loc=0.3, scale=0.2)
+threshold_prior = threshold_prior / threshold_prior.sum()  # normalize
+
+slope_prior = norm.pdf(np.arange(0.5, 10.1, 0.5), loc=4, scale=2)
+slope_prior = slope_prior / slope_prior.sum()  # normalize
+
+# STAIRCASE (https://questplus.readthedocs.io/en/latest/qp.html)
+SC = QuestPlusHandler(nTrials = n_SC2, intensityVals = np.arange(0, 1, 0.02), 
+                    thresholdVals = np.arange(0, 1, 0.02), slopeVals=np.arange(0.5, 10.1, 0.5),lowerAsymptoteVals = 0.5, lapseRateVals=0,
+                    responseVals = [1,0], prior={"threshold": threshold_prior, "slope": slope_prior}, psychometricFunc = "weibull", startIntensity = 0.3,
+                    stimScale="linear", stimSelectionMethod="minEntropy", paramEstimationMethod = "mean")
+
+if SC_coherence:
+        # training: 50% left and right
+        condition_direction = generate_balanced_up_down(n_SC2,max_cons) #Creates an equal amount of left/right trials
+
+        #Empty lists of accuracy and reaction times for training data  
+        acc = [0] * n_SC2 
+        rt = [0] * n_SC2
+        for trial in range(n_SC2):
+            stim = SC.next()
+            # Stimulus direction
+            mapping = {0: ('up', 90), 1: ('down', 270)}
+            correct, direction = mapping[condition_direction[trial]]    
+
+            # draw stimulus
+            resp = None #empty list for response
+            event.clearEvents() 
+            DotMotion.coherence = stim
+            print(stim)
+            DotMotion.dotLife = dotLife
+            DotMotion.dir = direction
+
+            # save start time of the stimulus    
+            T_stimulus_start = clock.getTime()
+            while not resp:
+                fixation.draw()
+                DotMotion.draw()
+                win.flip()
+                resp = event.getKeys(keyList = choice_keys)
+                #resp = "up"
+                if clock.getTime() - T_stimulus_start >= des_mean_rt:
+                    print("No response within 2 s, skipping trial")
+                    FB_text = "No response"
+                    FB_col = "white"
+                    break
+                    
+            if resp:
+                T_stimulus_stop = clock.getTime()
+                RTdec = T_stimulus_stop - T_stimulus_start
+                rt[trial] = RTdec
+                print("Reaction time is:", RTdec)
+            else:
+                RTdec = np.nan
+                rt[trial] = RTdec
+        
+            
+            #get accuracy
+            correct_key = choice_keys[0] if correct == "up" else choice_keys[1]
+            if resp:
+                is_correct = (resp[0] == correct_key)
+                ACC = int(is_correct)
+                acc[trial] = ACC 
+            #prob = weibull_cdf(stim, alpha, beta)
+            #print(prob)
+            #ACC = np.random.binomial(n=1, p=prob)
+                if is_correct:
+                    print("Decision was correct")
+                    FB_text = "Correct!"
+                else:
+                    print("Decision was incorrect")
+                    FB_text = "Wrong"
+        
+            else:
+                ACC = 0
+            
+            # allow escape to exit experiment
+            if resp == ['escape']:
+                print('Participant pressed escape')
+                thisExp.saveAsWideText(file_name + '.csv', delim=',') 
+                win.close()
+                core.quit() 
+
+            # Update staircase
+            print("trial = OK")
+            SC.addResponse(ACC)
+            print("update = OK")
+        
+            #Give feedback
+            feedback = vis.TextStim(win, text = FB_text, color = "white", height=40)
+            feedback.draw()
+            win.flip()
+
+            core.wait(0.5 if resp else 1)
+
+            key_to_label = {choice_keys[0]: "up", choice_keys[1]: "down"}
+
+            if resp:
+                resp = key_to_label[resp[0]]
+
+                
+            thisExp.addData("block", block)
+            thisExp.addData("Trialtype", TrialType)
+            thisExp.addData("withinblocktrial", trial)
+            thisExp.addData("RTdec", RTdec)
+            thisExp.addData("resp", resp)
+            thisExp.addData("cor", ACC)
+            thisExp.addData("dots direction", direction)
+            thisExp.addData("cor_resp", correct)
+            thisExp.addData("coherence", DotMotion.coherence)
+            thisExp.addData("dotlife", DotMotion.dotLife)
+            thisExp.nextEntry()
+
+# Extract slope and threshold 
+print(SC.paramEstimate)    
+threshold_coh = SC.paramEstimate["threshold"]
+slope_coh = SC.paramEstimate["slope"]
+
+# Extract coherence values for real experiment
+coherenceVals = np.minimum(inv_weibull(accVals, threshold_coh, slope_coh), 1)
+print(coherenceVals)
+
 
 ################################################################################################################################ 
 # Instructions
@@ -597,7 +765,7 @@ if training_2:
     coherence = np.linspace(0.1, 1.0, n_training_2);random.shuffle(coherence)
 
     #draw directions
-    condition_direction = np.repeat(range(2),[math.floor(n_training_2*0.5), math.ceil(n_training_2*0.5)]); random.shuffle(condition_direction)
+    condition_direction = condition_direction = generate_balanced_up_down(n_training_2,max_cons)
 
     acc = [0] * n_training_2
     rt = [0] * n_training_2
@@ -745,19 +913,16 @@ threshold_prior = threshold_prior / threshold_prior.sum()  # normalize
 slope_prior = norm.pdf(np.linspace(1, 10, 10),  loc=4, scale=2)
 slope_prior = slope_prior / slope_prior.sum()  # normalize
 
-# STAIRCASE (https://questplus.readthedocs.io/en/latest/qp.html)
-SC = qp.QuestPlus(stim_domain= {"intensity": np.linspace(0.01,1,50)}, 
-                 func="weibull",
-                 stim_scale="linear",
-                 param_domain= {"threshold": np.linspace(0.01,1,50), "slope": np.linspace(1,10,50), "lower_asymptote": 0.5, "lapse_rate": 0.05},
-                 prior = {"threshold": threshold_prior, "slope": slope_prior},
-                 outcome_domain={"response": [1, 0]},
-                 stim_selection_method="min_n_entropy",
-                 stim_selection_options = {"n": 1, "max_consecutive_reps": 20},
-                 param_estimation_method= "mean")
-
 # Equal # trials left and right for first block 
-condition_direction = np.repeat(range(2),[math.floor(n_trials*0.5), math.ceil(n_trials*0.5)]); random.shuffle(condition_direction)
+condition_direction = condition_direction = generate_balanced_up_down(n_trials,max_cons)
+
+# Coherence for the first block
+sequence = np.repeat(coherenceVals, repeats)
+coherence = []
+for i in range(n_seq): 
+    seq = sequence.copy()     # copy the block
+    np.random.shuffle(seq) # shuffle independently
+    coherence.extend(seq)
 
 # determine waiting times between trials for first block
 inter_trial = truncnorm.rvs(a, b, loc=inter_t_mean, scale=inter_t_sd, size= n_trials) #Can change mean according to pilots
@@ -792,31 +957,30 @@ for eachTrial in range(n_trials*n_blocks):
     T_stimulus_start = clock.getTime()
     
     # draw stimulus
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        future = executor.submit(get_stim, SC)
-        try:
-            coherence = future.result(timeout=2)  # seconds
-        except concurrent.futures.TimeoutError:
-            print(f"Problem on trial: {trialN}, block: {blockN + 2}. Aborting experiment...")
-            thisExp.saveAsWideText(file_name + '.csv', delim=',')
+    #with concurrent.futures.ThreadPoolExecutor() as executor:
+        #future = executor.submit(get_stim, SC)
+        #try:
+            #coherence = future.result(timeout=2)  # seconds
+        #except concurrent.futures.TimeoutError:
+            #print(f"Problem on trial: {trialN}, block: {blockN + 2}. Aborting experiment...")
+            #thisExp.saveAsWideText(file_name + '.csv', delim=',')
             ## save eyelink EDF from tracker to local Data folder
             #tracker.setOfflineMode()
             #tracker.closeDataFile()
-            try:
-                print("Receiving EDF from EyeLink...")
+            #try:
+                #print("Receiving EDF from EyeLink...")
                 #tracker.receiveDataFile(edf_remote_name, edf_local_path)
                 #print(f"EDF saved to {edf_local_path}")
-            except RuntimeError as e:
-                print("Error transferring EDF:", e)
+            #except RuntimeError as e:
+                #print("Error transferring EDF:", e)
 
             #tracker.close()
-            win.close()
-            core.quit()
-    
-    print(coherence["intensity"])
+            #win.close()
+            #ore.quit()
+
     resp = None
     event.clearEvents() 
-    DotMotion.coherence = coherence["intensity"]
+    DotMotion.coherence = coherence[trialN]
     DotMotion.dotLife = dotLife
     DotMotion.dir = direction
 
@@ -969,12 +1133,6 @@ for eachTrial in range(n_trials*n_blocks):
     #core.wait(0.015)
     #ser.write(str.encode('00'))
     #tracker.stopRecording()
-
-
-    #Add response to staircase and proceed to next value
-    print("trial = OK")
-    SC.update(stim= coherence, outcome= {"response":ACC})
-    print("update = OK")
         
 
     # Blank screen drawn from a truncated normal distribution
@@ -1005,7 +1163,7 @@ for eachTrial in range(n_trials*n_blocks):
     thisExp.addData("start_conf", start_conf)
     thisExp.addData("SR_conf", SR)
     thisExp.addData("RTrating", RTrating)
-    thisExp.addData("coherence", coherence["intensity"])
+    thisExp.addData("coherence", DotMotion.coherence)
     thisExp.nextEntry()
 
     #Update trialN
@@ -1018,7 +1176,7 @@ for eachTrial in range(n_trials*n_blocks):
             trialN = 0
 
             #Update variables for next block
-            condition_direction = np.repeat(range(2),[math.floor(n_trials*0.5), math.ceil(n_trials*0.5)]); random.shuffle(condition_direction)
+            condition_direction = condition_direction = generate_balanced_up_down(n_trials,max_cons)
 
             # determine waiting times between trials and waiting times confidence interval
             inter_trial = truncnorm.rvs(a, b, loc=inter_t_mean, scale=inter_t_sd, size= n_trials) #Can change mean according to pilots
@@ -1030,8 +1188,12 @@ for eachTrial in range(n_trials*n_blocks):
                 a2 = standard(1.5,current_mean, current_sd); b2 = standard(5, current_mean, current_sd) # normalized parameters
                 manipulation = truncnorm.rvs(a2, b2, loc= current_mean, scale=current_sd, size= n_trials) 
             
-            #Update staircase randomness for next trial (https://questplus.readthedocs.io/en/latest/qp.html)
-            SC.stim_selection_options["n"] += 7
+            #Update coherence values for next block 
+            coherence = []
+            for i in range(n_seq): 
+                seq = sequence.copy()     # copy the block
+                np.random.shuffle(seq) # shuffle independently
+                coherence.extend(seq)
 
             #Performance for current block
             num_correct = sum(acc) 
@@ -1051,6 +1213,11 @@ for eachTrial in range(n_trials*n_blocks):
                 ins.ExtraScale(win);core.wait(ins_wait); event.waitKeys(keyList=['lctrl']) # Press Control to continue the experiment (add in protocol)
             elif blockN == scale_Nblock + 1:
                 ins.Main7(win);core.wait(ins_wait); event.waitKeys(keyList=['lctrl']) # Press Control to continue the experiment (add in protocol)
+            
+            feedback = vis.TextStim(win, text = "Please put your hands back on the keyboard. \n Get ready to restart :)", color = "white", height=40)
+            feedback.draw()
+            win.flip()
+            core.wait(5)
                 
 ################################################################################################################################ 
 # End of experiment
