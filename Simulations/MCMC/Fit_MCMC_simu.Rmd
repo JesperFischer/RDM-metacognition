@@ -88,14 +88,14 @@ library(furrr)
 library(purrr)
 library(tidyverse)
 
-plan(multisession, workers = 2)  # Windows-friendly
+plan(multisession, workers = 10)  # Windows-friendly
 
 safe_function <- possibly(fit, otherwise = "Error")
 
 # Run 20 times in parallel
-results_list <- future_map(1:50, ~ safe_function(200), .progress = T)
+results_list <- future_map(1:2000, ~ safe_function(100), .progress = T)
 
-saveRDS(results_list,here::here("1500_no_metabias_phi_thight_rdm_metad.RData"))
+saveRDS(results_list,here::here("Simulations","MCMC","Saved models","2000sim_100trials_MCMC.RData"))
 
 results_list = results_list[-which(results_list == "Error")]
 ```
@@ -187,18 +187,18 @@ lin = lm(log(div) ~ mean_sigma_choice*mean_sigma_m*mean_sigma_e, data = d1)
 
 grid <- expand.grid(
   mean_sigma_choice = seq(
-    min(d2$mean_sigma_choice),
-    max(d2$mean_sigma_choice),
+    min(d1$mean_sigma_choice),
+    max(d1$mean_sigma_choice),
     length.out = 50
   ),
   mean_sigma_m = seq(
-    min(d2$mean_sigma_m),
-    max(d2$mean_sigma_m),
+    min(d1$mean_sigma_m),
+    max(d1$mean_sigma_m),
     length.out = 50
   ),
   mean_sigma_e = seq(
-    min(d2$mean_sigma_e),
-    max(d2$mean_sigma_e),
+    min(d1$mean_sigma_e),
+    max(d1$mean_sigma_e),
     length.out = 50
   )
 )
@@ -262,18 +262,18 @@ lin = lm(log(div) ~ simulated_sigma_choice*simulated_sigma_m*simulated_sigma_e, 
 
 grid <- expand.grid(
   simulated_sigma_choice = seq(
-    min(d2$simulated_sigma_choice),
-    max(d2$simulated_sigma_choice),
+    min(d1$simulated_sigma_choice),
+    max(d1$simulated_sigma_choice),
     length.out = 50
   ),
   simulated_sigma_m = seq(
-    min(d2$simulated_sigma_m),
-    max(d2$simulated_sigma_m),
+    min(d1$simulated_sigma_m),
+    max(d1$simulated_sigma_m),
     length.out = 50
   ),
   simulated_sigma_e = seq(
-    min(d2$simulated_sigma_e),
-    max(d2$simulated_sigma_e),
+    min(d1$simulated_sigma_e),
+    max(d1$simulated_sigma_e),
     length.out = 50
   )
 )
@@ -331,6 +331,23 @@ d2 = map_dfr(results_list,1) %>%
 
 logs = glm(div ~ mean_sigma_choice*mean_sigma_m*mean_sigma_e, family = "binomial", data = d2)
 
+grid <- expand.grid(
+  mean_sigma_choice = seq(
+    min(d2$mean_sigma_choice),
+    max(d2$mean_sigma_choice),
+    length.out = 50
+  ),
+  mean_sigma_m = seq(
+    min(d2$mean_sigma_m),
+    max(d2$mean_sigma_m),
+    length.out = 50
+  ),
+  mean_sigma_e = seq(
+    min(d2$mean_sigma_e),
+    max(d2$mean_sigma_e),
+    length.out = 50
+  )
+)
 
 grid$div_prob <- predict(
   logs,
@@ -386,6 +403,24 @@ d2 = map_dfr(results_list,1) %>%
   select(mean,simulated, div, variable,sim) %>% pivot_wider(names_from = "variable",values_from = c("mean","simulated"))
 
 logs = glm(div ~ simulated_sigma_choice*simulated_sigma_m*simulated_sigma_e, family = "binomial", data = d2)
+
+grid <- expand.grid(
+  simulated_sigma_choice = seq(
+    min(d2$simulated_sigma_choice),
+    max(d2$simulated_sigma_choice),
+    length.out = 50
+  ),
+  simulated_sigma_m = seq(
+    min(d2$simulated_sigma_m),
+    max(d2$simulated_sigma_m),
+    length.out = 50
+  ),
+  simulated_sigma_e = seq(
+    min(d2$simulated_sigma_e),
+    max(d2$simulated_sigma_e),
+    length.out = 50
+  )
+)
 
 
 grid$div_prob <- predict(
