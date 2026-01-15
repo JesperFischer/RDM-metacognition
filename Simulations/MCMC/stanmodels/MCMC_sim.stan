@@ -111,7 +111,6 @@ model {
   mean_choice ~ normal(0, 0.3);
   
   evidence_std ~ std_normal();
-  evidence_ind ~ std_normal();
   
   
   a ~ bernoulli(p_action);

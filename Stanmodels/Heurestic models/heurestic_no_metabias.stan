@@ -4,10 +4,6 @@ functions {
   real psycho_ACC(real x, real beta){
     return (Phi(beta * x));
    }
-  real entropy(real p){
-    return(-p * log(p) - (1-p) * log(1-p));
-  }
-
 
   // ordered beta function
   real ord_beta_reg_lpdf(real y, real mu, real phi, real cutzero, real cutone) {

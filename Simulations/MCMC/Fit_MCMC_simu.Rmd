@@ -100,7 +100,7 @@ saveRDS(results_list,here::here("Simulations","MCMC","Saved models","2000sim_100
 results_list = results_list[-which(results_list == "Error")]
 ```
 
-```{r}
+```{r, fig.height=10, fig.width=10}
 map_dfr(results_list,1) %>% 
   mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
   ggplot(aes(x = simulated, y = mean, ymin = q5, ymax = q95, col = div))+geom_pointrange()+

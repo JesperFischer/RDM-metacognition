@@ -95,8 +95,7 @@ fit = function(){
   
   df = simulate_data()
 
-  mod = cmdstanr::cmdstan_model(here::here("Derivations","heurestic.stan"))
-  mod = cmdstanr::cmdstan_model(here::here("Derivations","heurestic_simp.stan"))
+  mod = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","heurestic_no_metabias.stan"))
   
   datastan = list(a = df$a_gauss,
                   ACC = df$ACC,
@@ -111,7 +110,7 @@ fit = function(){
                    iter_sampling = 500,
              parallel_chains = 4)
   
-  div1 = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq,
+  div = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq,
                                                         time = fit$time()$total)
   
   estimated = fit$summary("gm") %>% mutate(variable = c("beta",
@@ -120,7 +119,7 @@ fit = function(){
                                             "meta_un_inc"
                                             # "meta_bias_cor",
                                             # "meta_bias_inc"
-                                            ))
+                                            )) %>% mutate(div = max(div$num_divergent))
   
   estimated2 = fit$summary(c("beta",
                                             "conf_prec",
@@ -128,7 +127,7 @@ fit = function(){
                                             "meta_un_inc"
                                             # "meta_bias_cor",
                                             # "meta_bias_inc"
-                             ))
+                             )) %>% mutate(div = max(div$num_divergent))
   
   
   simulated = data.frame(c0 = unique(df$c0),
@@ -137,28 +136,6 @@ fit = function(){
                          sigma_e =unique(df$sigma_e),
                          sigma_m =unique(df$sigma_m),
                          conf_prec =unique(df$conf_prec)) %>% mutate(sim = qq)
-  
-  mod = cmdstanr::cmdstan_model(here::here("Derivations","real_simp.stan"))
-
-  datastan = list(a = df$a_gauss,
-                D = df$D,
-                C = df$C,
-                N = nrow(df),
-                X = df$X)
-
-
-  fit = mod$sample(data = datastan,
-                   iter_warmup = 500,
-                   refresh = 100,
-                   iter_sampling = 500,
-             parallel_chains = 4)
-    
-  esti_real = fit$summary(c("sigma_choice","sigma_m","sigma_e","prec_conf","c0","c1"))
-
-  
-  div2 = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq,
-                                                      time = fit$time()$total)
-  
   
   data = df %>% mutate(conf_bin = cut(C,4),
                       stimulus  = as.factor(D),
@@ -175,9 +152,7 @@ fit = function(){
                 estimated%>% mutate(sim = qq),
                 estimated2%>% mutate(sim = qq),
                 df%>% mutate(sim = qq),
-                div1 = div1,
-                div2 = div2,
-                estimated_real = esti_real%>% mutate(sim = qq),
+                div = div,
                 mratio = mratio %>% mutate(sim = qq))
   
   return(result)
@@ -195,9 +170,9 @@ plan(multisession, workers = 10)  # Windows-friendly
 safe_function <- possibly(fit, otherwise = "Error")
 
 # Run 20 times in parallel
-results_list <- future_map(1:1500, ~ safe_function(), .progress = T)
+results_list <- future_map(1:50, ~ safe_function(), .progress = T)
 
-saveRDS(results_list,here::here("1500_no_metabias_phi_thight_rdm_metad.RData"))
+saveRDS(results_list,here::here("Simulations","Heurestic","Saved models","1000sim_1000trials_Heu.RData"))
 
 results_list = results_list[-which(results_list == "Error")]
 ```
