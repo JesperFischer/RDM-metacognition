@@ -31,6 +31,10 @@ fit_model_ss = function(df, model,samples){
   if(grepl("CANSANDRE",model1$stan_file())){
     fit$save_object(here::here("Experimental analysis","CANSANDRE","saved models",paste0("fit_",unique(df$ID),".rds")))
   }
+  if(grepl("Heurestic models",model1$stan_file())){
+    fit$save_object(here::here("Experimental analysis","Heurestic models","saved models",paste0("fit_",unique(df$ID),".rds")))
+  }
+  
   return(fit)
   
 }
@@ -47,14 +51,12 @@ dia = function(fit,df){
       
     }
     
-
-  
   parameters = c("sigma_choice","mean_choice","prec_conf","sigma_m","sigma_e")
-  
+  parameters = c("c0","c11","alpha","beta1","conf_prec1","meta_un_cor1","meta_un_inc1")
   available <- names(as_draws_df(fit$draws()))
   params <- intersect(parameters, available)
   
-  sum = fit$summary(params) %>% mutate(ID = unique(df$ID))
+  sum = fit$summary(params) %>% mutate(ID = unique(df$ID)) %>% dplyr::select(-c(mad,median))
 
   plot = mcmc_pairs(fit$draws(c(params)),np = nuts_params(fit))+ ggtitle(unique(df$ID))
   plot2 = mcmc_trace(fit$draws(c(params)),np = nuts_params(fit))+ ggtitle(unique(df$ID))

@@ -1,95 +1,16 @@
 functions {
-
-
-  real psycho_ACC(real x, real alpha, real beta, real lapse){
-    return (lapse + (1-2*lapse) * inv_logit(beta * (x - alpha)));
+  
+  real psycho_ACC(real x, real beta, real alpha){
+    return (Phi(beta * (x-alpha)));
    }
-  real entropy(real p){
-    return(-p * log(p) - (1-p) * log(1-p));
-  }
+   
+  real psycho_conf(real x, real beta, real alpha){
+    return (Phi(beta * abs(x-alpha)));
+   }
+   
+  //real entropy(real p){
+    //return(-p * log(p) - (1-p) * log(1-p));}       no reaction times for now
 
-  real contin_resp(real unc, real rt_int, real slope){
-    return(rt_int + slope * unc);
-  }
-
-  real gauss_copula_cholesky_lpdf(matrix u, matrix L) {
-    array[rows(u)] row_vector[cols(u)] q;
-    for (n in 1:rows(u)) {
-      q[n] = inv_Phi(u[n]);
-    }
-
-    return multi_normal_cholesky_lpdf(q | rep_row_vector(0, cols(L)), L)
-            - std_normal_lpdf(to_vector(to_matrix(q)));
-  }
-
-   vector gauss_copula_cholesky_per_row(matrix u, matrix L) {
-    int N = rows(u);
-    int D = cols(u);
-    array[N] row_vector[D] q;
-    vector[N] loglik;
-
-    for (n in 1:N) {
-        q[n,] = inv_Phi(u[n,]);
-        loglik[n] = multi_normal_cholesky_lpdf(to_row_vector(q[n,]) |
-                                                 rep_row_vector(0, D), L) - std_normal_lpdf(to_vector(to_matrix(q[n,])));
-    }
-
-    return loglik;
-  }
-
-
-
-
-
-
-  matrix uvar_bounds(array[] int binom_y, vector gm, vector X,
-                     int is_upper) {
-    int N = size(binom_y);
-
-    matrix[N, 1] u_bounds;
-
-
-    real alpha = (gm[1]);
-    real beta = (gm[2]);
-    real lapse = inv_logit(gm[3]) / 2;
-
-    for (n in 1:N) {
-      real theta = get_prob_cor(psycho_ACC(X[n], (alpha), exp(beta), lapse), X[n]);
-      if (is_upper == 0) {
-        u_bounds[n, 1] = binom_y[n] == 0.0
-                          ? 0.0 : binomial_cdf(binom_y[n] - 1 | 1, theta);
-      } else {
-        u_bounds[n, 1] = binomial_cdf(binom_y[n] | 1, theta);
-      }
-    }
-
-    return u_bounds;
-  }
-
-
-
-  real ord_beta_reg_cdf(real y, real mu, real phi, real cutzero, real cutone) {
-
-    vector[2] thresh;
-    thresh[1] = cutzero;
-    thresh[2] = cutzero + exp(cutone);
-
-    real p0 = 1-inv_logit(mu - thresh[1]);
-
-    real p_m = (inv_logit(mu - thresh[1])-inv_logit(mu - thresh[2]))  * beta_cdf(y | exp(log_inv_logit(mu) + log(phi)), exp(log1m_inv_logit(mu) + log(phi)));
-
-
-
-    if (y < 0) {
-      return 0;
-    } else if (y == 0) {
-      return p0;
-    } else if (y == 1) {
-      return 1-(1e-12);
-    } else {
-      return (p0 + p_m);
-    }
-  }
 
   // ordered beta function
   real ord_beta_reg_lpdf(real y, real mu, real phi, real cutzero, real cutone) {
@@ -144,186 +65,114 @@ functions {
     }
   }
 
-  real get_conf(real ACC, real theta, real x, real alpha){
-  if(ACC == 1 && x > alpha){
-    return(theta);
-  }else if(ACC == 1 && x < alpha){
-    return(1-theta);
-  }else if(ACC == 0 && x > alpha){
-    return(1-theta);
-  }else if(ACC == 0 && x < alpha){
-    return(theta);
-  }else{
-    return(0);
-  }
-}
-  real get_prob_cor(real theta, real x){
-  if(x > 0){
-    return(theta);
-  }else if(x < 0){
-    return(1-theta);
-  }else{
-    return(0);
-  }
-
-}
 }
 
 
 data {
-  int<lower=0> N;
+  int<lower=0> N;    // integer: amount of trials
 
-  array[N] int binom_y;
-  vector[N] RT;
-  vector[N] Conf;
+  array[N] int a;    // array: answers
+  
+  vector[N] C;      // vector: confidence ratings
 
-  vector[N] X;
+  vector[N] X;      // vector: stimulus values
 
-  real minRT;
 
-  vector[N] ACC; // Vector of deltaBPM values that match the binary response
+  vector[N] ACC; // vector: outcome binary response
 
 }
 
 transformed data{
-  int P = 9;
+  int P = 5;    // Number of subject-level parameters
 }
 
 parameters {
-  vector[P] gm;
+  vector[P] gm;   // vector: subject-level parameters
 
-  matrix<
-    lower=uvar_bounds(binom_y, gm, X, 0),
-    upper=uvar_bounds(binom_y, gm, X, 1)
-  >[N, 1] u;
-
-  // cholesky_factor_corr[2] rho_chol;
-
- cholesky_factor_corr[3] rho_chol;
-
-  real c0;
+  real c0;        // confidence cut-offs
   real c11;
-  real<lower=0, upper = minRT> rt_ndt;
 
 }
 
 transformed parameters{
 
+  real alpha = gm[1]; // threshold
+  real beta1 = gm[2]; // slope
 
-  real alpha = gm[1];
-  real beta = gm[2];
-  real lapse = gm[3];
+  real conf_prec1 = gm[3];  // confidence precision
+  real meta_un_cor1 = gm[4];  // meta uncertainty on correct trials
+  real meta_un_inc1 = gm[5];  // meta uncertainty on incorrect trials
 
-  real rt_int = gm[4];
-  real rt_slope = gm[5];
-  real rt_prec = gm[6];
-
-  real conf_prec = gm[7];
-  real meta_un = gm[8];
-  real meta_bias = gm[9];
-
-
-  vector[N] entropy_t;
 
   vector[N] conf_mu;
   vector[N] theta;
   vector[N] theta_conf;
 
-  profile("likelihood") {
   for (n in 1:N) {
-  theta[n] = psycho_ACC(X[n], (alpha), exp(beta), inv_logit(lapse)/ 2) ;
+  theta[n] = psycho_ACC(X[n], beta1, alpha) ;
 
-  entropy_t[n] = entropy(psycho_ACC(X[n], (alpha), exp(beta), inv_logit(lapse)/ 2));
-
-  theta_conf[n] = psycho_ACC(X[n], (alpha), exp(beta + meta_un), inv_logit(lapse)/ 2);
-
-  conf_mu[n] = get_conf(ACC[n],theta_conf[n], X[n], alpha);
+  if(ACC[n] == 1){
+    theta_conf[n] = psycho_conf(X[n], beta1 + meta_un_cor1, alpha);
+  }else if(ACC[n] == 0){
+    theta_conf[n] = psycho_conf(X[n], beta1 + meta_un_inc1, alpha);
   }
+  
   }
+  
 
 }
 model {
-  gm[1] ~ normal(0,0.5); //global mean of threshold 
-  gm[2] ~ normal(1,2); //global mean of slope
-  gm[3] ~ normal(-4,2); //global mean of lapse rate
-  gm[4] ~ normal(-1,2); //global mean of rt intercept
-  gm[5] ~ normal(0,2); //global mean of rt slope
-  gm[6] ~ normal(-1,2); //global mean of residual variance RT
-  gm[7] ~ normal(3,2); //global mean of confidence precision
-  gm[8] ~ normal(0,2); //global mean of meta uncertainty
-  gm[9] ~ normal(0,2); //global mean of meta bias
-
-
-  rt_ndt ~ normal(0.3,0.1);
+  gm[1] ~ normal(0,0.5); //global mean of threshold
+  gm[2] ~ normal(0,1); //global mean of slope
+  gm[3] ~ normal(3,2); //global mean of confidence precision
+  gm[4] ~ normal(0,1); //global mean of meta uncertainty for correct trials 
+  gm[5] ~ normal(0,1); //global mean of meta uncertainty for incorrect trials 
 
 
 
-  matrix[N, 3] u_mix;
+
   for (n in 1:N) {
-    u_mix[n, 1] = u[n,1];
+    
+    target += binomial_lpmf(a[n] | 1, theta[n]);   // likelihood for the outcomes
 
-    u_mix[n, 2] = lognormal_cdf(RT[n] - rt_ndt | rt_int + rt_slope * entropy_t[n], exp(rt_prec));
+    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);   // likelihood for confidence on correct trials 
 
-    u_mix[n, 3] = ord_beta_reg_cdf(Conf[n] | logit(conf_mu[n]) + meta_bias, exp(conf_prec), c0, c11);
 
-    target += lognormal_lpdf(RT[n] - rt_ndt | rt_int + rt_slope * entropy_t[n], exp(rt_prec));
-
-    target += ord_beta_reg_lpdf(Conf[n] | logit(conf_mu[n])+ meta_bias, exp(conf_prec), c0, c11);
-
-    // target += binomial_lpmf(binom_y[n] | 1, theta[n]);
+    // target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n])+ meta_bias, exp(conf_prec), c0, c11);
 
 
   }
 
-
-    c0 ~ induced_dirichlet([1,10,1]', 0, 1, c0, c11);
+    c0 ~ induced_dirichlet([1,10,1]', 0, 1, c0, c11);   // likelihood for confidence cut-offs
     c11 ~ induced_dirichlet([1,10,1]', 0, 2, c0, c11);
-
-    rho_chol ~ lkj_corr_cholesky(12);
-
-    u_mix ~ gauss_copula_cholesky(rho_chol);
 
 }
 
 generated quantities {
 
-  real c1 = c0 + exp(c11);
-  real rho_p_rt;
-  real rho_p_conf;
-  real rho_rt_conf;
+  real c1 = c0 + exp(c11);    // actual high confidence cut-off
+  real beta = beta1;     // actual slope 
 
-
+  real conf_prec = exp(conf_prec1);  // actual confidence precision
+  //real meta_un = meta_un_cor1 + exp(beta1);   // actual meta uncertainty for correct trials 
+  //real meta_un_inc = meta_un_inc1 + exp(beta1);  // actual meta uncertainty for inorrect trials
+  
+  
   vector[N] log_lik_bin = rep_vector(0,N);
-  vector[N] log_lik_rt = rep_vector(0,N);
   vector[N] log_lik_conf = rep_vector(0,N);
   vector[N] log_lik = rep_vector(0,N);
 
 
-
- matrix[N, 3] u_mixx;
-  for (n in 1:N) {
-    u_mixx[n, 1] = u[n,1];
-
-    u_mixx[n, 2] = lognormal_cdf(RT[n] - rt_ndt | rt_int + rt_slope * entropy_t[n], exp(rt_prec));
-
-    u_mixx[n, 3] = ord_beta_reg_cdf(Conf[n] | logit(conf_mu[n])+ meta_bias, exp(conf_prec), c0, c11);
-  }
-
-  vector[N] log_lik_cop;
-
-  log_lik_cop = gauss_copula_cholesky_per_row(u_mixx, rho_chol);
-
-
-  rho_p_rt = multiply_lower_tri_self_transpose(rho_chol)[1, 2];
-  rho_p_conf = multiply_lower_tri_self_transpose(rho_chol)[1, 3];
-  rho_rt_conf = multiply_lower_tri_self_transpose(rho_chol)[2, 3];
-
-
   for(n in 1:N){
-    log_lik_bin[n] = binomial_lpmf(binom_y[n] | 1, get_prob_cor(theta[n], X[n]));
-    log_lik_rt[n] = lognormal_lpdf(RT[n] - rt_ndt | rt_int + rt_slope * entropy_t[n], exp(rt_prec));
-    log_lik_conf[n] = ord_beta_reg_lpdf(Conf[n] | logit(conf_mu[n]) + meta_bias, exp(conf_prec), c0, c11);
-    log_lik[n] = log_lik_bin[n] + log_lik_rt[n] + log_lik_conf[n] + log_lik_cop[n];
+    log_lik_bin[n] = binomial_lpmf(a[n] | 1, theta[n]);
+    
+    if(ACC[n] == 1){
+     log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);
+    }else if(ACC[n] == 0){
+     log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);
+    }
+    // log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias, exp(conf_prec), c0, c11);
+    log_lik[n] = log_lik_conf[n] + log_lik_bin[n];
   }
 
 

@@ -31,15 +31,31 @@ plot_beh_data(df,NULL,F)
 
 ## fit the standard model with meta-uncertainty and meta-bias
 ```{r}
-model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","Single Subject","stanmodel.stan"))
-fit1 = fit_model(df,model1,500)
-fit1$save_object(here::here("Savedmodels","removed_models","fit1_siebe2.rds"))
-model2 = cmdstanr::cmdstan_model(here::here("Stanmodels","Single Subject","stanmodel2.stan"))
-fit2 = fit_model(df,model2,500)
-fit2$save_object(here::here("Savedmodels","removed_models","fit2_siebe2.rds"))
-model3 = cmdstanr::cmdstan_model(here::here("Stanmodels","Single Subject","stanmodel3.stan"))
-fit3 = fit_model(df,model3,500)
-fit3$save_object(here::here("Savedmodels","removed_models","fit3_siebe2.rds"))
+model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","Single Subject","model1.stan"))
+
+dd = df %>% 
+  mutate(subject = as.numeric(as.factor(subject))) %>% 
+  filter(Trialtype == "Main", scale == "conf") %>% drop_na()
+
+dd_by_subj <- split(dd, dd$subject)
+
+fits <- lapply(dd_by_subj, function(d) {
+  fit_model_ss(d, model1, 500)
+})
+
+models = list.files(here::here("Experimental analysis","Heurestic models","saved models"), full.names = T)
+
+fits = list()
+for(model in models[1:8]){
+  fit = readRDS(model)
+  fits[[str_remove(str_remove(str_split(model, "/")[[1]][9],".rds"),"fit_")]] = fit  
+}
+
+```
+
+
+```{r, fig.width=8,fig.height=6}
+dia(fits, dd)
 ```
 
 ## load the models
