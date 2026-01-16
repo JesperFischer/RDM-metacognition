@@ -13,7 +13,7 @@ plot_beh_data = function(df,n_bins,ACC = F){
       })
       
       for(i in 1:length(out)){
-        out[[i]] = out[[i]] + ggtitle(IDs[i])
+        out[[i]] = out[[i]] + ggtitle(unique(df_split[[i]]$ID))
       }      
       return(out)
     }
@@ -43,9 +43,9 @@ plot_beh_data = function(df,n_bins,ACC = F){
       group_by(X,ID) %>%
       summarize(
         name = "Type-1",
-        mean = mean(ACC),
-        q5 = mean(ACC) - 2* (mean(ACC) * (1-mean(ACC)) / sqrt(n())),
-        q95 = mean(ACC) + 2 * (mean(ACC) * (1-mean(ACC)) / sqrt(n())),
+        mean = mean(ACC, na.rm = T),
+        q5 = mean(ACC) - 2* (mean(ACC, na.rm = T) * (1-mean(ACC, na.rm = T)) / sqrt(n())),
+        q95 = mean(ACC) + 2 * (mean(ACC, na.rm = T) * (1-mean(ACC, na.rm = T)) / sqrt(n())),
         .groups = "drop"
       )
   }else{
@@ -54,9 +54,9 @@ plot_beh_data = function(df,n_bins,ACC = F){
       group_by(X,ID) %>%
       summarize(
         name = "Type-1",
-        mean = mean(Y),
-        q5 = mean(Y) - 2* (mean(Y) * (1-mean(Y)) / sqrt(n())),
-        q95 = mean(Y) + 2 * (mean(Y) * (1-mean(Y)) / sqrt(n())),
+        mean = mean(Y, na.rm = T),
+        q5 = mean(Y, na.rm = T) - 2* (mean(Y, na.rm = T) * (1-mean(Y, na.rm = T)) / sqrt(n())),
+        q95 = mean(Y, na.rm = T) + 2 * (mean(Y, na.rm = T) * (1-mean(Y, na.rm = T)) / sqrt(n())),
         .groups = "drop"
       )
   }
@@ -70,18 +70,18 @@ plot_beh_data = function(df,n_bins,ACC = F){
       mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
       group_by(X) %>%
       summarize(name = "RT",
-                mean = mean(RT),
-                q5 = mean(RT) - 2 * (sd(RT) / sqrt(n())),
-                q95 = mean(RT) + 2 * (sd(RT) / sqrt(n())),
+                mean = mean(RT, na.rm = T),
+                q5 = mean(RT, na.rm = T) - 2 * (sd(RT, na.rm = T) / sqrt(n())),
+                q95 = mean(RT, na.rm = T) + 2 * (sd(RT, na.rm = T) / sqrt(n())),
                 .groups = "drop"),
     
     df %>%
       mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
       group_by(X, Correct,ID) %>%
       summarize(name = "Confidence",
-                mean = mean(Confidence),
-                q5 = mean(Confidence) - 2 * (sd(Confidence) / sqrt(n())),
-                q95 = mean(Confidence) + 2 * (sd(Confidence) / sqrt(n())),
+                mean = mean(Confidence, na.rm = T),
+                q5 = mean(Confidence, na.rm = T) - 2 * (sd(Confidence, na.rm = T) / sqrt(n())),
+                q95 = mean(Confidence, na.rm = T) + 2 * (sd(Confidence, na.rm = T) / sqrt(n())),
                 .groups = "drop")
   ) 
   

@@ -35,7 +35,7 @@ df = load_data()
 
 ## plotting the behavioral data:
 ```{r, fig.height=6,fig.width=8, message=F,warning=F}
-plot_beh_data(df,NULL,F)
+plot_beh_data(df %>% filter(Trialtype == "Main"),NULL,F)
 ```
 
 
