@@ -7,7 +7,7 @@ fit_model_ss = function(df, model,samples){
                 RT = df$RT,
                 D = df$D,
                 C = df$Confidence,
-                X = df$X,
+                X = df$X * df$D,
                 minRT = min(df$RT),
                 ACC = df$Correct,
                 starts = 1,
@@ -51,7 +51,7 @@ dia = function(fit,df){
       
     }
     
-  parameters = c("sigma_choice","mean_choice","prec_conf","sigma_m","sigma_e")
+  # parameters = c("sigma_choice","mean_choice","prec_conf","sigma_m","sigma_e")
   parameters = c("c0","c11","alpha","beta1","conf_prec1","meta_un_cor1","meta_un_inc1")
   available <- names(as_draws_df(fit$draws()))
   params <- intersect(parameters, available)
