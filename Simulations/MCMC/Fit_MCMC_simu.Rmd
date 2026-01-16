@@ -37,7 +37,7 @@ fit = function(nn){
   
   df = simulate_data(n = nn)
   
-  mod = cmdstanr::cmdstan_model(here::here("Simulations","MCMC","stanmodels","MCMC_sim.stan"))
+  mod = cmdstanr::cmdstan_model(here::here("Simulations","MCMC","stanmodels","MCMC_cent_sim.stan"))
 
   datastan = list(a = df$a_gauss,
                 D = df$D,
@@ -93,9 +93,9 @@ plan(multisession, workers = 10)  # Windows-friendly
 safe_function <- possibly(fit, otherwise = "Error")
 
 # Run 20 times in parallel
-results_list <- future_map(1:2000, ~ safe_function(1000), .progress = T)
+results_list <- future_map(1:2000, ~ safe_function(100), .progress = T)
 
-saveRDS(results_list,here::here("Simulations","MCMC","Saved models","2000sim_100trials_MCMC.RData"))
+saveRDS(results_list,here::here("Simulations","MCMC","Saved models","2000sim_100trials_centered_MCMC.RData"))
 
 results_list = results_list[-which(results_list == "Error")]
 ```

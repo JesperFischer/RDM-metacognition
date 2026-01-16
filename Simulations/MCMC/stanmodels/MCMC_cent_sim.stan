@@ -108,13 +108,11 @@ model {
   sigma_m_log ~  normal(-1, 1);
   prec_conf_log ~ normal(3, 3);
   mean_choice ~ normal(0, 0.3);
-  
-  evidence_std ~ std_normal();
-  
-  
-  evidence ~ normal(mean_choice + X[i] * D[i], exp(sigma_e_log));
-  ehat ~ normal(evidence[i], exp(sigma_m_log));
-  
+
+  for(i in 1:N){
+    evidence[i] ~ normal(mean_choice + X[i] * D[i], exp(sigma_e_log));
+    ehat[i] ~ normal(evidence[i], exp(sigma_m_log));
+  }
   a ~ bernoulli(p_action);
   
   

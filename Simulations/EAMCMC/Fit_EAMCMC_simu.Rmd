@@ -1,0 +1,478 @@
+---
+title: "Fit_MCMC_simu"
+author: ""
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+---
+
+```{r}
+pacman::p_load(tidyverse,posterior,bayesplot,cmdstanr,patchwork,ordbetareg,shiny,statConfR)
+source(here::here("Simulations","EAMCMC","simulate.R"))
+```
+
+
+```{r, fig.height=12,fig.width=8}
+df = simulate_data(100)
+p1 = df %>% ggplot(aes(x = X*D, y = a_gauss))+geom_point()
+p2 = df %>% ggplot(aes(x = X*D, y = C, col = as.factor(ACC)))+geom_point()+geom_smooth()
+p3 = df %>% ggplot(aes(x = X*D, y = RT))+geom_point()+geom_smooth()
+
+p1/p2/p3
+```
+
+
+```{r, fig.height=12,fig.width=8}
+fit = function(nn){
+  
+  qq = rnorm(1,1,1)
+  
+  df = simulate_data(n = nn)
+  
+  # mod = cmdstanr::cmdstan_model(here::here("sandbox","EA-MCMC","stanmodels","Collaps_DDM.stan"))
+  mod = cmdstanr::cmdstan_model(here::here("Simulations","MCMC","stanmodels","MCMC_sim.stan"))
+
+  datastan = list(a = df$a_gauss,
+                D = df$D,
+                C = df$C,
+                XD = df$X * df$D,
+                RT = df$RT,
+                minRT = min(df$RT),
+                N = nrow(df),
+                X = df$X)
+
+
+  fit = mod$sample(data = datastan,
+                   iter_warmup = 500,
+                   refresh = 10,
+                   iter_sampling = 500,
+             parallel_chains = 4)
+  
+  div = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq, trial = nn,
+                                                      time = fit$time()$total)
+  
+    
+  esti_real = fit$summary(c("lp__","sigma_choice","sigma_m","sigma_e","mean_choice","prec_conf","c0","c1")) %>% 
+    mutate(simulated = c(NA,unique(df$sigma_k),unique(df$sigma_m),unique(df$sigma_e),
+                         0,unique(df$conf_prec),unique(df$c0),unique(df$c1))) %>% 
+    mutate(div = max(div$num_divergent))
+
+  
+  data = df %>% mutate(conf_bin = cut(C,4),
+                      stimulus  = as.factor(D),
+                      participant = 1,
+                      rating = as.numeric(as.factor(conf_bin)),
+                      correct = ACC) %>% drop_na()
+
+
+  simulated_params = unique(df %>% select(v,v_beta,k,a,c0,c1,sigma_k,sigma_e,conf_prec,sigma_m))
+  
+  
+  mratio = fitMetaDprime(data)
+  
+    
+  result = list(esti_real%>% mutate(sim = qq, trial = nn),
+                df%>% mutate(sim = qq, trial = nn),
+                div = div,
+                mratio = mratio %>% mutate(sim = qq, trial = nn),
+                simulated_params %>% mutate(sim = qq, trial = nn))
+  
+  return(result)
+}
+
+qq = fit(nn = 100)
+
+
+library(furrr)
+library(purrr)
+library(tidyverse)
+
+plan(multisession, workers = 2)  # Windows-friendly
+
+safe_function <- possibly(fit, otherwise = "Error")
+
+# Run 20 times in parallel
+results_list <- future_map(1:50, ~ safe_function(100), .progress = T)
+
+saveRDS(results_list,here::here("Simulations","MCMC","Saved models","2000sim_100trials_centered_MCMC.RData"))
+
+results_list = results_list[-which(results_list == "Error")]
+```
+
+```{r, fig.height=10, fig.width=10}
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
+  ggplot(aes(x = simulated, y = mean, ymin = q5, ymax = q95, col = div))+geom_pointrange()+
+  geom_abline()+facet_wrap(~variable, scales = "free")
+
+```
+
+
+```{r}
+mratio = map_dfr(results_list,4)
+
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
+  filter(div == 0) %>% 
+  inner_join(mratio) %>% 
+  ggplot(aes(x = simulated, y = Ratio))+geom_point()+
+  geom_abline()+
+  facet_wrap(~variable, scales = "free")
+
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
+  filter(div == 0) %>% 
+  inner_join(mratio) %>% 
+  ggplot(aes(x = simulated, y = metaD))+geom_point()+
+  facet_wrap(~variable, scales = "free")
+
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
+  filter(div == 0) %>% 
+  inner_join(mratio) %>% 
+  filter(variable %in% c("sigma_e","sigma_m")) %>% select(variable,mean,metaD,sim) %>% 
+  pivot_wider(names_from = "variable",values_from = "mean") %>% 
+  mutate(metaD_pred_esti = 1/(sqrt(sigma_m^2+sigma_e^2))) %>% 
+  ggplot(aes(x = metaD_pred_esti, y = metaD))+geom_point()
+
+
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
+  filter(div == 0) %>% 
+  inner_join(mratio) %>% 
+  ggplot(aes(x = simulated, y = c))+geom_point()+
+  facet_wrap(~variable, scales = "free")
+
+
+
+
+
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
+  filter(div == 0) %>% 
+  inner_join(mratio) %>% 
+  ggplot(aes(x = simulated, y = dprime))+geom_point()+
+  facet_wrap(~variable, scales = "free")
+
+
+
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
+  filter(div == 0) %>% 
+  inner_join(mratio) %>% 
+  filter(variable %in% c("sigma_e","sigma_choice")) %>% select(variable,mean,dprime,sim) %>% 
+  pivot_wider(names_from = "variable",values_from = "mean") %>% 
+  mutate(dprime_pred_esti = 1/(sqrt(sigma_e^2+sigma_choice^2))) %>% 
+  filter(dprime  < 4) %>% 
+  ggplot(aes(x = dprime_pred_esti, y = dprime))+geom_point()+
+  geom_abline()
+
+
+
+```
+
+
+```{r}
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% select(div,sim) %>% distinct() %>% group_by(div) %>% summarise(n())
+
+d1 = map_dfr(results_list,1) %>% 
+  mutate(div = (ifelse(div > 0,div,NA))) %>%
+  drop_na() %>% 
+  filter(variable %in% c("sigma_choice","sigma_m","sigma_e","mean_choice","prec_conf")) %>% 
+  select(mean,simulated, div, variable,sim) %>% pivot_wider(names_from = "variable",values_from = c("mean","simulated"))
+
+lin = lm(log(div) ~ mean_sigma_choice*mean_sigma_m*mean_sigma_e, data = d1)
+
+grid <- expand.grid(
+  mean_sigma_choice = seq(
+    min(d1$mean_sigma_choice),
+    max(d1$mean_sigma_choice),
+    length.out = 50
+  ),
+  mean_sigma_m = seq(
+    min(d1$mean_sigma_m),
+    max(d1$mean_sigma_m),
+    length.out = 50
+  ),
+  mean_sigma_e = seq(
+    min(d1$mean_sigma_e),
+    max(d1$mean_sigma_e),
+    length.out = 50
+  )
+)
+
+grid$div_hat_lm <- predict(
+  lin,
+  newdata = grid
+)
+
+library(ggplot2)
+library(gganimate)
+
+p_lm <- ggplot(
+  grid,
+  aes(
+    x = mean_sigma_choice,
+    y = mean_sigma_e,
+    fill = div_hat_lm
+  )
+) +
+  geom_raster() +
+  scale_fill_viridis_c(
+  ) +
+  labs(
+    x = expression(sigma[k]),
+    y = expression(sigma[e])
+  ) +
+  ggtitle("sigma_m = {round(frame_time, 2)}") +
+  theme_minimal() +
+  transition_time(mean_sigma_m) +
+  ease_aes("linear")
+
+anim_lm <- animate(
+  p_lm,
+  nframes = length(unique(grid$mean_sigma_m)),
+  fps = 5,
+  width = 500,
+  height = 500,
+  renderer = gifski_renderer()
+)
+
+anim_lm
+
+
+```
+
+## simulated values
+
+
+```{r}
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% select(div,sim) %>% distinct() %>% group_by(div) %>% summarise(n())
+
+d1 = map_dfr(results_list,1) %>% 
+  mutate(div = (ifelse(div > 0,div,NA))) %>%
+  drop_na() %>% 
+  filter(variable %in% c("sigma_choice","sigma_m","sigma_e","mean_choice","prec_conf")) %>% 
+  select(mean,simulated, div, variable,sim) %>% pivot_wider(names_from = "variable",values_from = c("mean","simulated"))
+
+lin = lm(log(div) ~ simulated_sigma_choice*simulated_sigma_m*simulated_sigma_e, data = d1)
+
+grid <- expand.grid(
+  simulated_sigma_choice = seq(
+    min(d1$simulated_sigma_choice),
+    max(d1$simulated_sigma_choice),
+    length.out = 50
+  ),
+  simulated_sigma_m = seq(
+    min(d1$simulated_sigma_m),
+    max(d1$simulated_sigma_m),
+    length.out = 50
+  ),
+  simulated_sigma_e = seq(
+    min(d1$simulated_sigma_e),
+    max(d1$simulated_sigma_e),
+    length.out = 50
+  )
+)
+
+grid$div_hat_lm <- predict(
+  lin,
+  newdata = grid
+)
+
+library(ggplot2)
+library(gganimate)
+
+p_lm <- ggplot(
+  grid,
+  aes(
+    x = simulated_sigma_choice,
+    y = simulated_sigma_e,
+    fill = div_hat_lm
+  )
+) +
+  geom_raster() +
+  scale_fill_viridis_c(
+  ) +
+  labs(
+    x = expression(sigma[k]),
+    y = expression(sigma[e])
+  ) +
+  ggtitle("sigma_m = {round(frame_time, 2)}") +
+  theme_minimal() +
+  transition_time(simulated_sigma_m) +
+  ease_aes("linear")
+
+anim_lm <- animate(
+  p_lm,
+  nframes = length(unique(grid$simulated_sigma_m)),
+  fps = 5,
+  width = 500,
+  height = 500,
+  renderer = gifski_renderer()
+)
+
+anim_lm
+
+
+```
+
+
+
+
+```{r}
+d2 = map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>%
+  filter(variable %in% c("sigma_choice","sigma_m","sigma_e","mean_choice","prec_conf")) %>% 
+  select(mean,simulated, div, variable,sim) %>% pivot_wider(names_from = "variable",values_from = c("mean","simulated"))
+
+logs = glm(div ~ mean_sigma_choice*mean_sigma_m*mean_sigma_e, family = "binomial", data = d2)
+
+grid <- expand.grid(
+  mean_sigma_choice = seq(
+    min(d2$mean_sigma_choice),
+    max(d2$mean_sigma_choice),
+    length.out = 50
+  ),
+  mean_sigma_m = seq(
+    min(d2$mean_sigma_m),
+    max(d2$mean_sigma_m),
+    length.out = 50
+  ),
+  mean_sigma_e = seq(
+    min(d2$mean_sigma_e),
+    max(d2$mean_sigma_e),
+    length.out = 50
+  )
+)
+
+grid$div_prob <- predict(
+  logs,
+  newdata = grid,
+  type = "response"   # gives P(divergence)
+)
+
+
+library(ggplot2)
+library(gganimate)
+p <- ggplot(
+  grid,
+  aes(
+    x = mean_sigma_choice,
+    y = mean_sigma_e,
+    fill = div_prob
+  )
+) +
+  geom_raster() +
+  scale_fill_viridis_c(
+    limits = c(0, 1),
+    name = "P(divergence)"
+  ) +
+  labs(
+    x = expression(sigma_k),
+    y = expression(sigma_e)
+  ) +
+  ggtitle("sigma_m = {round(frame_time,0)}")+
+  theme_minimal() +
+  transition_time(mean_sigma_m) +
+  ease_aes("linear")
+
+anim <- animate(
+  p,
+  nframes = length(unique(grid$mean_sigma_e)),
+  fps = 5,
+  width = 500,
+  height = 500,
+  renderer = gifski_renderer()
+)
+
+anim
+
+
+```
+
+# simualted values
+
+```{r}
+d2 = map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>%
+  filter(variable %in% c("sigma_choice","sigma_m","sigma_e","mean_choice","prec_conf")) %>% 
+  select(mean,simulated, div, variable,sim) %>% pivot_wider(names_from = "variable",values_from = c("mean","simulated"))
+
+logs = glm(div ~ simulated_sigma_choice*simulated_sigma_m*simulated_sigma_e, family = "binomial", data = d2)
+
+grid <- expand.grid(
+  simulated_sigma_choice = seq(
+    min(d2$simulated_sigma_choice),
+    max(d2$simulated_sigma_choice),
+    length.out = 50
+  ),
+  simulated_sigma_m = seq(
+    min(d2$simulated_sigma_m),
+    max(d2$simulated_sigma_m),
+    length.out = 50
+  ),
+  simulated_sigma_e = seq(
+    min(d2$simulated_sigma_e),
+    max(d2$simulated_sigma_e),
+    length.out = 50
+  )
+)
+
+
+grid$div_prob <- predict(
+  logs,
+  newdata = grid,
+  type = "response"   # gives P(divergence)
+)
+
+
+library(ggplot2)
+library(gganimate)
+p <- ggplot(
+  grid,
+  aes(
+    x = simulated_sigma_choice,
+    y = simulated_sigma_e,
+    fill = div_prob
+  )
+) +
+  geom_raster() +
+  scale_fill_viridis_c(
+    limits = c(0, 1),
+    name = "P(divergence)"
+  ) +
+  labs(
+    x = expression(sigma_k),
+    y = expression(sigma_e)
+  ) +
+  ggtitle("sigma_m = {round(frame_time,0)}")+
+  theme_minimal() +
+  transition_time(simulated_sigma_m) +
+  ease_aes("linear")
+
+anim <- animate(
+  p,
+  nframes = length(unique(grid$simulated_sigma_e)),
+  fps = 5,
+  width = 500,
+  height = 500,
+  renderer = gifski_renderer()
+)
+
+anim
+
+
+```
