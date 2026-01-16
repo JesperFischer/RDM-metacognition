@@ -3,7 +3,7 @@ intensity_vals <- seq(0.01, 1, length.out = 50)
 threshold_vals <- seq(0.01, 1, length.out = 50)  # Your prior has 50 values
 slope_vals <- seq(1, 10, length.out = 10)
 lower_asymptote <- 0.5  # chance level
-lapse_rate <- 0.05
+lapse_rate <- 0
 
 
 weibull_psychometric <- function(x, alpha, beta, gamma = 0.5, lambda = 0) {
@@ -14,7 +14,9 @@ weibull_psychometric <- function(x, alpha, beta, gamma = 0.5, lambda = 0) {
 # Sample from uniform priors
 set.seed(123)  # for reproducibility
 alpha_sample <- sample(threshold_vals, 1)  # or: runif(1, 5, 50)
+alpha_sample =0.3
 beta_sample <- sample(slope_vals, 1)        # or: runif(1, 1, 10)
+beta_sample = 8
 
 # Generate psychometric curve
 intensities <- seq(0.01, 1, length.out = 100)
@@ -91,7 +93,7 @@ threshold_prior <- dnorm(threshold_vals, mean = 0.3, sd = 0.2)
 threshold_prior <- threshold_prior / sum(threshold_prior)  # normalize
 
 # Example 2: Normal prior for slope (centered at 5)
-slope_prior <- dnorm(slope_vals, mean = 4, sd = 2)
+slope_prior <- dnorm(slope_vals, mean = 2, sd = 2)
 slope_prior <- slope_prior / sum(slope_prior)  # normalize
 
 # Sample from these priors

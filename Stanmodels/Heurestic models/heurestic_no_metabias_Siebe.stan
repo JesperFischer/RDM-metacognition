@@ -1,19 +1,16 @@
 functions {
   
-  real psycho_ACC(real x, real beta){
-    return (Phi(beta*(x)));
+  real psycho_ACC(real x, real beta, real alpha){
+    return (Phi(beta * (x-alpha)));
    }
-<<<<<<< Updated upstream
-=======
    
-  real psycho_conf(real x, real beta){
-    return (Phi(beta*abs(x)));
+  real psycho_conf(real x, real beta, real alpha){
+    return (Phi(beta * abs(x-alpha)));
    }
    
   //real entropy(real p){
     //return(-p * log(p) - (1-p) * log(1-p));}       no reaction times for now
 
->>>>>>> Stashed changes
 
   // ordered beta function
   real ord_beta_reg_lpdf(real y, real mu, real phi, real cutzero, real cutone) {
@@ -86,7 +83,7 @@ data {
 }
 
 transformed data{
-  int P = 4;    // Number of subject-level parameters
+  int P = 5;    // Number of subject-level parameters
 }
 
 parameters {
@@ -99,39 +96,37 @@ parameters {
 
 transformed parameters{
 
-  //real alpha = gm[1]; // threshold
-  real beta1 = gm[1]; // slope
+  real alpha = gm[1]; // threshold
+  real beta1 = gm[2]; // slope
 
-  real conf_prec1 = gm[2];  // confidence precision
-  real meta_un_cor1 = gm[3];  // meta uncertainty on correct trials
-  real meta_un_inc1 = gm[4];  // meta uncertainty on incorrect trials
+  real conf_prec1 = gm[3];  // confidence precision
+  real meta_un_cor1 = gm[4];  // meta uncertainty on correct trials
+  real meta_un_inc1 = gm[5];  // meta uncertainty on incorrect trials
 
 
   vector[N] conf_mu;
   vector[N] theta;
   vector[N] theta_conf;
 
-  profile("likelihood") {
   for (n in 1:N) {
-  theta[n] = psycho_ACC(X[n], exp(beta1)) ;
+  theta[n] = psycho_ACC(X[n], beta1, alpha) ;
 
   if(ACC[n] == 1){
-    theta_conf[n] = psycho_conf(X[n], exp(meta_un_cor1));
+    theta_conf[n] = psycho_conf(X[n], meta_un_cor1, alpha);
   }else if(ACC[n] == 0){
-    theta_conf[n] = psycho_conf(X[n], meta_un_inc1);
+    theta_conf[n] = psycho_conf(X[n], meta_un_inc1, alpha);
   }
   
   }
   
-  }
 
 }
 model {
-  //gm[1] ~ normal(0,0.5); //global mean of threshold
-  gm[1] ~ normal(2,2); //global mean of slope
-  gm[2] ~ normal(3,2); //global mean of confidence precision
-  gm[3] ~ normal(0,1); //global mean of meta uncertainty for correct trials 
-  gm[4] ~ normal(0,2); //global mean of meta uncertainty for incorrect trials 
+  gm[1] ~ normal(0,0.5); //global mean of threshold
+  gm[2] ~ normal(0,1); //global mean of slope
+  gm[3] ~ normal(3,2); //global mean of confidence precision
+  gm[4] ~ normal(0,1); //global mean of meta uncertainty for correct trials 
+  gm[5] ~ normal(0,1); //global mean of meta uncertainty for incorrect trials 
 
 
 
@@ -140,11 +135,8 @@ model {
     
     target += binomial_lpmf(a[n] | 1, theta[n]);   // likelihood for the outcomes
 
-    if(ACC[n] == 1){
-      target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);   // likelihood for confidence on correct trials 
-    }else if(ACC[n] == 0){
-    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);    // likelihood for confidence on incorrect trials
-    }
+    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);   // likelihood for confidence on correct trials 
+
 
     // target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n])+ meta_bias, exp(conf_prec), c0, c11);
 
@@ -159,11 +151,11 @@ model {
 generated quantities {
 
   real c1 = c0 + exp(c11);    // actual high confidence cut-off
-  real beta = exp(beta1);     // actual slope 
+  real beta = beta1;     // actual slope 
 
   real conf_prec = exp(conf_prec1);  // actual confidence precision
-  real meta_un_cor = exp(meta_un_cor1) - beta;   // actual meta uncertainty for correct trials 
-  real meta_un_inc = meta_un_inc1 - beta;  // actual meta uncertainty for inorrect trials
+  //real meta_un = meta_un_cor1 + exp(beta1);   // actual meta uncertainty for correct trials 
+  //real meta_un_inc = meta_un_inc1 + exp(beta1);  // actual meta uncertainty for inorrect trials
   
   
   vector[N] log_lik_bin = rep_vector(0,N);
