@@ -123,7 +123,7 @@ transformed parameters{
 }
 model {
   gm[1] ~ normal(0,0.5); //global mean of threshold
-  gm[2] ~ normal(0,1); //global mean of slope
+  gm[2] ~ normal(4,2); //global mean of slope
   gm[3] ~ normal(3,2); //global mean of confidence precision
   gm[4] ~ normal(0,1); //global mean of meta uncertainty for correct trials 
   gm[5] ~ normal(0,1); //global mean of meta uncertainty for incorrect trials 
@@ -151,11 +151,11 @@ model {
 generated quantities {
 
   real c1 = c0 + exp(c11);    // actual high confidence cut-off
-  real beta = beta1;     // actual slope 
+  real beta = beta1;          // slope 
 
   real conf_prec = exp(conf_prec1);  // actual confidence precision
-  //real meta_un = meta_un_cor1 + exp(beta1);   // actual meta uncertainty for correct trials 
-  //real meta_un_inc = meta_un_inc1 + exp(beta1);  // actual meta uncertainty for inorrect trials
+  real meta_un = beta - meta_un_cor1;   // actual meta uncertainty for correct trials 
+  real meta_un_inc = beta1 - meta_un_inc1;  // actual meta uncertainty for inorrect trials
   
   
   vector[N] log_lik_bin = rep_vector(0,N);
