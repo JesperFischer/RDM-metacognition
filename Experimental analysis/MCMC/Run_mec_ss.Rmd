@@ -35,7 +35,7 @@ df = load_data()
 
 ## plotting the behavioral data:
 ```{r, fig.height=6,fig.width=8, message=F,warning=F}
-plot_beh_data(df,NULL,F)
+plot_beh_data(df %>% filter(Trialtype == "Main"),NULL,F)
 ```
 
 
@@ -53,12 +53,12 @@ fits <- lapply(dd_by_subj, function(d) {
   fit_model_ss(d, model1, 500)
 })
 
-models = list.files(here::here("Experimental analysis","MCMC","saved models","No_threshold"), full.names = T)
+models = list.files(here::here("Experimental analysis","MCMC","saved models"), full.names = T)
 
 fits = list()
-for(model in models){
+for(model in models[1:8]){
   fit = readRDS(model)
-  fits[[str_remove(str_remove(str_split(model, "/")[[1]][10],".rds"),"fit_")]] = fit  
+  fits[[str_remove(str_remove(str_split(model, "/")[[1]][9],".rds"),"fit_")]] = fit  
 }
 
 ```
