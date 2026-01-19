@@ -124,50 +124,63 @@ ggplot(data.frame(x_seq,theta_C_cor,theta_C_IC))+geom_line(aes(x_seq,theta_C_cor
 ######## simulate data (extensive) ############################################
 ###############################################################################
 
-simulate_data = function(n){
+simulate_data <- function(n){
   # -----------------------------
   # Set parameters
   # -----------------------------
   n = n        # number of trials
-  beta = abs(rnorm(1,2,1))         # Slope (Expressed in precision on the normal)
-
-  meta_un = abs(rnorm(1,0,1))   # meta uncertainty for correct trials (expressed in precision on normal)
-  meta_un_IC =  rnorm(1,-1,1) # meta uncertainty for incorrect trials (expressed in precision on normal)
-  alpha = rnorm(1,0,0.3)    # threshold
-  conf_prec = abs(rnorm(1,100,50))  # confidence precision (precision on beta distribution)
   
-  c0 = -abs(rnorm(1,5,1))  # Cut points for ordered beta regression
-  c1 = abs(rnorm(1,5,1)) 
+  beta =   rlnorm(1,1.2,0.5)       # Slope (expressed in precision on normal, moderate values)
+  meta_un = rlnorm(1,0.8,0.5)    # Meta uncertainty for correct trials (positive, avoids inversion)
+  meta_un_IC = sample(c(-1, 1),1)*rlnorm(1,0.8,0.5)    # Meta uncertainty for incorrect trials (positive, avoids inversion)
+  alpha = sample(c(-1, 1),1) * rbeta(1, 2,8)        # Threshold
+  conf_prec = abs(rnorm(1,100,50))    # Confidence precision (precision on beta distribution)
   
+  c0 = -abs(rnorm(1,5,1))            # Cut points for ordered beta regression, lower bound
+  c1 = abs(rnorm(1,5,1))             # Cut points for ordered beta regression, upper bound
+  
+  # -----------------------------
   # Coherence level (stimulus intensity)
-  coh = runif(n,0,1)
+  # -----------------------------
+  coh = runif(n, 0, 1)             # Uniformly sampled stimulus strength
   
-  # stimuli (left or right)
-  D = sample(c(-1, 1), n, replace = TRUE)  # true stimulus
+  # -----------------------------
+  # Stimuli (left or right)
+  # -----------------------------
+  D = sample(c(-1, 1), n, replace = TRUE)  # True stimulus direction
   
+  # -----------------------------
   # Simulate evidence
-  X = coh * D
+  # -----------------------------
+  X = coh * D                       # Evidence scaled by stimulus
   
-  # Decision 
-  theta = pnorm(beta * (X-alpha))     # Internal probability of being correct
-  resp = rbinom(n,1,theta)         # simulated response
+  # -----------------------------
+  # Decision
+  # -----------------------------
+  theta = pnorm(beta * (X - alpha)) # Internal probability of being correct
+  resp = rbinom(n, 1, theta)        # Simulated response
   
-  ACC = ifelse(D == -1 & out == 0,1,ifelse(D == 1 & out == 1,1,0)) # Accuracy based on simulated response
+  # Accuracy based on simulated response
+  ACC = ifelse(D == -1 & resp == 0, 1,
+               ifelse(D == 1 & resp == 1, 1, 0))
   
+  # -----------------------------
   # Simulated confidence
+  # -----------------------------
   conf_mu = numeric(n)
   for(i in 1:n){
     if(ACC[i] == 1){
-      conf_mu[i] <- pnorm((meta_un) * (abs(X[i] - alpha)))
-    } else if(ACC[i] == 0){
-      conf_mu[i] <- pnorm((meta_un_IC) * (abs(X[i] - alpha)))
+      conf_mu[i] <- pnorm(meta_un * abs(X[i] - alpha))       # Confidence for correct trials
+    } else {
+      conf_mu[i] <- pnorm(meta_un_IC * abs(X[i] - alpha))    # Confidence for incorrect trials
     }
   }
   
+  conf = rordbeta(n = n, mu = conf_mu, phi = conf_prec, cutpoints = c(c0, c1))  # Simulated confidence values
   
-  conf = rordbeta(n=n, mu=conf_mu, phi = conf_prec, cutpoints = c(c0,c1))   # Simulated confidence values
-  
+  # -----------------------------
   # Dataframe
+  # -----------------------------
   df = data.frame(
     c0 = c0,
     c1 = c1,
@@ -179,24 +192,26 @@ simulate_data = function(n){
     inc_loss = beta - meta_un_IC,
     conf_prec = conf_prec,
     D = D,
-    X =X,
+    X = X,
     ACC = ACC,
     resp = resp,
     c_mu = conf_mu,
-    C = C,
+    C = conf
   )
-}  
+  
+  return(df)
+}
+
 ###############################################################################
 ######## Model fit (extensive) ################################################
 ###############################################################################
+mod <- cmdstan_model(here("Stanmodels", "Heurestic models", "heurestic_no_metabias_Siebe.stan"))
 
 ## function for 1 fit
-fit = function(nn){
+fit = function(nn, mod){
   qq = rnorm(1, 1, 1)
   
   df = simulate_data(n = nn)
-  
-  mod = cmdstan_model(cmdstan_model(here("Stanmodels", "Heurestic models", "heurestic_no_metabias_Siebe.stan")))
   
   datastan = list(a = df$resp,
                   ACC = df$ACC,
@@ -216,7 +231,7 @@ fit = function(nn){
   
   
   esti_real = fit$summary(c("lp__","alpha","beta","meta_un_cor1","meta_un_inc1","meta_un", "meta_un_inc", "conf_prec","c0","c1")) %>% 
-    mutate(simulated = c(NA,unique(df$alpha),unique(df$beta),unique(df$meta_un), unique(df$meta_un_IC),unique(df$cor_loss),
+    mutate(simulated = c(NA,unique(df$alpha),unique(df$beta),unique(df$meta_un_cor), unique(df$meta_un_IC),unique(df$cor_loss),
                          unique(df$inc_loss),unique(df$conf_prec), unique(df$c0),unique(df$c1))) %>% 
     mutate(div = max(div$num_divergent))
   
@@ -231,9 +246,61 @@ fit = function(nn){
 ## Model fit 
 plan(multisession, workers = 10)  # Make it run on multiple cores (Windows-friendly) 
 
-safe_function <- possibly(fit, otherwise = "Error")   # Prevemt crashing when 1 fit is bad
+safe_function <- possibly(fit, otherwise = "Error")   # Prevent crashing when 1 fit is bad
 
-results_list <- future_map(1:2000, ~ safe_function(100), .progress = T)   # Run 20 times in parallel
+results_list <- future_map(1:2000, ~ safe_function(100, mod), .progress = T)   # Run 20 times in parallel
 
 saveRDS(results_list,here::here("Simulations","Heurestic","Parameter_recovery_Hsim_Hfit.RData"))
+
+sum(results_list == "Error")
 results_list = results_list[-which(results_list == "Error")]
+
+
+
+###############################################################################
+######## Check model fit (extensive) ##########################################
+###############################################################################
+
+data_div = map_dfr(results_list,1) %>% select(simulated,variable,sim, div) %>%  # Data divergences 
+  pivot_wider(names_from = "variable",values_from = "simulated") %>% unnest()
+
+ggplot() + geom_point(data = data_div, mapping = aes(x = alpha, y = div)) + theme_minimal()
+ggplot() + geom_point(data = data_div, mapping = aes(x = beta, y = div)) + theme_minimal()
+ggplot() + geom_point(data = data_div, mapping = aes(x = meta_un_cor1, y = div)) + theme_minimal()
+ggplot() + geom_point(data = data_div, mapping = aes(x = meta_un_inc1, y = div)) + theme_minimal()
+ggplot() + geom_point(data = data_div, mapping = aes(x = conf_prec, y = div)) + theme_minimal()
+ggplot() + geom_point(data = data_div, mapping = aes(x = c0, y = div)) + theme_minimal()
+ggplot() + geom_point(data = data_div, mapping = aes(x = c1, y = div)) + theme_minimal()
+
+
+alpha_rec = map_dfr(results_list,1) %>% select(simulated,variable,sim, mean) %>%  
+  pivot_wider(names_from = "variable",values_from = "mean") %>% unnest() %>% filter(!is.na(alpha))
+
+beta_rec = map_dfr(results_list,1) %>% select(simulated,variable,sim, mean) %>%  
+  pivot_wider(names_from = "variable",values_from = "mean") %>% unnest() %>% filter(!is.na(beta))
+
+
+ggplot() + geom_point(alpha_rec, mapping = aes(x=simulated, y=alpha)) + theme_minimal() + coord_fixed(ratio = 1)
+ggplot() + geom_point(beta_rec, mapping = aes(x=simulated, y=beta)) + theme_minimal() +scale_y_continuous(limits = c(0, 20))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
