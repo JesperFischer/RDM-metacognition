@@ -54,7 +54,7 @@ fit = function(nn){
 
   fit = mod$sample(data = datastan,
                    iter_warmup = 500,
-                   refresh = 10,
+                   refresh = 0,
                    iter_sampling = 500,
              parallel_chains = 4)
   
@@ -90,21 +90,21 @@ fit = function(nn){
   return(result)
 }
 
-qq = fit(nn = 100)
+# qq = fit(nn = 100)
 
 
 library(furrr)
 library(purrr)
 library(tidyverse)
 
-plan(multisession, workers = 2)  # Windows-friendly
+plan(multisession, workers = 10)  # Windows-friendly
 
 safe_function <- possibly(fit, otherwise = "Error")
 
 # Run 20 times in parallel
-results_list <- future_map(1:50, ~ safe_function(100), .progress = T)
+results_list <- future_map(1:2000, ~ safe_function(1000), .progress = T)
 
-saveRDS(results_list,here::here("Simulations","MCMC","Saved models","2000sim_100trials_centered_MCMC.RData"))
+saveRDS(results_list,here::here("Simulations","EAMCMC","Saved models","2000sim_1000trials_centered_MCMC.RData"))
 
 results_list = results_list[-which(results_list == "Error")]
 ```
@@ -114,6 +114,17 @@ map_dfr(results_list,1) %>%
   mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
   ggplot(aes(x = simulated, y = mean, ymin = q5, ymax = q95, col = div))+geom_pointrange()+
   geom_abline()+facet_wrap(~variable, scales = "free")
+
+```
+
+```{r, fig.height=10, fig.width=10}
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
+  select(sim,div) %>% 
+  distinct() %>% 
+  group_by(div) %>% 
+  summarize(n())
+
 
 ```
 
@@ -176,8 +187,28 @@ map_dfr(results_list,1) %>%
   filter(dprime  < 4) %>% 
   ggplot(aes(x = dprime_pred_esti, y = dprime))+geom_point()+
   geom_abline()
+```
 
 
+```{r}
+
+estimated = map_dfr(results_list,1) %>% filter(variable != "lp__") %>% select(variable, median,q5,q95,sim,div) %>% 
+  pivot_wider(names_from = "variable",values_from = c(median,q5,q95))
+
+simulated = map_dfr(results_list,2) %>% 
+  select(v,v_beta,k,a,sigma_m,conf_prec,c0,c1,sigma_k,sigma_e,sim) %>% 
+  distinct()
+
+inner_join(simulated,estimated) %>% 
+  filter(div == 0) %>% 
+  ggplot(aes(x = sigma_m, y = median_sigma_m,ymin = q5_sigma_m,ymax = q95_sigma_m))+
+  geom_pointrange()+geom_abline()
+
+
+inner_join(simulated,estimated) %>% 
+  filter(div == 0) %>%
+  ggplot(aes(x = v_beta, y = median_sigma_e,ymin = q5_sigma_e,ymax = q95_sigma_e))+
+  geom_pointrange()+geom_abline()
 
 ```
 
