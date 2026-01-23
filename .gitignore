@@ -12,3 +12,6 @@
 /Data/Pilots/Jesper_2025_17_12/full_jespere_data.csv
 /Savedmodels/removed_models/fit1_jespere_nort_mec.rds
 /Savedmodels/removed_models/fit1_siebe_nort_mec.rds
+
+/Experimental analysis/Heurestic models/saved models hier/fit_hier.rds
+/Experimental analysis/MCMC/saved models hier/fit_hier.rds
