@@ -100,8 +100,8 @@ transformed parameters{
   real beta1 = gm[2]; // slope
 
   real conf_prec1 = gm[3];  // confidence precision
-  real meta_un_cor1 = gm[4];  // meta uncertainty on correct trials
-  real meta_un_inc1 = gm[5];  // meta uncertainty on incorrect trials
+  real meta_un_cor = gm[4];  // meta uncertainty on correct trials
+  real meta_prec_inc = gm[5];  // meta uncertainty on incorrect trials
 
 
   vector[N] conf_mu;
@@ -109,12 +109,12 @@ transformed parameters{
   vector[N] theta_conf;
 
   for (n in 1:N) {
-  theta[n] = psycho_ACC(X[n], beta1, alpha) ;
+  theta[n] = psycho_ACC(X[n], exp(beta1), alpha) ;
 
   if(ACC[n] == 1){
-    theta_conf[n] = psycho_conf(X[n], meta_un_cor1, alpha);
+    theta_conf[n] = psycho_conf(X[n], exp(beta1) - exp(meta_un_cor), alpha);
   }else if(ACC[n] == 0){
-    theta_conf[n] = psycho_conf(X[n], meta_un_inc1, alpha);
+    theta_conf[n] = psycho_conf(X[n], meta_prec_inc, alpha);
   }
   
   }
@@ -123,7 +123,7 @@ transformed parameters{
 }
 model {
   gm[1] ~ normal(0,0.5); //global mean of threshold
-  gm[2] ~ lognormal(1.2,0.5); //global mean of slope
+  gm[2] ~ normal(1.2,0.5); //global mean of slope
   gm[3] ~ normal(3,2); //global mean of confidence precision
   gm[4] ~ normal(0,1); //global mean of meta uncertainty for correct trials 
   gm[5] ~ normal(0,1); //global mean of meta uncertainty for incorrect trials 
@@ -151,11 +151,11 @@ model {
 generated quantities {
 
   real c1 = c0 + exp(c11);    // actual high confidence cut-off
-  real beta = beta1;          // slope 
+  real beta = exp(beta1);          // slope 
 
   real conf_prec = exp(conf_prec1);  // actual confidence precision
-  real meta_un = beta - meta_un_cor1;   // actual meta uncertainty for correct trials 
-  real meta_un_inc = beta1 - meta_un_inc1;  // actual meta uncertainty for inorrect trials
+  real meta_prec_cor = exp(beta1) - exp(meta_un_cor);   // actual meta uncertainty for correct trials 
+  real meta_un_inc = exp(beta1) - meta_prec_inc;  // actual meta uncertainty for inorrect trials
   
   
   vector[N] log_lik_bin = rep_vector(0,N);
