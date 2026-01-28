@@ -75,7 +75,7 @@ data {
   
   vector[N] C;      // vector: confidence ratings
 
-  vector[N] X;      // vector: stimulus values
+  vector[N] XD;      // vector: stimulus values
 
 
   vector[N] ACC; // vector: outcome binary response
@@ -96,7 +96,7 @@ parameters {
 
 transformed parameters{
 
-  real alpha = gm[1]; // threshold
+  real alpha1 = gm[1]; // threshold
   real beta1 = gm[2]; // slope
 
   real conf_prec1 = gm[3];  // confidence precision
@@ -109,12 +109,12 @@ transformed parameters{
   vector[N] theta_conf;
 
   for (n in 1:N) {
-  theta[n] = psycho_ACC(X[n], beta1, alpha) ;
+  theta[n] = psycho_ACC(XD[n], exp(beta1), (inv_logit(alpha1)-0.5)*2) ;
 
   if(ACC[n] == 1){
-    theta_conf[n] = psycho_conf(X[n], beta1 + meta_un_cor1, alpha);
+    theta_conf[n] = psycho_conf(XD[n], exp(beta1) + meta_un_cor1, (inv_logit(alpha1)-0.5)*2);
   }else if(ACC[n] == 0){
-    theta_conf[n] = psycho_conf(X[n], beta1 + meta_un_inc1, alpha);
+    theta_conf[n] = psycho_conf(XD[n], exp(beta1) + meta_un_inc1, (inv_logit(alpha1)-0.5)*2);
   }
   
   }
@@ -151,7 +151,8 @@ model {
 generated quantities {
 
   real c1 = c0 + exp(c11);    // actual high confidence cut-off
-  real beta = beta1;     // actual slope 
+  real beta = exp(beta1);     // actual slope 
+  real alpha = (inv_logit(alpha1)-0.5)*2;     // actual slope 
 
   real conf_prec = exp(conf_prec1);  // actual confidence precision
   //real meta_un = meta_un_cor1 + exp(beta1);   // actual meta uncertainty for correct trials 

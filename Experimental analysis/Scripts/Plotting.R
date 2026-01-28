@@ -1,6 +1,6 @@
 
 
-plot_beh_data = function(df,n_bins,ACC = F){
+plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
     subjects = unique(df$subject)
     IDs = unique(df$ID)
     # If more than one subject → apply function per subject
@@ -103,6 +103,9 @@ plot_beh_data = function(df,n_bins,ACC = F){
     theme(legend.position = "top")
   
   
+  if(r_data == T){
+    return(df1)
+  }
   
   
   return(plot_mean)
