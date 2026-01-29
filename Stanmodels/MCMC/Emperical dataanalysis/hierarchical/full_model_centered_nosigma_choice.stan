@@ -73,13 +73,13 @@ data {
 }
 
 transformed data{
-  int P = 5;
+  int P = 4;
 }
 
 parameters {
   
-  vector[N] evidence_std;
-  vector[N] evidence_ind;
+  vector[N] evidence;
+  vector[N] ehat;
 
   vector[P] gm;
   vector<lower=0>[P] tau_u;
@@ -109,20 +109,20 @@ transformed parameters{
 
   vector[S]  conf_prec1 = param[,3];  // confidence precision
   vector[S]  sigma_m_log = param[,4];  // meta uncertainty on correct trials
-  vector[S]  sigma_choice_log = param[,5];  // meta uncertainty on incorrect trials
+  // vector[S]  sigma_choice_log = param[,5];  // meta uncertainty on incorrect trials
 
 
-  vector[N] evidence;
+  // vector[N] evidence;
   vector[N] p_action;
-  vector[N] ehat;
+  // vector[N] ehat;
   vector[N] mu_conf;
   
   for(i in 1:N){
-    evidence[i] = mean_choice[S_id[i]] + XD[i] + exp(sigma_e_log[S_id[i]]) * evidence_std[i];
+    // evidence[i] = mean_choice[S_id[i]] + XD[i] + exp(sigma_e_log[S_id[i]]) * evidence_std[i];
 
-    ehat[i] = evidence[i] + exp(sigma_m_log[S_id[i]]) * evidence_ind[i];
+    // ehat[i] = evidence[i] + exp(sigma_m_log[S_id[i]]) * evidence_ind[i];
     
-    p_action[i] = Phi((evidence[i])/exp(sigma_choice_log[S_id[i]]));
+    p_action[i] = Phi(evidence[i]);
     
     if(a[i] == 1){
       mu_conf[i] = inv_logit(2*ehat[i]*X[i] / (exp(sigma_e_log[S_id[i]])^2 + exp(sigma_m_log[S_id[i]])^2));
@@ -138,21 +138,22 @@ model {
   gm[2] ~ normal(-1,1); //global mean of slope
   gm[3] ~ normal(3,2); //global mean of confidence precision
   gm[4] ~ normal(-1,1); //global mean of meta uncertainty
-  gm[5] ~ normal(-2,1); //global mean of meta bias
 
 
   to_vector(z_expo) ~ std_normal();
 
   tau_u[1] ~ normal(0 , 0.3);
   tau_u[2] ~ normal(0 , 2);
-  tau_u[3:5] ~ normal(0 , 2);
+  tau_u[3:4] ~ normal(0 , 2);
   L_u ~ lkj_corr_cholesky(2);
 
-  evidence_std ~ std_normal();
-  evidence_ind ~ std_normal();
+  for(i in 1:N){
+    evidence[i] ~ normal(mean_choice[S_id[i]] + XD[i], exp(sigma_e_log[S_id[i]]));
+    ehat[i] ~ normal(mean_choice[S_id[i]] + XD[i], sqrt(exp(sigma_e_log[S_id[i]])^2 + exp(sigma_m_log[S_id[i]])^2));
+  }
+  
   
   a ~ bernoulli(p_action);
-  
   
   for(i in 1:N){
     
@@ -167,17 +168,3 @@ model {
   }
 
 }
-
-generated quantities{
-
-  vector[S] sigma_e = exp(sigma_e_log);
-
-
-  vector[S]  conf_prec = exp(conf_prec1);
-  vector[S]  sigma_m = exp(sigma_m_log);
-  vector[S]  sigma_choice = exp(sigma_choice_log);
-
-
-  
-}
-

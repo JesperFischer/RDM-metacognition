@@ -130,10 +130,10 @@ simulate_data <- function(n){
   # -----------------------------
   n = n        # number of trials
   
-  beta =   rlnorm(1,1.2,0.5)       # Slope (expressed in precision on normal, moderate values)
-  meta_un = rlnorm(1,0.8,0.5)    # Meta uncertainty for correct trials (positive, avoids inversion)
-  meta_un_IC = sample(c(-1, 1),1)*rlnorm(1,0.8,0.5)    # Meta uncertainty for incorrect trials (positive, avoids inversion)
-  alpha = sample(c(-1, 1),1) * rbeta(1, 2,8)        # Threshold
+  beta =   exp(rnorm(1,1,0.5))       # Slope (expressed in precision on normal, moderate values)
+  meta_un = rnorm(1,-1,0.5)    # Meta uncertainty for correct trials (positive, avoids inversion)
+  meta_un_IC = sample(c(-1, 1),1)*rnorm(1,0.8,0.5)    # Meta uncertainty for incorrect trials (positive, avoids inversion)
+  alpha = sample(c(-1, 1),1) * rnorm(1, 2,8)        # Threshold
   conf_prec = abs(rnorm(1,100,50))    # Confidence precision (precision on beta distribution)
   
   c0 = -abs(rnorm(1,5,1))            # Cut points for ordered beta regression, lower bound
@@ -170,7 +170,7 @@ simulate_data <- function(n){
   conf_mu = numeric(n)
   for(i in 1:n){
     if(ACC[i] == 1){
-      conf_mu[i] <- pnorm(meta_un * abs(X[i] - alpha))       # Confidence for correct trials
+      conf_mu[i] <- pnorm((beta * meta_un) * abs(X[i] - alpha))       # Confidence for correct trials
     } else {
       conf_mu[i] <- pnorm(meta_un_IC * abs(X[i] - alpha))    # Confidence for incorrect trials
     }
@@ -194,6 +194,7 @@ simulate_data <- function(n){
     D = D,
     X = X,
     ACC = ACC,
+    theta = theta,
     resp = resp,
     c_mu = conf_mu,
     C = conf
@@ -205,7 +206,7 @@ simulate_data <- function(n){
 ###############################################################################
 ######## Model fit (extensive) ################################################
 ###############################################################################
-mod <- cmdstan_model(here("Stanmodels", "Heurestic models", "heurestic_no_metabias_Siebe.stan"))
+mod <- cmdstan_model(here::here("Stanmodels", "Heurestic models", "heurestic_no_metabias_Siebe.stan"))
 
 ## function for 1 fit
 fit = function(nn, mod){
@@ -240,15 +241,16 @@ fit = function(nn, mod){
                 df%>% mutate(sim = qq, trial = nn),
                 div = div %>% mutate(sim = qq, trial = nn))
   
-  return(result)}
+  return(result)
+}
 
 
 ## Model fit 
-plan(multisession, workers = 10)  # Make it run on multiple cores (Windows-friendly) 
+plan(multisession, workers = 15)  # Make it run on multiple cores (Windows-friendly) 
 
 safe_function <- possibly(fit, otherwise = "Error")   # Prevent crashing when 1 fit is bad
 
-results_list <- future_map(1:2000, ~ safe_function(100, mod), .progress = T)   # Run 20 times in parallel
+results_list <- future_map(1:100, ~ safe_function(100, mod), .progress = T)   # Run 20 times in parallel
 
 saveRDS(results_list,here::here("Simulations","Heurestic","Parameter_recovery_Hsim_Hfit.RData"))
 

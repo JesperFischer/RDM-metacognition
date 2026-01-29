@@ -137,7 +137,7 @@ transformed parameters{
 
 
   vector[S]  conf_prec1 = param[,3];  // confidence precision
-  vector[S]  meta_un_cor1 = param[,4];  // meta uncertainty on correct trials
+  vector[S]  meta_un_cor1 = (param[,4]);  // meta uncertainty on correct trials
   vector[S]  meta_un_inc1 = param[,5];  // meta uncertainty on incorrect trials
 
 
@@ -150,9 +150,9 @@ transformed parameters{
   theta[n] = psycho_ACC(XD[n], exp(beta1[S_id[n]]), (inv_logit(alpha1[S_id[n]])-0.5)*2) ;
 
   if(ACC[n] == 1){
-    theta_conf[n] = psycho_conf(XD[n], exp(beta1[S_id[n]]) + meta_un_cor1[S_id[n]], (inv_logit(alpha1[S_id[n]])-0.5)*2);
+    theta_conf[n] = psycho_conf(XD[n], exp(beta1[S_id[n]]) - exp(meta_un_cor1[S_id[n]]), (inv_logit(alpha1[S_id[n]])-0.5)*2);
   }else if(ACC[n] == 0){
-    theta_conf[n] = psycho_conf(XD[n], exp(beta1[S_id[n]]) + meta_un_inc1[S_id[n]], (inv_logit(alpha1[S_id[n]])-0.5)*2);
+    theta_conf[n] = psycho_conf(XD[n], meta_un_inc1[S_id[n]], (inv_logit(alpha1[S_id[n]])-0.5)*2);
   }
   
   }

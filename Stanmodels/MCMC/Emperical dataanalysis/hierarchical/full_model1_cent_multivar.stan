@@ -78,8 +78,8 @@ transformed data{
 
 parameters {
   
-  vector[N] evidence_std;
-  vector[N] evidence_ind;
+  array[N] vector[2] evidences;
+  // vector[N] ehat;
 
   vector[P] gm;
   vector<lower=0>[P] tau_u;
@@ -112,22 +112,22 @@ transformed parameters{
   vector[S]  sigma_choice_log = param[,5];  // meta uncertainty on incorrect trials
 
 
-  vector[N] evidence;
+  // vector[N] evidence;
   vector[N] p_action;
-  vector[N] ehat;
+  // vector[N] ehat;
   vector[N] mu_conf;
   
   for(i in 1:N){
-    evidence[i] = mean_choice[S_id[i]] + XD[i] + exp(sigma_e_log[S_id[i]]) * evidence_std[i];
+    // evidence[i] = mean_choice[S_id[i]] + XD[i] + exp(sigma_e_log[S_id[i]]) * evidence_std[i];
 
-    ehat[i] = evidence[i] + exp(sigma_m_log[S_id[i]]) * evidence_ind[i];
+    // ehat[i] = evidence[i] + exp(sigma_m_log[S_id[i]]) * evidence_ind[i];
     
-    p_action[i] = Phi((evidence[i])/exp(sigma_choice_log[S_id[i]]));
+    p_action[i] = Phi((evidences[i,1])/exp(sigma_choice_log[S_id[i]]));
     
     if(a[i] == 1){
-      mu_conf[i] = inv_logit(2*ehat[i]*X[i] / (exp(sigma_e_log[S_id[i]])^2 + exp(sigma_m_log[S_id[i]])^2));
+      mu_conf[i] = inv_logit(2*evidences[i,2]*X[i] / (exp(sigma_e_log[S_id[i]])^2 + exp(sigma_m_log[S_id[i]])^2));
     }else if(a[i] == 0){
-      mu_conf[i] = 1- inv_logit(2*ehat[i]*X[i] / (exp(sigma_e_log[S_id[i]])^2 + exp(sigma_m_log[S_id[i]])^2));
+      mu_conf[i] = 1- inv_logit(2*evidences[i,2]*X[i] / (exp(sigma_e_log[S_id[i]])^2 + exp(sigma_m_log[S_id[i]])^2));
     }
   }
 }
@@ -148,8 +148,20 @@ model {
   tau_u[3:5] ~ normal(0 , 2);
   L_u ~ lkj_corr_cholesky(2);
 
-  evidence_std ~ std_normal();
-  evidence_ind ~ std_normal();
+for (s in 1:S) {
+  matrix[2,2] Sigma;
+
+  Sigma[1,1] = square(exp(sigma_e_log[s]));
+  Sigma[1,2] = Sigma[1,1];
+  Sigma[2,1] = Sigma[1,1];
+  Sigma[2,2] = square(exp(sigma_e_log[s])) + square(exp(sigma_m_log[s]));
+
+  for (i in 1:N) {
+    
+    evidences[i,] ~ multi_normal([XD[i], XD[i]], Sigma);
+    
+  }
+}
   
   a ~ bernoulli(p_action);
   

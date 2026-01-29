@@ -57,44 +57,44 @@ functions{
 }
 
 data {
-  int<lower=0> N;
-  int<lower=0> S;
-  array[N] int S_id;
-
-  vector[N] C;
-
+  int<lower=1> N;
+  int<lower=1> S;
+  array[N] int S_id; 
+  
+  array[N] int<lower=-1, upper=1> D;   // true stimulus
+  array[N] int<lower=0, upper=1> a;   // observed choice
   vector[N] X;
   vector[N] XD;
-
-  vector[N] ACC; // Vector of deltaBPM values that match the binary response
-  array[N] int a;                      // stimulus strength
-  
+  vector[N] RT;                         // stimulus strength
+  vector[N] C;                         // stimulus strength
+  vector[S] minRT;
   
 }
 
 transformed data{
-  int P = 5;
+  int P = 7;
 }
 
 parameters {
+  vector[N] evidence;
+  vector[N] ehat;
   
-  vector[N] evidence_std;
-  vector[N] evidence_ind;
-
   vector[P] gm;
   vector<lower=0>[P] tau_u;
   cholesky_factor_corr[P] L_u;    // Between participant cholesky decomposition
   matrix[P, S] z_expo;    // Participant deviation from the group means
-
-
-  vector[S] c0;
+ 
+ vector <lower=0, upper = minRT>[S] RT_ndt;
+ 
+ 
   vector[S] c11;
+  vector[S] c0;
+ 
 }
 
 
 transformed parameters{
-  
-  // Extracting individual deviations for each subject for each parameter
+   // Extracting individual deviations for each subject for each parameter
   matrix[S, P] indi_dif = (diag_pre_multiply(tau_u, L_u) * z_expo)';
 
   matrix[S, P] param;
@@ -103,81 +103,90 @@ transformed parameters{
     param[,p]= gm[p] + indi_dif[,p];
   }
 
-  vector[S] mean_choice = (param[,1]);
-  vector[S] sigma_e_log = (param[,2]);
+  vector[S] mean_choice = param[,1];
+  vector[S] sigma_choice_log = param[,2];
+  // vector[S] sigma_e_log = param[,3];
 
-
-  vector[S]  conf_prec1 = param[,3];  // confidence precision
-  vector[S]  sigma_m_log = param[,4];  // meta uncertainty on correct trials
-  vector[S]  sigma_choice_log = param[,5];  // meta uncertainty on incorrect trials
-
-
-  vector[N] evidence;
+  vector[S] RT_int = param[,3];
+  vector[S] sigma_rt_log = param[,4];
+  
+  vector[S] sigma_m_log = param[,5];
+  vector[S] prec_conf_log = param[,6];
+  
+  vector[S] RT_scal = param[,7];
+  
+  // vector[N] evidence;
   vector[N] p_action;
-  vector[N] ehat;
+  vector[N] mu_rt;
   vector[N] mu_conf;
+  // vector[N] ehat;
+  
   
   for(i in 1:N){
-    evidence[i] = mean_choice[S_id[i]] + XD[i] + exp(sigma_e_log[S_id[i]]) * evidence_std[i];
 
-    ehat[i] = evidence[i] + exp(sigma_m_log[S_id[i]]) * evidence_ind[i];
-    
+    mu_rt[i] = RT_int[S_id[i]] - exp(RT_scal[S_id[i]]) * abs(evidence[i]);
+  
     p_action[i] = Phi((evidence[i])/exp(sigma_choice_log[S_id[i]]));
     
     if(a[i] == 1){
-      mu_conf[i] = inv_logit(2*ehat[i]*X[i] / (exp(sigma_e_log[S_id[i]])^2 + exp(sigma_m_log[S_id[i]])^2));
+      mu_conf[i] = inv_logit(2*ehat[i]*X[i] / (1 + exp(sigma_m_log[S_id[i]])^2));
     }else if(a[i] == 0){
-      mu_conf[i] = 1- inv_logit(2*ehat[i]*X[i] / (exp(sigma_e_log[S_id[i]])^2 + exp(sigma_m_log[S_id[i]])^2));
+      mu_conf[i] = 1- inv_logit(2*ehat[i]*X[i] / (1 + exp(sigma_m_log[S_id[i]])^2));
     }
+
   }
 }
 
 model {
-  
-  gm[1] ~ normal(0,0.3); //global mean of threshold 
-  gm[2] ~ normal(-1,1); //global mean of slope
-  gm[3] ~ normal(3,2); //global mean of confidence precision
-  gm[4] ~ normal(-1,1); //global mean of meta uncertainty
-  gm[5] ~ normal(-2,1); //global mean of meta bias
 
+  gm[1] ~ normal(0,0.3);
+  gm[2] ~ normal(-2,1);
+  // gm[3] ~ normal(-2,1);
+  gm[3] ~ normal(0,1);
+  gm[4] ~ normal(-1,1);
+  gm[5] ~ normal(-1,1);
+  gm[6] ~ normal(3,2);
+  gm[7] ~ normal(0,1);
+
+  tau_u[1] ~ normal(0,0.3);
+  tau_u[2] ~ normal(0,1);
+  // tau_u[3] ~ normal(0,1);
+  tau_u[3] ~ normal(0,1);
+  tau_u[4] ~ normal(0,1);
+  tau_u[5] ~ normal(0,1);
+  tau_u[6] ~ normal(2,2);
+  tau_u[7] ~ normal(0,1);
 
   to_vector(z_expo) ~ std_normal();
 
-  tau_u[1] ~ normal(0 , 0.3);
-  tau_u[2] ~ normal(0 , 2);
-  tau_u[3:5] ~ normal(0 , 2);
   L_u ~ lkj_corr_cholesky(2);
 
-  evidence_std ~ std_normal();
-  evidence_ind ~ std_normal();
+  RT_ndt ~ normal(0.5,0.2);
+
+  for(i in 1:N){
+    evidence[i] ~ normal(mean_choice[S_id[i]] + XD[i], 1);
+    ehat[i] ~ normal(mean_choice[S_id[i]] + XD[i], sqrt(1 + exp(sigma_m_log[S_id[i]])^2));
+  }
+  
   
   a ~ bernoulli(p_action);
   
   
   for(i in 1:N){
-    
-    target += ord_beta_reg_lpdf(C[i] | logit(mu_conf[i]), exp(conf_prec1[S_id[i]]), c0[S_id[i]], c11[S_id[i]]);
+    target += lognormal_lpdf((RT[i] - RT_ndt[S_id[i]]) | mu_rt[i], exp(sigma_rt_log[S_id[i]]));
+    target += ord_beta_reg_lpdf(C[i] | logit(mu_conf[i]), exp(prec_conf_log[S_id[i]]), c0[S_id[i]], c11[S_id[i]]);
 
-    
   }
   
+
   for(s in 1:S){
-    c0[s] ~ induced_dirichlet([1,10,1]', 0, 1, c0[s], c11[s]);
-    c11[s] ~ induced_dirichlet([1,10,1]', 0, 2, c0[s], c11[s]);
+      c0[s] ~ induced_dirichlet([1,10,1]', 0, 1, c0[s], c11[s]);
+      c11[s] ~ induced_dirichlet([1,10,1]', 0, 2, c0[s], c11[s]);
   }
+
 
 }
 
 generated quantities{
-
-  vector[S] sigma_e = exp(sigma_e_log);
-
-
-  vector[S]  conf_prec = exp(conf_prec1);
-  vector[S]  sigma_m = exp(sigma_m_log);
-  vector[S]  sigma_choice = exp(sigma_choice_log);
-
-
   
 }
-

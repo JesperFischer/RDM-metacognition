@@ -78,8 +78,8 @@ transformed data{
 
 parameters {
   
-  vector[N] evidence_std;
-  vector[N] evidence_ind;
+  vector[N] evidence;
+  vector[N] ehat;
 
   vector[P] gm;
   vector<lower=0>[P] tau_u;
@@ -112,15 +112,15 @@ transformed parameters{
   vector[S]  sigma_choice_log = param[,5];  // meta uncertainty on incorrect trials
 
 
-  vector[N] evidence;
+  // vector[N] evidence;
   vector[N] p_action;
-  vector[N] ehat;
+  // vector[N] ehat;
   vector[N] mu_conf;
   
   for(i in 1:N){
-    evidence[i] = mean_choice[S_id[i]] + XD[i] + exp(sigma_e_log[S_id[i]]) * evidence_std[i];
+    // evidence[i] = mean_choice[S_id[i]] + XD[i] + exp(sigma_e_log[S_id[i]]) * evidence_std[i];
 
-    ehat[i] = evidence[i] + exp(sigma_m_log[S_id[i]]) * evidence_ind[i];
+    // ehat[i] = evidence[i] + exp(sigma_m_log[S_id[i]]) * evidence_ind[i];
     
     p_action[i] = Phi((evidence[i])/exp(sigma_choice_log[S_id[i]]));
     
@@ -148,8 +148,10 @@ model {
   tau_u[3:5] ~ normal(0 , 2);
   L_u ~ lkj_corr_cholesky(2);
 
-  evidence_std ~ std_normal();
-  evidence_ind ~ std_normal();
+  for(i in 1:N){
+    evidence[i] ~ normal(mean_choice[S_id[i]] + XD[i], exp(sigma_e_log[S_id[i]]));
+    ehat[i] ~ normal(mean_choice[S_id[i]] + XD[i], sqrt(exp(sigma_e_log[S_id[i]])^2 + exp(sigma_m_log[S_id[i]])^2));
+  }
   
   a ~ bernoulli(p_action);
   
