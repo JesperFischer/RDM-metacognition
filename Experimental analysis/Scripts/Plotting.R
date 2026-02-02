@@ -9,15 +9,21 @@ plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
       df_split = split(df, df$subject)
       
       out = lapply(df_split, function(d){
-        plot_beh_data(d, n_bins = n_bins, ACC = ACC)
+        plot_beh_data(d, n_bins = n_bins, ACC = ACC, r_data  = r_data)
       })
-      
-      for(i in 1:length(out)){
-        out[[i]] = out[[i]] + ggtitle(unique(df_split[[i]]$ID))
-      }      
+      if(is.ggplot(out[[1]])){
+        for(i in 1:length(out)){
+          out[[i]] = out[[i]] + ggtitle(unique(df_split[[i]]$ID))
+        }      
+      }
       return(out)
     }
 
+  
+  if(r_data == T){
+    return(df %>% mutate(trial = 1:n()))
+  }
+  
   
   # Prepare observed data
   if (!is.null(n_bins)) {
@@ -33,12 +39,12 @@ plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
     df <- df %>%
       mutate(X_bin = cut(X, breaks = bin_breaks, labels = FALSE, include.lowest = TRUE),
              X = bin_centers[X_bin]) %>%
-      select(-X_bin)
+      select(-X_bin)%>% mutate(trial = 1:n())
 
   }
 
   if(ACC){
-    bin = df %>%
+    bin = df %>% mutate(trial = 1:n())%>%
       mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
       group_by(X,ID) %>%
       summarize(
@@ -49,7 +55,8 @@ plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
         .groups = "drop"
       )
   }else{
-    bin = df %>%
+    bin = df %>% 
+      mutate(trial = 1:n()) %>% 
       mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
       group_by(X,ID) %>%
       summarize(
@@ -103,10 +110,7 @@ plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
     theme(legend.position = "top")
   
   
-  if(r_data == T){
-    return(df1)
-  }
-  
+
   
   return(plot_mean)
   
