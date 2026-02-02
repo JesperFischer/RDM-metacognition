@@ -1,40 +1,6 @@
-functions {
-
-
-  real psycho_ACC(real x, real beta, real alpha){
-    return (Phi(beta * (x-alpha)));
-   }
-   
-  real psycho_conf(real x, real beta, real alpha){
-    return (Phi(beta * abs(x-alpha)));
-   }
-   
-   
-
-
-  real ord_beta_reg_cdf(real y, real mu, real phi, real cutzero, real cutone) {
-
-    vector[2] thresh;
-    thresh[1] = cutzero;
-    thresh[2] = cutzero + exp(cutone);
-
-    real p0 = 1-inv_logit(mu - thresh[1]);
-
-    real p_m = (inv_logit(mu - thresh[1])-inv_logit(mu - thresh[2]))  * beta_cdf(y | exp(log_inv_logit(mu) + log(phi)), exp(log1m_inv_logit(mu) + log(phi)));
-
-
-
-    if (y < 0) {
-      return 0;
-    } else if (y == 0) {
-      return p0;
-    } else if (y == 1) {
-      return 1-(1e-12);
-    } else {
-      return (p0 + p_m);
-    }
-  }
-
+functions{
+  
+  
   // ordered beta function
   real ord_beta_reg_lpdf(real y, real mu, real phi, real cutzero, real cutone) {
 
@@ -90,7 +56,6 @@ functions {
 
 }
 
-
 data {
   int<lower=0> N;
   int<lower=0> S;
@@ -102,8 +67,9 @@ data {
   vector[N] XD;
 
   vector[N] ACC; // Vector of deltaBPM values that match the binary response
-  array[N] int a;
-
+  array[N] int a;                      // stimulus strength
+  
+  
 }
 
 transformed data{
@@ -111,6 +77,10 @@ transformed data{
 }
 
 parameters {
+  
+  vector[N] evidence_std;
+  vector[N] evidence_ind;
+
   vector[P] gm;
   vector<lower=0>[P] tau_u;
   cholesky_factor_corr[P] L_u;    // Between participant cholesky decomposition
@@ -121,8 +91,9 @@ parameters {
   vector[S] c11;
 }
 
-transformed parameters{
 
+transformed parameters{
+  
   // Extracting individual deviations for each subject for each parameter
   matrix[S, P] indi_dif = (diag_pre_multiply(tau_u, L_u) * z_expo)';
 
@@ -132,64 +103,69 @@ transformed parameters{
     param[,p]= gm[p] + indi_dif[,p];
   }
 
-  vector[S] alpha1 = (param[,1]);
-  vector[S] beta1 = (param[,2]);
+  vector[S] mean_choice = (param[,1]);
+  vector[S] sigma_e_log = (param[,2]);
 
 
   vector[S]  conf_prec1 = param[,3];  // confidence precision
-  vector[S]  meta_un_cor1 = (param[,4]);  // meta uncertainty on correct trials
-  vector[S]  meta_un_inc1 = param[,5];  // meta uncertainty on incorrect trials
+  vector[S]  sigma_m_log = param[,4];  // meta uncertainty on correct trials
+  vector[S]  sigma_choice_log = param[,5];  // meta uncertainty on incorrect trials
   vector[S]  meta_bias = param[,6];  // meta uncertainty on incorrect trials
 
 
-
-  vector[N] conf_mu;
-  vector[N] theta;
-  vector[N] theta_conf;
-
-  for (n in 1:N) {
-  theta[n] = psycho_ACC(XD[n], exp(beta1[S_id[n]]), (inv_logit(alpha1[S_id[n]])-0.5)*2) ;
-
-  if(ACC[n] == 1){
-    theta_conf[n] = psycho_conf(XD[n], exp(beta1[S_id[n]] - exp(meta_un_cor1[S_id[n]])), (inv_logit(alpha1[S_id[n]])-0.5)*2);
-  }else if(ACC[n] == 0){
-    theta_conf[n] = psycho_conf(XD[n], meta_un_inc1[S_id[n]], (inv_logit(alpha1[S_id[n]])-0.5)*2);
-  }
+  vector[N] evidence;
+  vector[N] p_action;
+  vector[N] Xhat;
+  vector[N] mu_conf;
   
+  for(i in 1:N){
+    evidence[i] = mean_choice[S_id[i]] + XD[i] + exp(sigma_e_log[S_id[i]]) * evidence_std[i];
+
+    Xhat[i] = X[i] + exp(sigma_m_log[S_id[i]]) * evidence_ind[i];
+    
+    p_action[i] = Phi((evidence[i])/exp(sigma_choice_log[S_id[i]]));
+    
+    if(a[i] == 1){
+      mu_conf[i] = inv_logit(2*evidence[i]*Xhat[i] / (exp(sigma_e_log[S_id[i]])^2));
+    }else if(a[i] == 0){
+      mu_conf[i] = 1- inv_logit(2*evidence[i]*Xhat[i] / (exp(sigma_e_log[S_id[i]])^2));
+    }
   }
-  
 }
 
-
 model {
-  gm[1] ~ normal(0,0.5); //global mean of threshold 
-  gm[2] ~ normal(1,2); //global mean of slope
+  
+  gm[1] ~ normal(0,0.3); //global mean of threshold 
+  gm[2] ~ normal(-2,1); //global mean of slope
   gm[3] ~ normal(3,2); //global mean of confidence precision
-  gm[4] ~ normal(0,2); //global mean of meta uncertainty
-  gm[5] ~ normal(0,2); //global mean of meta bias
+  gm[4] ~ normal(-1,1); //global mean of meta uncertainty
+  gm[5] ~ normal(-2,1); //global mean of meta bias
   gm[6] ~ normal(0,0.5); //global mean of meta bias
+
 
 
   to_vector(z_expo) ~ std_normal();
 
-  tau_u[1] ~ normal(0 , 1);
+  tau_u[1] ~ normal(0 , 0.3);
   tau_u[2] ~ normal(0 , 2);
   tau_u[3:5] ~ normal(0 , 2);
-  tau_u[6] ~ normal(0 , 1);
+  tau_u[6] ~ normal(0 , 0.5);
   
   L_u ~ lkj_corr_cholesky(2);
 
-
-  for (n in 1:N) {
+  evidence_std ~ std_normal();
+  evidence_ind ~ std_normal();
+  
+  a ~ bernoulli(p_action);
+  
+  
+  for(i in 1:N){
     
-    target += binomial_lpmf(a[n] | 1, theta[n]);   // likelihood for the outcomes
+    target += ord_beta_reg_lpdf(C[i] | logit(mu_conf[i]) + meta_bias[S_id[i]], exp(conf_prec1[S_id[i]]), c0[S_id[i]], c11[S_id[i]]);
 
-    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias[S_id[n]], exp(conf_prec1[S_id[n]]), c0[S_id[n]], c11[S_id[n]]);   // likelihood for confidence on correct trials 
-
+    
   }
-
-
-
+  
   for(s in 1:S){
     c0[s] ~ induced_dirichlet([1,10,1]', 0, 1, c0[s], c11[s]);
     c11[s] ~ induced_dirichlet([1,10,1]', 0, 2, c0[s], c11[s]);
@@ -197,22 +173,16 @@ model {
 
 }
 
-generated quantities {
+generated quantities{
 
-  vector[S] c1 = c0 + exp(c11);
-  matrix[P,P] correlation_matrix = L_u * L_u';
+  vector[S] sigma_e = exp(sigma_e_log);
 
-  vector[N] log_lik_bin = rep_vector(0,N);
-  vector[N] log_lik_conf = rep_vector(0,N);
-  vector[N] log_lik = rep_vector(0,N);
 
-  for(n in 1:N){
-    log_lik_bin[n] = binomial_lpmf(a[n] | 1, theta[n]);
+  vector[S]  conf_prec = exp(conf_prec1);
+  vector[S]  sigma_m = exp(sigma_m_log);
+  vector[S]  sigma_choice = exp(sigma_choice_log);
+
+
   
-    log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias[S_id[n]], exp(conf_prec1[S_id[n]]), c0[S_id[n]], c11[S_id[n]]);
-    log_lik[n] = log_lik_bin[n] + log_lik_conf[n];
-  }
-
-
-
 }
+

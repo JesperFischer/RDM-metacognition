@@ -83,7 +83,7 @@ data {
 }
 
 transformed data{
-  int P = 5;    // Number of subject-level parameters
+  int P = 6;    // Number of subject-level parameters
 }
 
 parameters {
@@ -102,7 +102,7 @@ transformed parameters{
   real conf_prec1 = gm[3];  // confidence precision
   real meta_un_cor1 = gm[4];  // meta uncertainty on correct trials
   real meta_prec_inc = gm[5];  // meta uncertainty on incorrect trials
-
+  real meta_bias = gm[6];
 
   vector[N] conf_mu;
   vector[N] theta;
@@ -127,6 +127,7 @@ model {
   gm[3] ~ normal(3,2); //global mean of confidence precision
   gm[4] ~ normal(0,2); //global mean of meta uncertainty for correct trials 
   gm[5] ~ normal(0,2); //global mean of meta uncertainty for incorrect trials 
+  gm[6] ~ normal(0,0.5); //global mean of meta uncertainty for incorrect trials 
 
 
 
@@ -135,10 +136,7 @@ model {
     
     target += binomial_lpmf(a[n] | 1, theta[n]);   // likelihood for the outcomes
 
-    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);   // likelihood for confidence on correct trials 
-
-
-    // target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n])+ meta_bias, exp(conf_prec), c0, c11);
+    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias, exp(conf_prec1), c0, c11);   // likelihood for confidence on correct trials 
 
 
   }
@@ -168,11 +166,8 @@ generated quantities {
   for(n in 1:N){
     log_lik_bin[n] = binomial_lpmf(a[n] | 1, theta[n]);
     
-    if(ACC[n] == 1){
-     log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);
-    }else if(ACC[n] == 0){
-     log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);
-    }
+    log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);
+    
     // log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias, exp(conf_prec), c0, c11);
     log_lik[n] = log_lik_conf[n] + log_lik_bin[n];
   }

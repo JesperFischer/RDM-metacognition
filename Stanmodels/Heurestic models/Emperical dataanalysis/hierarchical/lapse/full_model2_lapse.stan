@@ -5,6 +5,11 @@ functions {
     return (Phi(beta * (x-alpha)));
    }
    
+    real psycho_ACC_lapse(real x, real beta, real alpha, real lapse){
+    return (lapse + (1-2*lapse) * Phi(beta * (x-alpha)));
+   }
+   
+   
   real psycho_conf(real x, real beta, real alpha){
     return (Phi(beta * abs(x-alpha)));
    }
@@ -100,6 +105,7 @@ data {
 
   vector[N] X;
   vector[N] XD;
+  vector[N] interval;
 
   vector[N] ACC; // Vector of deltaBPM values that match the binary response
   array[N] int a;
@@ -107,7 +113,7 @@ data {
 }
 
 transformed data{
-  int P = 6;
+  int P = 8;
 }
 
 parameters {
@@ -140,6 +146,8 @@ transformed parameters{
   vector[S]  meta_un_cor1 = (param[,4]);  // meta uncertainty on correct trials
   vector[S]  meta_un_inc1 = param[,5];  // meta uncertainty on incorrect trials
   vector[S]  meta_bias = param[,6];  // meta uncertainty on incorrect trials
+  vector[S]  lapse = param[,7];  // meta uncertainty on incorrect trials
+  vector[S]  meta_un_beta = param[,8];  // meta uncertainty on incorrect trials
 
 
 
@@ -148,10 +156,10 @@ transformed parameters{
   vector[N] theta_conf;
 
   for (n in 1:N) {
-  theta[n] = psycho_ACC(XD[n], exp(beta1[S_id[n]]), (inv_logit(alpha1[S_id[n]])-0.5)*2) ;
+  theta[n] = psycho_ACC_lapse(XD[n], exp(beta1[S_id[n]]), (inv_logit(alpha1[S_id[n]])-0.5)*2, inv_logit(lapse[S_id[n]]) / 2);
 
   if(ACC[n] == 1){
-    theta_conf[n] = psycho_conf(XD[n], exp(beta1[S_id[n]] - exp(meta_un_cor1[S_id[n]])), (inv_logit(alpha1[S_id[n]])-0.5)*2);
+    theta_conf[n] = psycho_conf(XD[n], exp(beta1[S_id[n]] - exp(meta_un_cor1[S_id[n]]) +  meta_un_beta[S_id[n]] * interval[n]), (inv_logit(alpha1[S_id[n]])-0.5)*2);
   }else if(ACC[n] == 0){
     theta_conf[n] = psycho_conf(XD[n], meta_un_inc1[S_id[n]], (inv_logit(alpha1[S_id[n]])-0.5)*2);
   }
@@ -168,7 +176,8 @@ model {
   gm[4] ~ normal(0,2); //global mean of meta uncertainty
   gm[5] ~ normal(0,2); //global mean of meta bias
   gm[6] ~ normal(0,0.5); //global mean of meta bias
-
+  gm[7] ~ normal(-4,2); //global mean of meta bias
+  gm[8] ~ normal(0,0.5); 
 
   to_vector(z_expo) ~ std_normal();
 
@@ -176,6 +185,8 @@ model {
   tau_u[2] ~ normal(0 , 2);
   tau_u[3:5] ~ normal(0 , 2);
   tau_u[6] ~ normal(0 , 1);
+  tau_u[7] ~ normal(0 , 2);
+  tau_u[8] ~ normal(0 , 0.5);
   
   L_u ~ lkj_corr_cholesky(2);
 
