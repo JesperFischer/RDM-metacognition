@@ -1,5 +1,6 @@
 library(future)
 library(future.apply)
+library(ordbetareg)
 extract_Lu = function(row, P) {
   row %>%
     select(matches("^L_u\\.")) %>%
@@ -267,23 +268,49 @@ sim_new_subjects = function(max_subjects = 100){
   fits = fitter(new_subjects,5)
   
   
-  plan(multisession, workers = 4)  # Windows-friendly
+  
+  
+  plan(multisession, workers = 6)  # Windows-friendly
   safe_function <- possibly(
     function(n) fitter(new_subjects, n),
     otherwise = "Error"
   )
   
-  n_subj <- c(5, 10, 15,20)
-  
-  results_list <- future_map(
-    n_subj,
-    ~ safe_function(.x),
-    .progress = TRUE
-  )
-  
-  saveRDS(results_list,here::here("test_ss.RData"))
-  
+  for(i in 1:5){
+    n_subj <- c(5, 10, 15,20,30,50)
+    
+    library(furrr)
+    results_list <- future_map(
+      n_subj,
+      ~ safe_function(.x),
+      .progress = TRUE,
+      .options = furrr_options(seed = TRUE)
+    )
+    
+    saveRDS(results_list,here::here(paste0("test_ss",i,".RData")))
+    
+    
+  }
+
   results_list = results_list[-which(results_list == "Error")]
   
+  files = list.files((here::here("Simulations","Heurestic","Sequential Sampling","results")), full.names = T)
   
+  results_list = list()
+  
+  for(i in 1:length(files)){
+    results_list[[i]] = readRDS(files[i])
+  }
+  
+  purrr::map_dfr(
+    results_list[1:2],
+    ~ dplyr::bind_rows(purrr::map(.x, purrr::pluck, 1))
+  )
+  
+  
+  
+  
+
+  
+    
 }
