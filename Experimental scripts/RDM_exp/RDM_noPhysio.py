@@ -45,7 +45,7 @@ os.chdir(dname)
 ################################################################################################################################ 
 # general
 keyboard_type = "qwerty" # azerty
-pilot = 1
+pilot = 0
 SC_dotlife = 1
 SC_coherence = 1
 training = 0
@@ -238,19 +238,17 @@ def get_stim(SC):
     return SC.next_stim
 
 ## Function to check if the mouse is hovering over the slider bar area
-def move_slider(left, right, up, slider, SR, step_size):
-    slider_pos = slider.markerPos
+def move_slider(left, right, up, SR, step_size, slider_pos):
     if slider_pos is None:
         slider_pos = 0.5
     if left:
-        slider_pos = max(0, slider.markerPos - step_size)  
+        slider_pos = max(0, slider_pos - step_size)  
     if right:
-        slider_pos = min(1, slider.markerPos + step_size)
+        slider_pos = min(1, slider_pos + step_size)
     if up:
-        slider_pos = slider.markerPos
         SR = slider_pos
 
-    return slider_pos, SR 
+    return slider_pos, SR
 
 # Get training state
 def get_state(per_correct, mean_rt, des_per_cor, des_mean_rt, TrialType):
@@ -339,6 +337,24 @@ def generate_balanced_up_down(n_trials, max_repeats=3):
                 counts = 1
         if valid:
             return np.array(sequence)
+
+def generate_valid_sequence(sequence):
+    while True:
+        np.random.shuffle(sequence)
+
+        counts = 1
+        valid = True
+        for i in range(1, len(sequence)):
+            if sequence[i][0] == sequence[i-1][0]:
+                counts += 1
+                if counts > 3:
+                    valid = False
+                    break
+            else:
+                counts = 1
+
+        if valid:
+            return sequence.copy()
 
 ################################################################################################################################ 
 # Training 1
@@ -823,11 +839,11 @@ if training_2:
         
         fixation.draw(); win.flip(); core.wait(1)
         kb.clearEvents()
-
+        slider.reset()
+        slider.markerPos = 0.5  # Reset slider position
 
         if resp:
             T_rating_start = clock.getTime()
-            slider.reset()
             slider.draw()
             slider_instructions.draw(); slider_label_wrong.draw(); slider_label_right.draw()    
             win.flip()
@@ -855,10 +871,12 @@ if training_2:
                     core.quit()
 
                 # Get new slider value and check if new confidence
-                slider_pract_value, SR = move_slider(left, right, up, slider, SR, step_size)
+                slider_pos = slider.markerPos
+                slider_pract_value, SR = move_slider(left, right, up, SR, step_size, slider_pos)
                 slider.markerPos = slider_pract_value  # Update slider marker position
                 slider.draw()
                 slider_instructions.draw(); slider_label_wrong.draw(); slider_label_right.draw()    
+   
 
                 win.flip()
 
@@ -914,15 +932,19 @@ slope_prior = norm.pdf(np.linspace(1, 10, 10),  loc=4, scale=2)
 slope_prior = slope_prior / slope_prior.sum()  # normalize
 
 # Equal # trials left and right for first block 
-condition_direction = condition_direction = generate_balanced_up_down(n_trials,max_cons)
+
 
 # Coherence for the first block
 sequence = np.repeat(coherenceVals, repeats)
-coherence = []
-for i in range(n_seq): 
-    seq = sequence.copy()     # copy the block
-    np.random.shuffle(seq) # shuffle independently
-    coherence.extend(seq)
+sequence = np.concatenate([sequence,sequence])
+direction= [1]*9 + [0]*9
+
+stim_info_1 = list(zip(direction, sequence))
+stim_info = []
+
+for _ in range(3):
+    valid_seq = generate_valid_sequence(stim_info_1)
+    stim_info.extend(valid_seq)
 
 # determine waiting times between trials for first block
 inter_trial = truncnorm.rvs(a, b, loc=inter_t_mean, scale=inter_t_sd, size= n_trials) #Can change mean according to pilots
@@ -951,7 +973,7 @@ for eachTrial in range(n_trials*n_blocks):
 
     # Stimulus direction
     mapping = {0: ('up', 90), 1: ('down', 270)}
-    correct, direction = mapping[condition_direction[trialN]]
+    correct, direction = mapping[stim_info[trialN][0]]
             
     # save start time of the stimulus    
     T_stimulus_start = clock.getTime()
@@ -980,7 +1002,7 @@ for eachTrial in range(n_trials*n_blocks):
 
     resp = None
     event.clearEvents() 
-    DotMotion.coherence = coherence[trialN]
+    DotMotion.coherence = stim_info[trialN][1]
     DotMotion.dotLife = dotLife
     DotMotion.dir = direction
 
@@ -1047,12 +1069,11 @@ for eachTrial in range(n_trials*n_blocks):
     
     #fixation cross
     #win.color = 'black'
+    interval = manipulation[trialN]
     fixation.draw() ; win.flip()
-    kb.clearEvents()
 
     #Waiting time for cofidence ratings
     if resp:
-        interval = manipulation[trialN]
         core.wait(interval - rt[trialN]- 0.05)
 
         #ser.write(str.encode('01'))
@@ -1061,9 +1082,6 @@ for eachTrial in range(n_trials*n_blocks):
 
 
         T_rating_start = clock.getTime()
-        slider.reset()
-        start_conf = np.random.uniform(low=0.25, high=0.75)
-        slider.setMarkerPos(start_conf)
         #win.color = 'white'
         slider.draw()
         if blockN == scale_Nblock:
@@ -1072,8 +1090,10 @@ for eachTrial in range(n_trials*n_blocks):
             slider_instructions.draw(); slider_label_wrong.draw(); slider_label_right.draw()
         win.flip()
 
-
         SR = None
+        slider.reset()
+        start_conf = 0.5 # random start position for confidence slider
+        slider.MarkerPos = start_conf # random start position
         #tracker.sendMessage("start_confidence")
         while SR is None: 
             # check if participant is 
@@ -1104,7 +1124,8 @@ for eachTrial in range(n_trials*n_blocks):
                 core.quit()
 
             # Get new slider value and check if new confidence
-            slider_pract_value, SR = move_slider(left, right, up, slider, SR, step_size)
+            slider_pos = slider.markerPos
+            slider_pract_value, SR = move_slider(left, right, up, SR, step_size, slider_pos)
             slider.markerPos = slider_pract_value  # Update slider marker position
         
             # Redraw the slider and instructions
@@ -1175,9 +1196,6 @@ for eachTrial in range(n_trials*n_blocks):
             blockN += 1
             trialN = 0
 
-            #Update variables for next block
-            condition_direction = condition_direction = generate_balanced_up_down(n_trials,max_cons)
-
             # determine waiting times between trials and waiting times confidence interval
             inter_trial = truncnorm.rvs(a, b, loc=inter_t_mean, scale=inter_t_sd, size= n_trials) #Can change mean according to pilots
 
@@ -1188,12 +1206,17 @@ for eachTrial in range(n_trials*n_blocks):
                 a2 = standard(1.5,current_mean, current_sd); b2 = standard(5, current_mean, current_sd) # normalized parameters
                 manipulation = truncnorm.rvs(a2, b2, loc= current_mean, scale=current_sd, size= n_trials) 
             
-            #Update coherence values for next block 
-            coherence = []
-            for i in range(n_seq): 
-                seq = sequence.copy()     # copy the block
-                np.random.shuffle(seq) # shuffle independently
-                coherence.extend(seq)
+            # Coherence for the first block
+            sequence = np.repeat(coherenceVals, repeats)
+            sequence = np.concatenate([sequence,sequence])
+            direction= [1]*9 + [0]*9
+
+            stim_info_1 = list(zip(direction, sequence))
+            stim_info = []
+
+            for _ in range(3):
+                valid_seq = generate_valid_sequence(stim_info_1)
+                stim_info.extend(valid_seq)
 
             #Performance for current block
             num_correct = sum(acc) 
