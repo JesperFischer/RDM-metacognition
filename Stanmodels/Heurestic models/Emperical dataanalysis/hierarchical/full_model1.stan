@@ -107,7 +107,7 @@ data {
 }
 
 transformed data{
-  int P = 5;
+  int P = 6;
 }
 
 parameters {
@@ -137,8 +137,9 @@ transformed parameters{
 
 
   vector[S]  conf_prec1 = param[,3];  // confidence precision
-  vector[S]  meta_un_cor1 = param[,4];  // meta uncertainty on correct trials
+  vector[S]  meta_un_cor1 = (param[,4]);  // meta uncertainty on correct trials
   vector[S]  meta_un_inc1 = param[,5];  // meta uncertainty on incorrect trials
+  vector[S]  meta_bias = param[,6];  // meta uncertainty on incorrect trials
 
 
 
@@ -150,9 +151,9 @@ transformed parameters{
   theta[n] = psycho_ACC(XD[n], exp(beta1[S_id[n]]), (inv_logit(alpha1[S_id[n]])-0.5)*2) ;
 
   if(ACC[n] == 1){
-    theta_conf[n] = psycho_conf(XD[n], exp(beta1[S_id[n]]) + meta_un_cor1[S_id[n]], (inv_logit(alpha1[S_id[n]])-0.5)*2);
+    theta_conf[n] = psycho_conf(XD[n], exp(beta1[S_id[n]] - exp(meta_un_cor1[S_id[n]])), (inv_logit(alpha1[S_id[n]])-0.5)*2);
   }else if(ACC[n] == 0){
-    theta_conf[n] = psycho_conf(XD[n], exp(beta1[S_id[n]]) + meta_un_inc1[S_id[n]], (inv_logit(alpha1[S_id[n]])-0.5)*2);
+    theta_conf[n] = psycho_conf(XD[n], meta_un_inc1[S_id[n]], (inv_logit(alpha1[S_id[n]])-0.5)*2);
   }
   
   }
@@ -166,6 +167,7 @@ model {
   gm[3] ~ normal(3,2); //global mean of confidence precision
   gm[4] ~ normal(0,2); //global mean of meta uncertainty
   gm[5] ~ normal(0,2); //global mean of meta bias
+  gm[6] ~ normal(0,0.5); //global mean of meta bias
 
 
   to_vector(z_expo) ~ std_normal();
@@ -173,6 +175,8 @@ model {
   tau_u[1] ~ normal(0 , 1);
   tau_u[2] ~ normal(0 , 2);
   tau_u[3:5] ~ normal(0 , 2);
+  tau_u[6] ~ normal(0 , 1);
+  
   L_u ~ lkj_corr_cholesky(2);
 
 
@@ -180,7 +184,7 @@ model {
     
     target += binomial_lpmf(a[n] | 1, theta[n]);   // likelihood for the outcomes
 
-    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1[S_id[n]]), c0[S_id[n]], c11[S_id[n]]);   // likelihood for confidence on correct trials 
+    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias[S_id[n]], exp(conf_prec1[S_id[n]]), c0[S_id[n]], c11[S_id[n]]);   // likelihood for confidence on correct trials 
 
   }
 
@@ -205,7 +209,7 @@ generated quantities {
   for(n in 1:N){
     log_lik_bin[n] = binomial_lpmf(a[n] | 1, theta[n]);
   
-    log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1[S_id[n]]), c0[S_id[n]], c11[S_id[n]]);
+    log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias[S_id[n]], exp(conf_prec1[S_id[n]]), c0[S_id[n]], c11[S_id[n]]);
     log_lik[n] = log_lik_bin[n] + log_lik_conf[n];
   }
 

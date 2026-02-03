@@ -13,7 +13,7 @@ fit_model_ss = function(df, model,samples){
                 ACC = df$Correct,
                 starts = 1,
                 ends = nrow(df),
-                interval = df$interTrial.interval)
+                interval = df$interval)
 
 
   fit <-model$sample(
@@ -21,7 +21,7 @@ fit_model_ss = function(df, model,samples){
     refresh = 300,
     iter_sampling = samples,
     iter_warmup = samples,
-    adapt_delta = 0.95,
+    adapt_delta = 0.99,
     max_treedepth = 12,
     init  = 0,
     parallel_chains = 4)
@@ -53,12 +53,12 @@ dia = function(fit,df){
     }
     
   available <- names(as_draws_df(fit$draws()))
-  parameters = c("sigma_choice","mean_choice","prec_conf","sigma_m","sigma_e")
+  parameters = c("sigma_choice","mean_choice","prec_conf","sigma_m","sigma_e", "meta_bias")
   
   if(length(intersect(parameters, available)) != 0){
     params <- intersect(parameters, available)
   }
-  parameters = c("c0","c11","alpha1","beta1","alpha","beta","conf_prec1","meta_un_cor1","meta_un_inc1")
+  parameters = c("c0","c11","alpha1","beta1","alpha","beta","conf_prec1","meta_un_cor1","meta_un_inc1","meta_bias")
   if(length(intersect(parameters, available)) > 5){
     params <- intersect(parameters, available)
     
@@ -92,12 +92,70 @@ pp = function(fit,df,n_bins){
   }
   
   available <- names(as_draws_df(fit$draws()))
-  parameters = c("sigma_choice","mean_choice","prec_conf","sigma_m","sigma_e")
+  parameters = c("sigma_choice","mean_choice","prec_conf","sigma_m","sigma_e", "meta_bias")
   
   if(length(intersect(parameters, available)) != 0){
     params <- intersect(parameters, available)
+    
+    
+    
+    behplot = plot_beh_data(df,NULL,F, r_data = T)
+    
+    preds = fit$draws(c("p_action","mu_conf","evidence")) %>% as_draws_df() %>% select(-contains(".")) %>% pivot_longer(everything()) %>% 
+      separate(
+        name,
+        into = c("param_base", "trial"),
+        sep = "\\[|\\]",
+        extra = "drop"
+      ) %>% 
+      mutate(trial = as.integer(trial)) %>% 
+      group_by(param_base,trial) %>% 
+      summarize(mean = mean(value, na.rm =T),
+                q5 = quantile(value, 0.05, na.rm =T),
+                q95 = quantile(value, 0.95, na.rm =T)) %>% 
+      pivot_wider(names_from = "param_base", values_from = c(mean,q5,q95))
+    
+    
+    dq = inner_join(behplot,preds)
+  
+    
+    Confidence = dq %>% ggplot(aes(x = Confidence, y = mean_mu_conf, ymin = q5_mu_conf, ymax = q95_mu_conf, col = as.factor(Correct)))+
+      geom_pointrange()+
+      geom_abline()+
+      theme_classic()+
+      labs(y= "Predicted confidence",
+           x = "Reported confidence")+
+      theme(legend.position = "top")+
+      ggtitle(unique(behplot$ID))
+      
+    
+    Actions = dq %>% 
+      ggplot(aes(x = (Y), y = mean_p_action, ymin = q5_p_action, ymax = q95_p_action))+
+      geom_pointrange(position = position_dodge2(width = 0.2), alpha = 0.3)+
+      geom_abline()+
+      theme_classic()+
+      labs(y= "Predicted Probability of action",
+           x = "Reported Action")+
+      theme(legend.position = "top")+
+      ggtitle(unique(behplot$ID))
+    
+    
+    RT_evi = dq %>% 
+      ggplot(aes(y = RT, x = mean_evidence, xmin = q5_evidence, xmax = q95_evidence))+
+      geom_pointrange(position = position_dodge2(width = 0.2), alpha = 0.3)+
+      theme_classic()+
+      labs(y= "Response time (s)",
+           x = "Estimated Evidence")+
+      theme(legend.position = "top")+
+      ggtitle(unique(behplot$ID))
+    
+    
+    return(list(Confidence, Actions, RT_evi))
+    
   }
-  parameters = c("c0","c11","alpha1","beta1","conf_prec1","meta_un_cor1","meta_un_inc1")
+  
+  
+  parameters = c("c0","c11","alpha1","beta1","conf_prec1","meta_un_cor1","meta_un_inc1","meta_bias")
   if(length(intersect(parameters, available)) != 0){
     params <- intersect(parameters, available)
     
@@ -119,7 +177,10 @@ pp = function(fit,df,n_bins){
       mutate(p = psycho(x, (brms::inv_logit_scaled(alpha1)-0.5)*2,exp(beta1)),
              resp = rbinom(n(),1,p)) %>% 
       mutate(ACC = ifelse(resp == 0 & x < 0,1, ifelse(resp == 1 & x > 0, 1, 0))) %>% 
-      mutate(conf_mu = ifelse(ACC == 1, psycho_ACC(x,(brms::inv_logit_scaled(alpha1)-0.5)*2, exp(beta1) + meta_un_cor1), psycho_ACC(x,(brms::inv_logit_scaled(alpha1)-0.5)*2, exp(beta1) + meta_un_inc1))) %>% 
+      mutate(conf_mu = ifelse(ACC == 1,
+                              psycho_ACC(x,(brms::inv_logit_scaled(alpha1)-0.5)*2, exp(beta1 - exp(meta_un_cor1))),
+                              psycho_ACC(x,(brms::inv_logit_scaled(alpha1)-0.5)*2,meta_un_inc1))) %>% 
+      mutate(conf_mu = brms::inv_logit_scaled(brms::logit_scaled(conf_mu) + meta_bias)) %>% 
       mutate(ID = unique(behplot$ID)[1])
     
     
@@ -185,13 +246,24 @@ dia_hier = function(fit,df){
   
 
   available <- names(as_draws_df(fit$draws()))
-  parameters = c("sigma_choice[1]","mean_choice[1]","prec_conf[1]","sigma_m[1]","sigma_e[1]")
+  parameters = c("sigma_choice[1]","mean_choice[1]","conf_prec[1]","sigma_m[1]","sigma_e[1]")
   
   if(length(intersect(parameters, available)) != 0){
     params <- intersect(parameters, available)
+    
+
+    n_subj = length(unique(df$ID))
+    subs = rep(unique(df$ID), length(params))
+    
+    subj_parameters = str_sub(parameters, 1, -4)
+    
+    subj_parameters = paste0(rep(subj_parameters, each = n_subj),"[",rep(seq_len(n_subj), times = length(subj_parameters)),"]")
+    
   }
-  parameters = c("c0[1]","c11[1]","alpha1[1]","beta1[1]","conf_prec1[1]","meta_un_cor1[1]","meta_un_inc1[1]")
-  if(length(intersect(parameters, available)) != 0){
+  
+  
+  parameters = c("c0[1]","c11[1]","alpha1[1]","beta1[1]","conf_prec1[1]","meta_un_cor1[1]","meta_un_inc1[1]","meta_bias[1]","lapse[1]","meta_un_beta[1]","meta_bias_beta[1]")
+  if(length(intersect(parameters, available)) > 5){
     params <- intersect(parameters, available)
     
     n_subj = length(unique(df$ID))
@@ -226,7 +298,6 @@ dia_hier = function(fit,df){
 pp_hier = function(fit,df,n_bins){
   
 
-  
   available <- names(as_draws_df(fit$draws()))
   parameters = c("sigma_choice[1]","mean_choice[1]","prec_conf[1]","sigma_m[1]","sigma_e[1]")
   
@@ -234,7 +305,8 @@ pp_hier = function(fit,df,n_bins){
     params <- intersect(parameters, available)
   }
   
-  parameters = c("c0[1]","c11[1]","alpha1[1]","beta1[1]","conf_prec1[1]","meta_un_cor1[1]","meta_un_inc1[1]")
+  parameters = c("c0[1]","c11[1]","alpha1[1]","beta1[1]","conf_prec1[1]","meta_un_cor1[1]","meta_un_inc1[1]","meta_bias[1]","lapse[1]","meta_un_beta[1]","meta_bias_beta[1]")
+  
   if(length(intersect(parameters, available)) != 0){
     params <- intersect(parameters, available)
     
@@ -246,7 +318,7 @@ pp_hier = function(fit,df,n_bins){
     subj_parameters = paste0(rep(subj_parameters, each = n_subj),"[",rep(seq_len(n_subj), times = length(subj_parameters)),"]")
   
     
-    psycho = function(x,alpha,beta){
+    psycho = function(x,alpha,beta,lapse){
       return(pnorm(beta * (x-alpha)))
     }
     
@@ -262,14 +334,26 @@ pp_hier = function(fit,df,n_bins){
                        "beta1",
                        "conf_prec1",
                        "meta_un_cor1",
-                       "meta_un_inc1")) %>%
+                       "meta_un_inc1",
+                       "meta_bias",
+                       "lapse",
+                       "meta_un_beta",
+                       "meta_bias_beta")) %>%
       mutate(draw = 1:n()) %>% 
-      mutate(x = list(seq(min(df$X)-0.2,max(df$X)+0.2,by = 0.05))) %>% unnest() %>% 
+      mutate(x = list(seq(min(df$X)-0.2,max(df$X)+0.2,by = 0.05))) %>% 
+      unnest() %>% 
+      mutate(interval = list(seq(1,5,by = 0.1))) %>% 
+      unnest() %>% 
       group_by(draw) %>% 
-      mutate(p = psycho(x, (brms::inv_logit_scaled(alpha1)-0.5)*2,exp(beta1)),
+      mutate(p = psycho(x, (brms::inv_logit_scaled(alpha1)-0.5)*2,exp(beta1) , brms::inv_logit_scaled(lapse) / 2),
              resp = rbinom(n(),1,p)) %>% 
       mutate(ACC = ifelse(resp == 0 & x < 0,1, ifelse(resp == 1 & x > 0, 1, 0))) %>% 
-      mutate(conf_mu = ifelse(ACC == 1, psycho_ACC(x,(brms::inv_logit_scaled(alpha1)-0.5)*2, exp(beta1) + meta_un_cor1), psycho_ACC(x,(brms::inv_logit_scaled(alpha1)-0.5)*2, exp(beta1) + meta_un_inc1)))
+      mutate(conf_mu = ifelse(ACC == 1,
+                              psycho_ACC(x,(brms::inv_logit_scaled(alpha1)-0.5)*2, exp(beta1 - exp(meta_un_cor1) + interval * meta_un_beta)),
+                              psycho_ACC(x,(brms::inv_logit_scaled(alpha1)-0.5)*2, meta_un_inc1))) %>% 
+      mutate(conf_mu = brms::inv_logit_scaled(brms::logit_scaled(conf_mu) + meta_bias + interval * meta_bias_beta))
+    
+      
     
     
     df1 = bind_rows(
@@ -353,7 +437,12 @@ pp_hier = function(fit,df,n_bins){
     
     
     
-    pred_subj = as_draws_df(fit$draws(c("alpha1","beta1","meta_un_cor1","meta_un_inc1"))) %>% select(-contains(".")) %>% 
+    pred_subj = as_draws_df(fit$draws(c("alpha1","beta1","meta_un_cor1",
+                                        "meta_un_inc1","meta_bias",
+                                        "lapse",
+                                        "meta_un_beta",
+                                        "meta_bias_beta"
+                                        ))) %>% select(-contains(".")) %>% 
       mutate(draw = 1:n()) %>% 
       pivot_longer(-draw) %>% 
       mutate(
@@ -363,12 +452,19 @@ pp_hier = function(fit,df,n_bins){
         name = NULL
       ) %>% 
       pivot_wider(names_from = "param", values_from = "value") %>% 
-      mutate(x = list(seq(min(df$X)-0.2,max(df$X)+0.2,by = 0.05))) %>% unnest() %>% 
+      mutate(x = list(seq(min(df$X)-0.2,max(df$X)+0.2,by = 0.05))) %>% 
+      unnest() %>% 
+      mutate(interval = list(seq(1,5,by = 0.1))) %>% 
+      unnest() %>% 
       group_by(draw, ID) %>% 
-      mutate(p = psycho(x, (brms::inv_logit_scaled(alpha1)-0.5)*2,exp(beta1)),
+      mutate(p = psycho(x, (brms::inv_logit_scaled(alpha1)-0.5)*2,exp(beta1), brms::inv_logit_scaled(lapse) / 2),
              resp = rbinom(n(),1,p)) %>% 
       mutate(ACC = ifelse(resp == 0 & x < 0,1, ifelse(resp == 1 & x > 0, 1, 0))) %>% 
-      mutate(conf_mu = ifelse(ACC == 1, psycho_ACC(x,(brms::inv_logit_scaled(alpha1)-0.5)*2, exp(beta1) + meta_un_cor1), psycho_ACC(x,(brms::inv_logit_scaled(alpha1)-0.5)*2, exp(beta1) + meta_un_inc1)))
+      mutate(conf_mu = ifelse(ACC == 1,
+                              psycho_ACC(x,(brms::inv_logit_scaled(alpha1)-0.5)*2, exp(beta1 - exp(meta_un_cor1) + interval * meta_un_beta)),
+                              psycho_ACC(x,(brms::inv_logit_scaled(alpha1)-0.5)*2, meta_un_inc1))) %>% 
+      mutate(conf_mu = brms::inv_logit_scaled(brms::logit_scaled(conf_mu) + meta_bias+ interval * meta_bias_beta))
+    
     
     
     df1_sub = bind_rows(
@@ -448,3 +544,346 @@ pp_hier = function(fit,df,n_bins){
   }
   
 }
+
+
+correlation_matrix = function(fit){
+  
+  available <- names(as_draws_df(fit$draws()))
+  
+  parameters = c("c0[1]","c11[1]","alpha1[1]","beta1[1]","conf_prec1[1]","meta_un_cor1[1]","meta_un_inc1[1]","meta_bias[1]", 
+                 "lapse[1]",
+                 "meta_un_beta[1]",
+                 "meta_bias_beta[1]")
+  if(length(intersect(parameters, available)) != 0){
+    params <- intersect(parameters, available)
+    param_names <- c(
+      "alpha1",
+      "beta1",
+      "conf_prec1",
+      "meta_un_cor1",
+      "meta_un_inc1",
+      "meta_bias",
+      "lapse",
+      "meta_un_beta",
+      "meta_bias_beta"
+    )
+    
+    corr_df <- fit$draws("correlation_matrix") %>% 
+      as_draws_df() %>% 
+      pivot_longer(
+        cols = everything(),
+        names_to = "param",
+        values_to = "value"
+      ) %>% 
+      separate(
+        param,
+        into = c("matrix", "row", "col"),
+        sep = "\\[|,|\\]",
+        extra = "drop"
+      ) %>% 
+      mutate(
+        row = as.integer(row),
+        col = as.integer(col),
+        row_name = param_names[row],
+        col_name = param_names[col]
+      )
+    
+    
+    corr_hdi_df <- corr_df %>% 
+      mutate(lower_triangle = row > col) %>% 
+      # filter(lower_triangle) %>% 
+      group_by(row_name, col_name,lower_triangle) %>% 
+      summarise(
+        mean = mean(value),
+        q5 = hdi(value, prob = 0.95)[,1],
+        q95 = hdi(value, prob = 0.95)[,2],
+        .groups = "drop"
+      ) %>% drop_na() %>%
+      mutate(
+        label = sprintf(
+          "%.2f \n [%.2f, %.2f]",
+          mean, q5, q95
+        )
+      )
+    
+    plot = corr_hdi_df %>% 
+      mutate(
+        row_name = factor(row_name, levels = param_names),
+        col_name = factor(col_name, levels = param_names),
+        fill_plot  = ifelse(lower_triangle, mean, NA_real_),
+        label_plot = ifelse(lower_triangle, label, "")
+      ) %>% 
+      ggplot(aes(x = col_name, y = row_name, fill = fill_plot)) +
+      geom_tile() +
+      scale_fill_gradient2(
+        low = "blue",
+        mid = "white",
+        high = "red",
+        limits = c(-1, 1)
+      ) +
+      geom_text(
+        aes(label = label_plot),
+        size = 2.5,
+        colour = "black"
+      ) +
+      coord_fixed() +
+      theme_minimal() +
+      labs(
+        x = NULL,
+        y = NULL,
+        fill = "Mean corr"
+      ) +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1)
+      )
+    
+    
+    table_df <- corr_hdi_df %>% 
+      select(row_name, col_name, mean, q5, q95) %>% 
+      arrange(row_name, col_name) %>%
+      mutate(sig = (q5 > 0) | (q95 < 0))
+    
+    
+    
+    table = flextable::flextable(corr_hdi_df %>% 
+                                   filter(mean != 1) %>% 
+                                   select(row_name, col_name, mean, q5, q95) %>% 
+                                   arrange(row_name, col_name) %>%
+                                   mutate(sig = (q5 > 0) | (q95 < 0))) %>% 
+      bg(i  =~  (q5 > 0) | (q95 < 0), bg = "darkgreen")
+    
+    
+    
+    # parameter by parameter scatter plots:
+    
+    # Extract subject-level draws
+    draws_df <- fit$draws(param_names) %>%  # replace "theta" with your per-subject parameters
+      as_draws_df() %>% 
+      select(-contains(".")) %>% 
+      pivot_longer(
+        cols = everything(),
+        names_to = "param",
+        values_to = "value"
+      ) %>% 
+      separate(
+        param,
+        into = c("param_base", "subject"),
+        sep = "\\[|\\]",
+        extra = "drop"
+      ) %>% 
+      mutate(
+        subject = as.integer(subject),
+      ) %>% 
+      pivot_wider(names_from = param_base, values_from = value) %>% drop_na()
+    
+    # Create all combinations of parameters
+    param_combos <- expand.grid(
+      row_name = param_names,
+      col_name = param_names,
+      stringsAsFactors = FALSE
+    ) %>% 
+      mutate(lower_triangle = match(row_name, param_names) > match(col_name, param_names))
+    
+    # Join data for plotting
+    scatter_df <- param_combos %>% 
+      filter(lower_triangle) %>%  # only lower triangle
+      rowwise() %>% 
+      mutate(
+        data_list = list(draws_df %>% select(subject, row_val = all_of(row_name), col_val = all_of(col_name)))
+      ) %>% 
+      unnest(cols = c(data_list)) %>% 
+      group_by(row_name,col_name,subject) %>% 
+      summarize(mean_row = mean(unlist(row_val)),
+                q5_row = hdi(unlist(row_val))[,1],
+                q95_row = hdi(unlist(row_val))[,2],
+                mean_col = mean(unlist(col_val)),
+                q5_col = hdi(unlist(col_val))[,1],
+                q95_col = hdi(unlist(col_val))[,2]
+      )
+    
+    scatter_plot <- scatter_df %>% 
+      mutate(
+        row_name = factor(row_name, levels = rev(param_names)),
+        col_name = factor(col_name, levels = param_names),
+      ) %>% 
+      ggplot(aes(x = mean_col, y = mean_row)) +
+      geom_pointrange(aes(ymin = q5_row,ymax = q95_row),alpha = 0.5, size = 0.05) +
+      geom_pointrange(aes(xmin = q5_col,xmax = q95_col),alpha = 0.5, size = 0.05) +
+      facet_grid(row_name ~ col_name, scales = "free") +
+      theme_minimal() +
+      labs(x = NULL, y = NULL)
+      # geom_smooth(method = "lm", se = F)
+    
+    
+    
+    
+    return(list(plot,scatter_plot,table))
+     
+  }
+  
+
+  
+}
+
+get_marginal_estimates = function(fit){
+ 
+  
+  available <- names(as_draws_df(fit$draws()))
+  parameters = c("c0[1]","c11[1]","alpha1[1]","beta1[1]","conf_prec1[1]",
+                 "meta_un_cor1[1]","meta_un_inc1[1]","meta_bias[1]", 
+                 "lapse[1]","meta_un_beta[1]","meta_bias_beta[1]")
+  
+  if(length(intersect(parameters, available)) > 5){
+    params <- intersect(parameters, available)
+    
+    param_names <- c(
+      "alpha1",
+      "beta1",
+      "conf_prec1",
+      "meta_un_cor1",
+      "meta_un_inc1",
+      "meta_bias",
+      "lapse",
+      "meta_un_beta",
+      "meta_bias_beta")
+      
+    
+    grouplevel_posterior <- fit$draws(c("gm","tau_u")) %>% 
+      as_draws_df() %>% 
+      select(-contains(".")) %>% 
+      rename_with(~c(paste0("mean_",param_names),paste0("tau_",param_names))) %>% 
+      pivot_longer(
+        cols = everything(),
+        names_to = "variable",
+        values_to = "value"
+      ) %>% mutate(Posterior = "Posterior")
+    
+    
+      
+    n_draws = nrow(as_draws_df(fit$sampler_diagnostics()))
+    priors <- tibble(
+      variable = c(
+        paste0("mean_", param_names),
+        paste0("tau_",  param_names)
+      ),
+      mean = c(
+        # gm (global means)
+        0,  1,  3,  0,  0,  0, -4,0,0,
+        # tau_u
+        0,  0,  0,  0,  0,  0,0,0,0
+      ),
+      sd = c(
+        # gm (global means)
+        0.5, 2, 2, 2, 2, 0.5, 2, 0.5,0.5,
+        # tau_u
+        1,   2, 2, 2, 2, 1,2,0.5,0.5
+      ))
+    
+    grouplevel_prior <- priors %>%
+      mutate(value = map2(mean, sd, ~ rnorm(n_draws, .x, .y))) %>%
+      unnest(value) %>% 
+      mutate(Posterior = "Prior",
+             mean = NULL,
+             sd = NULL)
+    
+    priorposterior_mean = rbind(grouplevel_prior,grouplevel_posterior) %>% 
+      filter(grepl("mean_",variable)) %>% 
+      ggplot(aes(x = value,fill = Posterior))+
+      geom_histogram(col = "black", position = "identity", alpha = 0.5)+
+      facet_wrap(~variable, scales = "free")+
+      theme_classic()+
+      theme(legend.position = "top")
+    
+    priorposterior_sd = rbind(grouplevel_prior,grouplevel_posterior) %>% 
+      filter(grepl("tau_",variable)) %>% 
+      ggplot(aes(x = value,fill = Posterior))+
+      geom_histogram(col = "black", position = "identity", alpha = 0.5)+
+      facet_wrap(~variable, scales = "free")+
+      theme_classic()+
+      theme(legend.position = "top")
+    
+    
+    return(list(priorposterior_mean,priorposterior_sd))
+    
+    
+  }
+    
+  
+
+  parameters = c("sigma_choice[1]","mean_choice[1]","conf_prec[1]","sigma_m[1]","sigma_e[1]","meta_bias[1]")
+
+  if(length(intersect(parameters, available)) > 5){
+    params <- intersect(parameters, available)
+
+    param_names <- c(
+      "mean_choice",
+      "sigma_e",
+      "conf_prec",
+      "sigma_m",
+      "sigma_choice",
+      "meta_bias")
+    
+    
+    grouplevel_posterior <- fit$draws(c("gm","tau_u")) %>% 
+      as_draws_df() %>% 
+      select(-contains(".")) %>% 
+      rename_with(~c(paste0("mean_",param_names),paste0("tau_",param_names))) %>% 
+      pivot_longer(
+        cols = everything(),
+        names_to = "variable",
+        values_to = "value"
+      ) %>% mutate(Posterior = "Posterior")
+    
+    
+    n_draws = nrow(as_draws_df(fit$sampler_diagnostics()))
+    
+    priors <- tibble(
+      variable = c(
+        paste0("mean_", param_names),
+        paste0("tau_",  param_names)
+      ),
+      mean = c(
+        # gm (global means)
+        0, -2,  3,  -1,  -2,  0,
+        # tau_u
+        0,  0,  0,  0,  0,  0
+      ),
+      sd = c(
+        # gm (global means)
+        0.3, 1, 2, 1, 1, 0.5,
+        # tau_u
+        0.3, 2, 2, 2, 2, 0.5
+      ))
+    
+    grouplevel_prior <- priors %>%
+      mutate(value = map2(mean, sd, ~ rnorm(n_draws, .x, .y))) %>%
+      unnest(value) %>% 
+      mutate(Posterior = "Prior",
+             mean = NULL,
+             sd = NULL)
+    
+    priorposterior_mean = rbind(grouplevel_prior,grouplevel_posterior) %>% 
+      filter(!grepl("tau_",variable)) %>% 
+      ggplot(aes(x = value,fill = Posterior))+
+      geom_histogram(col = "black", position = "identity", alpha = 0.5)+
+      facet_wrap(~variable, scales = "free")+
+      theme_classic()+
+      theme(legend.position = "top")
+    
+    priorposterior_sd = rbind(grouplevel_prior,grouplevel_posterior) %>% 
+      filter(grepl("tau_",variable)) %>% 
+      ggplot(aes(x = value,fill = Posterior))+
+      geom_histogram(col = "black", position = "identity", alpha = 0.5)+
+      facet_wrap(~variable, scales = "free")+
+      theme_classic()+
+      theme(legend.position = "top")
+    
+    
+    return(list(priorposterior_mean,priorposterior_sd))
+    
+  }
+  
+  
+  }
+
+

@@ -73,7 +73,7 @@ data {
 }
 
 transformed data{
-  int P = 5;
+  int P = 6;
 }
 
 parameters {
@@ -110,6 +110,7 @@ transformed parameters{
   vector[S]  conf_prec1 = param[,3];  // confidence precision
   vector[S]  sigma_m_log = param[,4];  // meta uncertainty on correct trials
   vector[S]  sigma_choice_log = param[,5];  // meta uncertainty on incorrect trials
+  vector[S]  meta_bias = param[,6];  // meta uncertainty on incorrect trials
 
 
   vector[N] evidence;
@@ -119,7 +120,7 @@ transformed parameters{
   
   for(i in 1:N){
     evidence[i] = mean_choice[S_id[i]] + XD[i] + exp(sigma_e_log[S_id[i]]) * evidence_std[i];
-    // evidence[i] = X[i] * D[i] + exp(sigma_e_log) * evidence_std[i];
+
     ehat[i] = evidence[i] + exp(sigma_m_log[S_id[i]]) * evidence_ind[i];
     
     p_action[i] = Phi((evidence[i])/exp(sigma_choice_log[S_id[i]]));
@@ -135,10 +136,12 @@ transformed parameters{
 model {
   
   gm[1] ~ normal(0,0.3); //global mean of threshold 
-  gm[2] ~ normal(-1,1); //global mean of slope
+  gm[2] ~ normal(-2,1); //global mean of slope
   gm[3] ~ normal(3,2); //global mean of confidence precision
   gm[4] ~ normal(-1,1); //global mean of meta uncertainty
   gm[5] ~ normal(-2,1); //global mean of meta bias
+  gm[6] ~ normal(0,0.5); //global mean of meta bias
+
 
 
   to_vector(z_expo) ~ std_normal();
@@ -146,19 +149,19 @@ model {
   tau_u[1] ~ normal(0 , 0.3);
   tau_u[2] ~ normal(0 , 2);
   tau_u[3:5] ~ normal(0 , 2);
+  tau_u[6] ~ normal(0 , 0.5);
+  
   L_u ~ lkj_corr_cholesky(2);
 
-  
   evidence_std ~ std_normal();
   evidence_ind ~ std_normal();
-  
   
   a ~ bernoulli(p_action);
   
   
   for(i in 1:N){
     
-    target += ord_beta_reg_lpdf(C[i] | logit(mu_conf[i]), exp(conf_prec1[S_id[i]]), c0[S_id[i]], c11[S_id[i]]);
+    target += ord_beta_reg_lpdf(C[i] | logit(mu_conf[i]) + meta_bias[S_id[i]], exp(conf_prec1[S_id[i]]), c0[S_id[i]], c11[S_id[i]]);
 
     
   }
@@ -169,3 +172,17 @@ model {
   }
 
 }
+
+generated quantities{
+
+  vector[S] sigma_e = exp(sigma_e_log);
+
+
+  vector[S]  conf_prec = exp(conf_prec1);
+  vector[S]  sigma_m = exp(sigma_m_log);
+  vector[S]  sigma_choice = exp(sigma_choice_log);
+
+
+  
+}
+

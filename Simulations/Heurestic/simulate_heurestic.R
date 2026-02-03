@@ -14,11 +14,11 @@ library(purrr)
 n = 100  # N simulated values 
 x_seq = seq(from = -1, to =1, by = 0.01)    # Sequence of coherence values
 
-beta =   5  # Slope (expressed in precision on normal)
-meta_un = 3   # meta uncertainty for correct trials (expressed in precision on normal)
-meta_un_IC = -4# meta uncertainty for incorrect trials (expressed in precision on normal)
+beta =  5  # Slope (expressed in precision on normal)
+meta_un = -2  # meta uncertainty for correct trials (expressed in precision on normal)
+meta_un_IC = 3 # meta uncertainty for incorrect trials (expressed in precision on normal)
 alpha = -0.1    # threshold
-conf_prec = 100   # confidence precision (precision on beta distribution)
+conf_prec = 10   # confidence precision (precision on beta distribution)
 
 c0 = -5  # Cut points for ordered beta regression
 c1 = 5
@@ -40,9 +40,9 @@ ACC = ifelse(D == -1 & out == 0,1,ifelse(D == 1 & out == 1,1,0)) # Accuracy base
 conf_mu = numeric(n)
 for(i in 1:n){
   if(ACC[i] == 1){
-    conf_mu[i] <- pnorm((meta_un) * (abs(X[i] - alpha)))
+    conf_mu[i] <- pnorm((beta+meta_un) * (abs(X[i] - alpha)))
   } else if(ACC[i] == 0){
-    conf_mu[i] <- pnorm((meta_un_IC) * (abs(X[i] - alpha)))
+    conf_mu[i] <- pnorm(meta_un_IC * (abs(X[i] - alpha)))
   }
 }
 
@@ -61,7 +61,8 @@ binned_out = sim_data %>% group_by((bins)) %>%
 ## Plot to check validity of raw simulations
 
 ggplot()+geom_line(data = sim_data, aes(X,theta))+ geom_point(data= binned_out, aes(bin,resp, col ="red"))+theme_minimal()   # Plot to check validity of raw simulations
-ggplot(sim_data)+geom_line(aes(X,conf_mu, color = factor(ACC, levels = c(0, 1), labels = c("Incorrect", "Correct"))))+
+ggplot(sim_data)+
+  geom_line(aes(X,conf_mu, color = factor(ACC, levels = c(0, 1), labels = c("Incorrect", "Correct"))))+
   geom_point(aes(X,conf,color = factor(ACC, levels = c(0, 1), labels = c("Incorrect", "Correct"))))+
   scale_color_manual(values = c("Incorrect" = "salmon", "Correct" = "lightgreen"))+theme_minimal()+theme(legend.position = "none")
 
@@ -130,11 +131,11 @@ simulate_data <- function(n){
   # -----------------------------
   n = n        # number of trials
   
-  beta =   rlnorm(1,1.2,0.5)       # Slope (expressed in precision on normal, moderate values)
-  meta_un = rlnorm(1,0.8,0.5)    # Meta uncertainty for correct trials (positive, avoids inversion)
-  meta_un_IC = sample(c(-1, 1),1)*rlnorm(1,0.8,0.5)    # Meta uncertainty for incorrect trials (positive, avoids inversion)
-  alpha = sample(c(-1, 1),1) * rbeta(1, 2,8)        # Threshold
-  conf_prec = abs(rnorm(1,100,50))    # Confidence precision (precision on beta distribution)
+  beta = rnorm(1,1,0.5)       # Slope (expressed in precision on normal, moderate values)
+  meta_un_cor = exp(rnorm(1,0.25,0.5))    # Meta uncertainty for correct trials (positive, avoids inversion)
+  meta_prec_inc = rnorm(1,0,1)   # Meta uncertainty for incorrect trials (positive, avoids inversion)
+  alpha = rnorm(1,0,0.2)        # Threshold
+  conf_prec = exp(rnorm(1,2,0.5))    # Confidence precision (precision on beta distribution)
   
   c0 = -abs(rnorm(1,5,1))            # Cut points for ordered beta regression, lower bound
   c1 = abs(rnorm(1,5,1))             # Cut points for ordered beta regression, upper bound
@@ -157,7 +158,7 @@ simulate_data <- function(n){
   # -----------------------------
   # Decision
   # -----------------------------
-  theta = pnorm(beta * (X - alpha)) # Internal probability of being correct
+  theta = pnorm(exp(beta) * (X - alpha)) # Internal probability of being correct
   resp = rbinom(n, 1, theta)        # Simulated response
   
   # Accuracy based on simulated response
@@ -170,9 +171,9 @@ simulate_data <- function(n){
   conf_mu = numeric(n)
   for(i in 1:n){
     if(ACC[i] == 1){
-      conf_mu[i] <- pnorm(meta_un * abs(X[i] - alpha))       # Confidence for correct trials
+      conf_mu[i] <- pnorm(exp(beta - meta_un_cor) * abs(X[i] - alpha))       # Confidence for correct trials
     } else {
-      conf_mu[i] <- pnorm(meta_un_IC * abs(X[i] - alpha))    # Confidence for incorrect trials
+      conf_mu[i] <- pnorm(meta_prec_inc * abs(X[i] - alpha))    # Confidence for incorrect trials
     }
   }
   
@@ -184,12 +185,12 @@ simulate_data <- function(n){
   df = data.frame(
     c0 = c0,
     c1 = c1,
-    beta = beta,
+    beta = exp(beta),
+    # exp_beta = exp(beta),
     alpha = alpha, 
-    meta_un_cor = meta_un,
-    meta_un_IC = meta_un_IC,
-    cor_loss = beta - meta_un,
-    inc_loss = beta - meta_un_IC,
+    meta_un_cor = meta_un_cor,
+    meta_total_cor = exp(beta - meta_un_cor),
+    meta_prec_inc = meta_prec_inc,
     conf_prec = conf_prec,
     D = D,
     X = X,
@@ -201,6 +202,21 @@ simulate_data <- function(n){
   
   return(df)
 }
+
+
+
+# sim_data = simulate_data(100)
+
+#sim_data = df
+
+#ggplot(sim_data)+
+  #geom_point(aes(X,resp))
+  
+#ggplot(sim_data)+
+  #geom_point(aes(X,C,color = factor(ACC, levels = c(0, 1), labels = c("Incorrect", "Correct"))))+
+  #scale_color_manual(values = c("Incorrect" = "salmon", "Correct" = "lightgreen"))+theme_minimal()+theme(legend.position = "none")
+
+
 
 ###############################################################################
 ######## Model fit (extensive) ################################################
@@ -223,6 +239,7 @@ fit = function(nn, mod){
   fit = mod$sample(data = datastan,
                    iter_warmup = 500,
                    refresh = 0,
+                   adapt_delta = 0.99,
                    iter_sampling = 500,
                    parallel_chains = 4)
   
@@ -230,9 +247,9 @@ fit = function(nn, mod){
                                                        time = fit$time()$total)
   
   
-  esti_real = fit$summary(c("lp__","alpha","beta","meta_un_cor1","meta_un_inc1","meta_un", "meta_un_inc", "conf_prec","c0","c1")) %>% 
-    mutate(simulated = c(NA,unique(df$alpha),unique(df$beta),unique(df$meta_un_cor), unique(df$meta_un_IC),unique(df$cor_loss),
-                         unique(df$inc_loss),unique(df$conf_prec), unique(df$c0),unique(df$c1))) %>% 
+  esti_real = fit$summary(c("lp__","alpha","beta","meta_un_cor","meta_total_cor", "meta_prec_inc", "conf_prec","c0","c1")) %>% 
+    mutate(simulated = c(NA,unique(df$alpha),unique(df$beta),unique(df$meta_un_cor),unique(df$meta_total_cor),
+                         unique(df$meta_prec_inc),unique(df$conf_prec), unique(df$c0),unique(df$c1))) %>% 
     mutate(div = max(div$num_divergent))
   
   
@@ -240,15 +257,18 @@ fit = function(nn, mod){
                 df%>% mutate(sim = qq, trial = nn),
                 div = div %>% mutate(sim = qq, trial = nn))
   
-  return(result)}
+  return(result)
+  }
 
 
 ## Model fit 
-plan(multisession, workers = 10)  # Make it run on multiple cores (Windows-friendly) 
+plan(multisession, workers = 5)  # Make it run on multiple cores (Windows-friendly) 
 
 safe_function <- possibly(fit, otherwise = "Error")   # Prevent crashing when 1 fit is bad
 
-results_list <- future_map(1:2000, ~ safe_function(100, mod), .progress = T)   # Run 20 times in parallel
+# qq = safe_function(100,mod)
+
+results_list <- future_map(1:200, ~ safe_function(200, mod), .progress = T)   # Run 20 times in parallel
 
 saveRDS(results_list,here::here("Simulations","Heurestic","Parameter_recovery_Hsim_Hfit.RData"))
 
@@ -256,39 +276,27 @@ sum(results_list == "Error")
 results_list = results_list[-which(results_list == "Error")]
 
 
-
 ###############################################################################
 ######## Check model fit (extensive) ##########################################
 ###############################################################################
 
-data_div = map_dfr(results_list,1) %>% select(simulated,variable,sim, div) %>%  # Data divergences 
-  pivot_wider(names_from = "variable",values_from = "simulated") %>% unnest()
+## Check number of runs with divergences
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% select(div,sim) %>% distinct() %>% group_by(div) %>% summarise(n())
 
-ggplot() + geom_point(data = data_div, mapping = aes(x = alpha, y = div)) + theme_minimal()
-ggplot() + geom_point(data = data_div, mapping = aes(x = beta, y = div)) + theme_minimal()
-ggplot() + geom_point(data = data_div, mapping = aes(x = meta_un_cor1, y = div)) + theme_minimal()
-ggplot() + geom_point(data = data_div, mapping = aes(x = meta_un_inc1, y = div)) + theme_minimal()
-ggplot() + geom_point(data = data_div, mapping = aes(x = conf_prec, y = div)) + theme_minimal()
-ggplot() + geom_point(data = data_div, mapping = aes(x = c0, y = div)) + theme_minimal()
-ggplot() + geom_point(data = data_div, mapping = aes(x = c1, y = div)) + theme_minimal()
+## Check parameter recovery 
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
+  ggplot(aes(x = simulated, y = mean, col = div))+geom_point()+
+  geom_abline()+facet_wrap(~variable, scales = "free")
 
+map_dfr(results_list,1) %>% 
+  mutate(div = as.factor(ifelse(div > 0,1,0))) %>% 
+  ggplot(aes(x = simulated, y = mean, ymin = q5, ymax = q95, col = div))+geom_pointrange()+
+  geom_abline()+facet_wrap(~variable, scales = "free")
 
-alpha_rec = map_dfr(results_list,1) %>% select(simulated,variable,sim, mean) %>%  
-  pivot_wider(names_from = "variable",values_from = "mean") %>% unnest() %>% filter(!is.na(alpha))
-
-beta_rec = map_dfr(results_list,1) %>% select(simulated,variable,sim, mean) %>%  
-  pivot_wider(names_from = "variable",values_from = "mean") %>% unnest() %>% filter(!is.na(beta))
-
-
-ggplot() + geom_point(alpha_rec, mapping = aes(x=simulated, y=alpha)) + theme_minimal() + coord_fixed(ratio = 1)
-ggplot() + geom_point(beta_rec, mapping = aes(x=simulated, y=beta)) + theme_minimal() +scale_y_continuous(limits = c(0, 20))
-
-
-
-
-
-
-
+## Check fit time
+map_dfr(results_list,3) %>% ggplot(aes(x=time))+geom_histogram(color = "black")+theme_minimal()
 
 
 
