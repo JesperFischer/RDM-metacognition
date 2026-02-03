@@ -238,8 +238,7 @@ sim_new_subjects = function(max_subjects = 100){
   post_draws = read.csv(here::here("Simulations","Heurestic","Sequential Sampling","post_draws.csv"))
   
   draws_id = sample(nrow(post_draws), 1)
-  
-  
+
   new_subjects =
     post_draws %>% filter(draw %in% draws_id) %>% 
     rowwise() %>% 
@@ -270,16 +269,31 @@ sim_new_subjects = function(max_subjects = 100){
   
   
   
-  plan(multisession, workers = 6)  # Windows-friendly
-  safe_function <- possibly(
-    function(n) fitter(new_subjects, n),
-    otherwise = "Error"
-  )
+  plan(multisession, workers = 5)  # Windows-friendly
+  
+  n_subj <- c(5, 10, 15,20,30)
+  library(furrr)
   
   for(i in 1:5){
-    n_subj <- c(5, 10, 15,20,30,50)
     
-    library(furrr)
+    draws_id = sample(nrow(post_draws), 1)
+    
+    print(draws_id)
+    
+    new_subjects =
+      post_draws %>% filter(draw %in% draws_id) %>% 
+      rowwise() %>% 
+      mutate(sim = list(simulate_subjects(cur_data(), S = max_subjects,P = 9))) %>% 
+      unnest(sim) %>% 
+      ungroup() %>% 
+      rowwise() %>% 
+      mutate(sim_d = list(sim_trials(cur_data())))
+    
+    safe_function <- possibly(
+      function(n) fitter(new_subjects, n),
+      otherwise = "Error"
+    )
+    
     results_list <- future_map(
       n_subj,
       ~ safe_function(.x),

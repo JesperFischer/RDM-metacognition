@@ -131,7 +131,7 @@ simulate_data <- function(n){
   # -----------------------------
   n = n        # number of trials
   
-  beta = (rnorm(1,1,0.5))       # Slope (expressed in precision on normal, moderate values)
+  beta = rnorm(1,1,0.5)       # Slope (expressed in precision on normal, moderate values)
   meta_un_cor = exp(rnorm(1,0.25,0.5))    # Meta uncertainty for correct trials (positive, avoids inversion)
   meta_prec_inc = rnorm(1,0,1)   # Meta uncertainty for incorrect trials (positive, avoids inversion)
   alpha = rnorm(1,0,0.2)        # Threshold
@@ -177,8 +177,6 @@ simulate_data <- function(n){
     }
   }
   
-  
-  
   conf = rordbeta(n = n, mu = conf_mu, phi = conf_prec, cutpoints = c(c0, c1))  # Simulated confidence values
   
   # -----------------------------
@@ -209,14 +207,14 @@ simulate_data <- function(n){
 
 # sim_data = simulate_data(100)
 
-sim_data = df
+#sim_data = df
 
-ggplot(sim_data)+
-  geom_point(aes(X,resp))
+#ggplot(sim_data)+
+  #geom_point(aes(X,resp))
   
-ggplot(sim_data)+
-  geom_point(aes(X,C,color = factor(ACC, levels = c(0, 1), labels = c("Incorrect", "Correct"))))+
-  scale_color_manual(values = c("Incorrect" = "salmon", "Correct" = "lightgreen"))+theme_minimal()+theme(legend.position = "none")
+#ggplot(sim_data)+
+  #geom_point(aes(X,C,color = factor(ACC, levels = c(0, 1), labels = c("Incorrect", "Correct"))))+
+  #scale_color_manual(values = c("Incorrect" = "salmon", "Correct" = "lightgreen"))+theme_minimal()+theme(legend.position = "none")
 
 
 
@@ -264,13 +262,13 @@ fit = function(nn, mod){
 
 
 ## Model fit 
-plan(multisession, workers = 10)  # Make it run on multiple cores (Windows-friendly) 
+plan(multisession, workers = 5)  # Make it run on multiple cores (Windows-friendly) 
 
 safe_function <- possibly(fit, otherwise = "Error")   # Prevent crashing when 1 fit is bad
 
 # qq = safe_function(100,mod)
 
-results_list <- future_map(1:500, ~ safe_function(100, mod), .progress = T)   # Run 20 times in parallel
+results_list <- future_map(1:200, ~ safe_function(200, mod), .progress = T)   # Run 20 times in parallel
 
 saveRDS(results_list,here::here("Simulations","Heurestic","Parameter_recovery_Hsim_Hfit.RData"))
 
