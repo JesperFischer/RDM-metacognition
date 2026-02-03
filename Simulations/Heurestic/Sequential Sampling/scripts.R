@@ -303,14 +303,57 @@ sim_new_subjects = function(max_subjects = 100){
   }
   
   purrr::map_dfr(
-    results_list[1:2],
+    results_list[1:length(results_list)],
     ~ dplyr::bind_rows(purrr::map(.x, purrr::pluck, 1))
-  )
+  ) %>%   
+    # mutate(draw_id = if_else(row_number() <= 6, draw_id + 1, draw_id)) %>% 
+    pivot_longer(cols = c("bf8","bf9")) %>% 
+    ggplot(aes(x = n_subs, y =value, group = draw_id))+geom_line()+facet_wrap(~name)+
+    geom_hline(yintercept = c(1/30), linetype = 2)+
+    theme_classic()
+  
+  
+  purrr::map_dfr(
+    results_list[1:length(results_list)],
+    ~ dplyr::bind_rows(purrr::map(.x, purrr::pluck, 2))
+  ) %>%   
+    # mutate(draw_id = if_else(row_number() <= 6, draw_id + 1, draw_id)) %>% 
+    ggplot(aes(x = simulated, y = mean,ymin = q5,ymax = q95, group = draw_id))+
+    geom_pointrange()+
+    facet_grid(variable~n_subs, scales = "free")+
+    theme_classic()+
+    geom_abline(col = "red")
   
   
   
+  purrr::map_dfr(
+    results_list[1:length(results_list)],
+    ~ dplyr::bind_rows(purrr::map(.x, purrr::pluck, 3))
+  ) %>%   
+    filter(grepl("gm",variable)) %>% 
+    # mutate(draw_id = if_else(row_number() <= 6, draw_id + 1, draw_id)) %>% 
+    ggplot(aes(x = simulated, y = mean,ymin = q5,ymax = q95, group = draw_id))+
+    geom_pointrange()+
+    facet_grid(variable~n_subs, scales = "free")+
+    theme_classic()+
+    geom_abline(col = "red")
   
 
+  
+  purrr::map_dfr(
+    results_list[1:length(results_list)],
+    ~ dplyr::bind_rows(purrr::map(.x, purrr::pluck, 3))
+  ) %>%   
+    filter(grepl("tau_u",variable)) %>% 
+    # mutate(draw_id = if_else(row_number() <= 6, draw_id + 1, draw_id)) %>% 
+    ggplot(aes(x = simulated, y = mean,ymin = q5,ymax = q95, group = draw_id))+
+    geom_pointrange()+
+    facet_grid(variable~n_subs, scales = "free")+
+    theme_classic()+
+    geom_abline(col = "red")
+  
+  
+  
   
     
 }
