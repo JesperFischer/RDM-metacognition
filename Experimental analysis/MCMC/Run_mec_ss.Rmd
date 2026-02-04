@@ -41,7 +41,7 @@ plot_beh_data(df %>% filter(Trialtype == "Main"),NULL,F)
 
 ## fit the standard model with meta-uncertainty and meta-bias
 ```{r}
-model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","MCMC","Emperical dataanalysis","Single Subject","Model1.stan"))
+model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","MCMC","Emperical dataanalysis","Single Subject","Model1_ex.stan"))
 
 dd = df %>% 
   mutate(subject = as.numeric(as.factor(subject))) %>% 

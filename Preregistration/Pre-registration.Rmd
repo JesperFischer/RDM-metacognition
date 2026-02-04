@@ -56,236 +56,132 @@ lapply(required_packages, library, character.only = TRUE)
 
 # Introduction
 
-Metacognition, the ability to reflect upon one's own thoughts and cognitive processes, has been extensively studied in recent years. One prominent approach for studying metacognition has been the use of confidence ratings. How confidence ratings relate to performance in decision-making tasks has yielded several important insights into how humans reflect on their own decisions. 
+Metacognition, the ability to reflect on one's own cognitive processes, is commonly studied through confidence ratings in decision-making tasks. Three key findings have emerged from this research:
 
-First, confidence ratings generally reflect a noisy readout of the subjective probability of being correct, with the subjective part reflecting that confidence ratings encode response bias' from the binary decision instead of reflecting the actual objective performance in the primary task. This is illustrated in several studies (xxx).
+First, confidence ratings can be thought to reflect a noisy, subjective probability of being correct, incorporating response biases rather than purely objective performance.
 
-Second, while confidence ratings encode the subjective probability of being correct, they do not seem to be based on the same amount of  information that was used to make the decision itself. This finding is generally shown by confidence rating (when unbiased) do not exactly follow the type-1-performance (i.e. the probability of being correct in the first order task), but instead a lower probability. Specifically, this means that if the probability of being correct for a particular trial difficultly is 90% then would be expected that the agent would respond with a confidence rating less than 90% if the agent was unbiased. Here it should be noted that some findings suggest that it might be possible to also have a boosted type-2-performance compared to the type-1-performance, shown by a higher than 90% confidence rating (xxx). The general finding that type-2-performance is less than that of the type-1-performance has be ascribed to metacognitive noise, reflecting additional noise that is added to the information used by the decision maker to make the type-1 decision, whereas the boosted type-2-performance has been called confidence boost (xxxx). 
+Second, confidence judgments most often underperform relative to first-order accuracy, (i.e. a difficultly level produces 90% Accuracy might produce 80% confidence).
 
-Third, Metacognition and error-monitoring can be viewed as part of the same systems (xxx). When confidence is viewed as reflecting the subjective probability of being correct this makes intuitive sense as when you are confident that you were wrong in your decision, this is error-monitoring. 
+Third, metacognition and error-monitoring are functionally related systems. Being confident about an error is a form of error-monitoring. 
 
 
 ## Models of metacognition
 
-Metacognition research has received a tremendous attention among computational scientists, which is reflected in the ever growing number of computational models of meta-cognition (xxx). Here we seek to outline the types of meta-cognitive computational models. Models of meta-cognition generally come in two flavors; those based on Signal detection theory, i.e. static models, and those based on evidence accumulation, i.e. dynamic models. Static models only describe the first order decision and the confidence rating associated with it, whereas the dynamic models also describe the response time for the first order decision and sometimes also the response time for the confidence rating with additional assumptions and constraints (xxx). Both approaches can be shown to be optimal or heuristically optimal as partially observable Markov decision process under given assumptions (xxxx). These two types of models mainly differ in how evidence from the external world is encoded, with static models assuming that a fixed evidence is drawn at each trial, whereas dynamic models assume that evidence is collected over the duration of the trial and when enough evidence is collected, i.e. when an evidence bound is hit, a decision is made that is equivalent to the decision bound that was reached. 
+Computational models of metacognition typically fall into two categories: **static models** based on Signal Detection Theory (SDT) and **dynamic models** based on evidence accumulation. 
 
-### Patterns of metatcognition
+Static models describe choice and confidence, while dynamic models additionally account for response times. 
+Both can be understood as (approximately) optimal solutions to partially observable Markov decision processes under different assumptions. 
+One key distinction between these two approaches is how evidence is encoded: 
+static models assume fixed evidence per trial  (drawn from a distribution), while dynamic models assume evidence accumulates over time until some decision bound is reached.
 
-Generally these models of meta-cognition should be able to describe several empirical patterns of confidence and binary choices. 
+The two types of models are not mutually exclusive and are many times thought of being extentions of oneanother. I.e. the dynamic models being extentions of the static models.
 
-Firstly as the presented physical stimulus becomes stronger or more visable, the probability of the actor making a correct choice should increase. 
+### Patterns of metacognition
 
-Secondly, confidence as expressed by the rater should have a more intricate relationship with stimulus strength as it should be conditional on whether the choice of the actor was correct. 
+Metacognitive models should capture several empirical patterns:
 
-A particular pattern that has been deemed "a signature meta-cognition" is the empirical pattern called the "folded X" which describes an increase in confidence for correct responses with stimulus strength and a decrease or flat-lining of confidence ratings for incorrect responses (..). 
+1. **Performance increases with stimulus strength**: Stronger stimuli yield higher accuracy
+2. **Confidence increases with stimulus strength**: Stronger stimuli yield higher Confidence ratings
+3. **Confidence varies with accuracy**: The relationship between confidence and stimulus strength depends on response correctness, with correct trials showing higher confidence than incorrect.
+4. **"Folded-X" pattern**: Confidence increases with stimulus strength for correct responses but decreases (or plateaus) for errors—considered a signature of metacognition
+5. **"Double-increase" pattern**: Confidence increases with stimulus strength for both correct and incorrect responses
 
-However, recently it has been shown that under particular experimental designs and manipulations a folded-X pattern is not observed, but instead what has been described as a double increases pattern is shown. Here confidence ratings increases for incorrect responses with stimulus strength. 
+Recent work suggests these two latter patterns of confidence arise from different experimental manipulations: 
+* folded-X emerges when manipulating decision-relevant stimulus properties (e.g., coherence in RDM)
+* double-increase occurs when manipulating auxiliary difficulty markers (e.g., stimulus visibility). 
 
-Recent findings have proposed that these two patterns emerge from different experimental manipulations, with the folded-X pattern emerging by manipulating the stimulus strength of the decision axis i.e. the coherence level in a RDM task where the actor is asked to determine the direction of the moving dots. Whereas the double increase pattern is observed when stimulus strength is manipulated as an auxiliary difficultly marker such as the viability of the stimulus (xxx). 
+From an error-monitoring perspective, folded-X reflects functioning error-monitoring (confidence decreases for errors), while double-increase suggests limited error-monitoring.
 
-These two empirical patterns from the view of meta-cognition as a part of error-monitoring make sense. In the case of the folded-X pattern an agent have error-monitoring as they report lower confidence for incorrect trials and with increasing certainty as the probability of making a mistake increases. For the double increase pattern an agent has limited or no error-monitoring as they report similar confidence ratings for correct and incorrect binary responses.
+## Confidence scales, Stimulus granularity, and measurement considerations
 
-It has thus been supposed that a computational cognitive model of meta-cognition needs to be able to account for these emperical patterns.
+Several methodological issues deserve attention:
 
+**Confidence measurement**: Confidence is collected either discretely or continuously. While continuous scales offer more information and statistical power, 
+most computational models require discrete data, leading many to discretize continuous confidence.
 
+**Stimulus strength**: Similarly often binary or discretized, though continuous measurement provides more statistical power.
 
+**Scale construction**: A critical yet underexamined issue is how confidence scale anchors constrain expressivity.
+A **"half-scale"** (e.g., "guessing" to "confident") prevents expressing certainty about errors, agents cannot indicate they are sure they made a mistake. This produces a **"half-folded-X"** (flat incorrect branch) rather than a true folded-X. 
+In contrast, a **"full scale"** (e.g., "confidently incorrect" to "confidently correct") enables full error-monitoring expression and can produce complete folded-X patterns. 
+Simultaneous binary-confidence paradigms, where choice and confidence are indicated together, necessarily produce double-increase patterns, as otherwise would mean that agents deliberately choose the wrong answer.
 
-## Confidence scales, Stimulus granularity, folded X and double increase and error monitoring
-
-Before deriving our model of meta-cognition, we here outline some additional considerations to the above section of the statistical patterns observed for confidence ratings in correct and incorrect trials. 
-
-Firstly, Confidence ratings are roughly obtained in two ways, either as a discrete entity or as a continuous variables. Generally, without considerations of human response biases and other non-statistical properties a continuous variable should be preferred to the discrete as it contains more information and therefore has the potential to increase the statistical power. However, most of the computational models of metacognition are build such that their likelihood functions only work with discrete variables and have resulted in many experiments either collecting discrete confidence data or collecting continuous data and then discretizing these.
-
-Secondly, stimulus strength has been treated in a similar way to that of confidence ratings, where mostly it is collected as binary, or discritized entities. Here the same argument as for the collection of confidence ratings holds, that for statistical reasons it makes sense to collect these as continous.
-
-Thirdly, a particular issue that has not received much attention in the computational modeling community of meta-cognition and especially in the modeling of confidence ratings is the construction of the confidence scale itself. Generally, regardless of the type of scale used, the selection of confidence ratings happens in a context where anchors are placed on the extremes or on each selectable item. These anchors together with the instructions of the task of how to use the scale will determine what the subject is allowed to express. Imagine an experiment where you make a binary choice and then have to rate your confidence on scale ranging from "guessing" to "confident" (half-scale). This type of scale seems optimal for a particular type of agent, the one that does not make mistakes in the choices, i.e. no error monitoring. However if the agent has error monitoring capabilities, then this type of confidence scale runs into issues. Lets again consider that you make a binary choice, but right after having made this choice you realized that you clicked the wrong button or had a strong change of mind. Now you are presented with the half-scale for the confidence judgement; what do you rate? This example showcases two very important details that have big implications for the statistical patterns observed in the literature discussed above. Firstly if a half-scale of confidence is used the rater can not showcase full error-monitoring, meaning that they cannot indicate the they are sure that they made a mistake. This lack of expressibility will be visable in the confidence data in such a way that a folded-X pattern will instead of looking like an X will look like a truncated X pattern with the decreasing branch for incorrect trials being horizontal, here called the Half-X-pattern. This is because on trials with no stimulus strength a perfect agent should report that they are guessing, which would be indicated by the lowest confidence rating on the half-scale. Now as stimulus strength increases the agents should become more confident on their correct responses and less confident in their incorrect responses. However due to the nature of the scale there is only one way for these ratings to go, that is to increase. This means that confidence assessed by a half-scale should in principle produce a half-folded-X where the steepness of the confidence by stimulus strength is higher for correct trials than for incorrect trials and for the optimal agent increasing at a rate of the probability of being correct for correct trials and constant at guessing for incorrect trials at the guessing anchor. 
-
-Above we have outlined an inconsistency in the way that confidence ratings are collected (i.e. the anchors used) and the statistical patterns that researchers expect. We ascribe to the idea that confidence ratings should be assessed by a full confidence scale that for binary choices ranges from either confidently incorrect to confidently correct or similar. This type of scale would in principle be able to produce a full folded-X pattern where confidence ratings for incorrect trials would decrease at the same rate as that of the increase in confidence ratings for correct trials, a meta-cognitively optimal agent. 
-
-Another approach for collecting confidence ratings has been the use of simultaneous binary and confidence ratings, such that agents indicate their binary choice and the confidence therein at the same time. From the above considerations it should come as no surprise that researchers should not be expecting a full or haven half folded-X pattern in such a design, as that would indicate that the agent deliberately answered wrong. One would therefore expect that such studies would find a double increase pattern which is what is generally observed (xxx). 
-
-Here we propose that error-monitoring as a part of meta-cognition is inevitable and experimental paradigms interested in meta-cognition needs the capability of being able to express error-monitoring.
-
-A particular pending question given the above discussion is of course why do agents make mistakes in their binary choices while knowing that they made such a mistake preceding the choice. Below we motivate that such mistakes could arise from varability in the binary choices themselves. This view challenges one of the core assumptions made by most of the SDT models of meta-cognition. Here when presented with a physical stimulus an agent observes a noisy evidence for this stimulus and deterministically makes their binary choice based on this evidence. This entails that if one could quantify the evidence on each trial there would be no variability in the binary responses. As we will show below this assumption makes sense when only binary choices are collected from an experiment as a model that has additional choice variability would be indistinguishable from and the noise of the stimulus encoding noise. However from a generative perspective we argue that such variability should be present and can be estimated by the inclusion of additional response variables that are conditional on the evidence itself. We will show how confidence ratings if used in the same models (and perhaps response time), can make it possible to disentangle these two quantities of noise and come to a model that can produce everything from a full folded-X to a double increase pattern. 
-Not only will we use this model to show that these behavioral patterns can be produced we will by leveraging advances in software show that by utilizing several response variables it is possible to estimate the latent trial-by-trial evidence using Bayesian data augmentation. Below we will outline our general model which we will show is a particular conceptualizing of the second order framework proposed by Fleming and Daw (xx).
-
-To foreshadow our results we derive a model that does not have to assume that there is (partially) independent information for the rater in order to observe error-monitoring. Further we show how our proposed model is a particular simplification of the second order model proposed by Fleming and Daw. 
+**Choice variability and error-monitoring**: A key question is why agents make errors while knowing they erred. 
+We propose this at least partly arises from variability in the choice process itself. Most models of perceptual decision making assume that after evidence has been acquired, a deterministic choice is given, i.e. the choice is fixed given the evidence. 
+This means evidence noise and choice variability are confounded when observing only binary responses. 
+However, by incorporating confidence ratings (and potentially response times), we can disentangle these noise sources.
+We demonstrate that our model, which includes choice variability, can produce the full range of patterns (folded-X to double-increase) and represents a specific instantiation of Fleming and Daw's second-order framework.
 
 ### Static models of metacognition
 
-From SDT, static models of meta-cognition are generally formalized such that we consider an actor making a binary choice $a \in \{-1,+1\}$. This could represent, for example, the direction of dots moving on a screen or whether a picture was remembered. This binary choice is based on some evidence, $e$, that the actor receives based on the true underlying state $D \in \{-1,+1\}$ (are the dots moving left or right?). SDT assumes that this evidence is drawn from a normal distribution with the mean equal to the underlying state and a standard deviation that relates to the uncertainty of the sensory system, $\sigma$. Formally this can be written as:
+Here we outline the general idea between the static models of perceptual deicison making and confidence judgements.
 
-$$
-e_i \sim \mathcal{N}(D_i,\sigma)
-$$
-
-The actor makes a correct choice when $a = D$ and an error when $a \neq D$. Rather than assuming a stationary true state, one can vary the strength of the evidence by for instance changing the proportion of coherently moving dots. As stimulus strength increases, the task becomes easier for the actor as the evidence for $D$ increases. Formally we might re-write equation (1) to include this stimulus strength $X$ which scales the underlying state.
+In SDT, an actor makes a binary choice $a \in \{-1,+1\}$ based on evidence $e$ about the true state $D \in \{-1,+1\}$. Evidence is drawn from a normal distribution:
 
 $$
 e_i \sim \mathcal{N}(X_iD_i,\sigma)
 $$
 
-The actor now makes a choice based on a particular decision policy. 
-
-Most SDT models assume that the actor compares the evidence sample to a criterion $c$:
+where $X_i$ is stimulus strength. The actor compares evidence to criterion $c$:
 
 $$
-a_i =
-\begin{cases}
-+1 & \text{if } e_i > c, \\
--1 & \text{if } e_i \le c .
-\end{cases}
+a_i = \begin{cases}+1 & \text{if } e_i > c \\ -1 & \text{if } e_i \le c\end{cases}
 $$
 
-Now that the actor has made a decision, the rater has to access the reliability and accuracy of this decision. Many different types of implementations exist for how this assessment might happen. Generally, either the rater is thought to have partial or independent information about the evidence that the actor used for her decision. In the case where the rater has partial information we might write.
+For metacognition, the agent accesses this evidence for information about the correctness of the action.
+
+Models differ in whether the rater has independent information above the evidence used to make the action.
+Fleming and Daw formalized a second order rater where evidence for the action and evidence for the confidence judgement is draw from a multivariate normal with correlation $\rho$ governing information sharing. I.e. if $\rho$ = 1, the confidence judgement is based on the same information as the action, however if $\rho$ = 0 the confidence judgement is based on completely independent information.
 
 $$
-r_i \sim \mathcal{N}(e_i,\sigma_m)
+\begin{bmatrix}e_i \\ r_i\end{bmatrix}\sim \mathcal{N}\left(\begin{bmatrix}X_iD_i \\ X_iD_i\end{bmatrix},\begin{bmatrix}\sigma_e^2 & \rho \cdot \sigma_e \cdot \sigma_m \\ \rho \cdot \sigma_e \cdot \sigma_m & \sigma_m^2\end{bmatrix}\right)
 $$
 
-Where $r_i$ is the information accessible for the rater and $\sigma_m$ being the additional noise that the rater has to deal with. For models that assume independent information for the rater we can write: 
+The rater uses this information to compute $P(D = a | r_i)$, the subjective probability of being correct.
 
-$$
-r_i \sim \mathcal{N}(m_i,\sigma_m)
-$$
+One of the main arguments for the development of this and other models with independent information for the confidence judgement was to explain error-monitoring. The question is; how can an agent be confident that they made the wrong decision if they do not have access to independent information from the action. Phrased different, why do agents sometime make the wrong choice eventhough they know that it was the wrong choice?
 
-where $m_i$ is the independent information that the rater has access to. Of course these two implementations are the extremes of a particular model where a correlation coefficient governs the amount of independent information. This was formally introduced by Fleming and Daw (xxx) where the information for the action and rater are described as a multivariate normal distribution with the amount of information shared between them is encoded in the correlation coefficient of the variance co-variance matrix.
+Below we formalize the idea that such independent information is not necessary if instead it is assumeed that agents have varability in their choice given the evidence. I.e. instead of a deterministic decision policy agents have a noisy decision process that can produce errors eventhough the evidence is in favor of a different choice.
 
-$$
-\begin{bmatrix}
-e_i \\
-r_i
-\end{bmatrix}
-\sim \mathcal{N}\left(
-\begin{bmatrix}
-X_iD_i \\
-X_iD_i
-\end{bmatrix},
-\begin{bmatrix}
-\sigma_e^2 & \rho \cdot \sigma_e \cdot \sigma_m \\
-\rho \cdot \sigma_e \cdot \sigma_m & \sigma_m^2
-\end{bmatrix}
-\right)
-$$
+## Choice Variability
 
-Here we see that if $\rho = 0$ we have two independent information streams both centered at the physical stimulus strength. Contrary if $\rho = 1$ we end up having that the information contained in one of the information streams is exactly identical to the other meaning that there is no additional information.
-
-Regardless of the particular type of information the rater gets access to, they use this information to compute the probability that the decision of the actor was correct i.e. $P(D = a)$. 
-
-
-## The model
-
-Having outlined some of the considerations for meta-cognitive models and how they differ we now turn to describing and motivating the present model.
-
-We start with the SDT assumption that evidence is collected on each trial based on the physical stimulus:
+We extend the standard SDT framework by introducing stochastic choice policy. Evidence is drawn as:
 
 $$
 e_i \sim \mathcal{N}(X_iD_i,\sigma_e)
 $$
-Where $\sigma_e$ reflects the stimulus encoding noise. Next we assume that the policy with which the agent makes their response is not deterministic but instead stochastic such that the citerion that the evidence is compared against varies trial by trial. For simplicity we here assume that this citerion follows a normal distribution $c_i \sim \mathcal{N}(0,\sigma_c)$.
+
+But now the criterion varies trial-by-trial: $c_i \sim \mathcal{N}(0,\sigma_c)$. This yields:
 
 $$
-a_i =
-\begin{cases}
-+1 & \text{if } e_i > c_i \\
--1 & \text{if } e_i \le c_i 
-\end{cases}
+P(a = 1 \mid D) = \Phi\left(\frac{D_i \cdot X_i}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
 $$
+From choices alone, only $\sigma_e^2 + \sigma_c^2$ is identifiable—both noise sources equivalently flatten the psychometric curve. However, by including confidence ratings these can be disentangled 
 
-Assuming that the evidence and criterion are independent normal distributions, we can compute their difference which is another normal distribution:
+For confidence, we define:
 
-$$
-P(a = 1 \mid e) = P(e - c > 0 \mid D) = \mathcal{N}(D_i \cdot X_i, \sigma_e^2 + \sigma_c^2)
-$$
-Now marginalizing over the evidence and the criterion gives us a psychometric function:
+$$\text{confidence} = P(\text{correct} \mid r, a) = P(D = a \mid r)$$
 
-$$
-P(a = 1 \mid D) = \Phi\left(\frac{D_i \cdot X_i}{\sqrt{\sigma_e^2 + \sigma_k^2}}\right)
-$$
+The rater accesses noisy evidence: $r_i \sim \mathcal{N}(e_i, \sigma_m^2)$, where $\sigma_m^2$ is metacognitive noise. This can be shown to yield:
 
-where $a = 1 = e_i - c_i > 0$. From this it is immediately obvious that from the choice data alone we can only identify $\sigma_k^2 + \sigma_e^2$, and not the individual parameters. Both noise sources make the psychometric curve shallower in the same way, because we only observe the physical stimulus strength and not the internal evidence representation.
+$$P(D=1 \mid r_i) = g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right)$$
 
-Now turning to the rater, and the confidence ratings. After the actor has made a decision $a$, the rater reports their confidence in decision of the actor. We define confidence as the raters assessment in the probability of being correct given the available evidence (for the rater) and the action taken:
+giving:
 
 $$
-\text{confidence} = P(\text{correct} \mid e, a)
+P(\text{correct} \mid r_i, a) = \begin{cases}g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases}
 $$
 
-As correctness is defined as $D = a$ we have
-
-$$
-P(\text{correct} \mid e, a) = P(D = a \mid e)
-$$
-
-
-As there are two underlying states $D \in (0,1)$ and two actions $a \in (0,1)$ we can write out the probability of being correct in the following way:
-
-$$
-P(\text{correct} \mid e, a) = 
-\begin{cases}
-P(D=1 \mid e) & \text{if } a = 1 \\
-P(D=-1 \mid e) = 1 - P(D=1 \mid e) & \text{if } a = -1
-\end{cases}
-$$
-
-Now we will relax the assumption that the rater has perfect insight into the information the actor used to make the decision i.e. the evidence.
-
-We formulate this as is typically done in metacognition models that include metacognitive noise, where the rater gets access to a noisy estimate of the evidence that the actor used to make the decision.
-
-$$
-r_i \sim \mathcal{N}(e_i, \sigma_m^2)
-$$
-
-where $\sigma_m^2$ represents metacognitive noise i.e. the uncertainty or imprecision in the metacognitive system.
-
-Plugging this into equation (XX)
-
-$$
-P(\text{correct} \mid r_i, a) = 
-\begin{cases}
-P(D=1 \mid r_i) & \text{if } a = 1 \\
-P(D=-1 \mid r_i) = 1 - P(D=1 \mid r_i) & \text{if } a = -1
-\end{cases}
-$$
-
-Now it can be shown (see supplementary XX) that this can be written as:
-
-$$
-P(D=1 \mid r_i) = g\Big(\frac{2 \cdot r_i \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big)
-$$
-
-Which means that we have:
-
-$$
-P(\text{correct} \mid r_i, a) = 
-\begin{cases}
-g\Big(\frac{2 \cdot r_i \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big) & \text{if } a = 1 \\
-1 - g\Big(\frac{2 \cdot r_i \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big) & \text{if } a = -1
-\end{cases}
-$$
-
-As for the binary decisions we can see that from confidence ratings alone, it is only possible to identify $\sigma_m^2 + \sigma_e^2$, not the individual parameters. Both noise sources make the confidence curve shallower in the same way. 
-
-The key insight here is that the binary decisions estimate the sum of the variability of stimulus encoding and choice consistency $\sigma_k^2 + \sigma_e^2$, whereas confidence ratings estimate the sum of variability in the same stimulus encoding and the variability of the rater $\sigma_m^2 + \sigma_e^2$, which means that given both response variables it is theoretically possible to estimate all three parameters.
-
-
-As there is no solution for marginalizing out $r_i$ in the confidence model, as it is a logit-normal distribution, one needs to estimates the trial by trial evidence in order to infer the parameters of this model from choice and confidence data. One way to do this is by the use of Bayesian data-augmentation approaches that treat these evidences as latent trial-by-trial parameters that gets estimated in conjunction with the variability parameters. 
-
-Before fitting this generative model we first showcase the behavioral patterns that this model can produce under different parameter settings. These simulations help motivate the fact that this model can produce the main behavioral patterns observed in the meta-cognitive literature, but also situate the meaning of these parameters in terms of other meta-cognitive models' parameters.
-
-
-## Theories of why and how?
-
-Efference copies? This idea could be added inside the bayesian computation as is an implemention of the noisy or real readout of the thing. 
-
-This idea would predict that the ISI would not do anything to sigma_e but in post-deicisional-evidence accumulation you would predict it to decrease. 
-
-In the DDM framework you always end up with the same evidence for each choice (because you made a choice), in the SDT framework you collect an evidence 
+From confidence alone, only $\sigma_e^2 + \sigma_m^2$ is identifiable. However, combining choices and confidence allows estimating all three parameters: $\sigma_e$, $\sigma_c$, and $\sigma_m$. This requires Bayesian data augmentation to estimate latent trial-by-trial evidence, has this normative probability of being correct i.e. $P(correct | r_i,a)$ is a logit-normally distributed variable and cannot be marginalized, like the choice probability can.
 
 
 ## Simulations
 
-First we here showcase the implications of $\sigma_k$ and $\sigma_e$. Here we plot samples of the evidence drawn given the physical stimulus for various levels of the two parameters
+We demonstrate that this model reproduces key behavioral patterns (folded-X, double-increase) under different parameter combinations. Simulations show that the ratio $\frac{\sigma_e}{\sigma_c}$ determines these patterns: 
+
+A low ratio (high $\sigma_c$ low $\sigma_e$) produces folded-X (strong error-monitoring), while a high ratio (low $\sigma_c$ high $\sigma_e$) produces double-increase (weak error-monitoring).
+
+Metacognitive noise $\sigma_m$ flattens confidence curves regardless of accuracy.
 
 ```{r}
 set.seed(199742)
@@ -338,8 +234,10 @@ ACC = df_interaction %>%
 
 ACC
 ```
-From the above plot its obvious that $\sigma_e$ scales the the range of evidence observed, meaning that when sigma_e is low the subject receives evidence values that are essentially the physical stimulus strength and when its high, evidence across the board are observed. What $\sigma_k$ shows is that as when its low (left column) choice are consistent and in so when the the signed stimulus is positive i.e. D = 1 then when the evidence is above 0 the agent answers correctly and when evidence is below 0 they answer incorrectly. When $\sigma_k$ increases this relationship essentially becomes more noisy with correct and incorrect choices being less distinguishable across the evidence = 0 line. Another way to display this is by plotting the actions instead of the accuracy:
 
+From the above plot its obvious that $\sigma_e$ scales the the range of evidence observed (see y-axis range for the different rows). When $\sigma_k$ is low (left column) choices are consistent (when the the evidence is positive and the signed stimulus is positive i.e. D = 1 then a correct response is given). When $\sigma_k$ increases this relationship essentially becomes more noisy with correct and incorrect choices being less distinguishable across the evidence = 0 line. Another way to display this is by plotting the actions instead of the accuracy: 
+
+here the space is only split in two quadrants instead of 4.
 
 ```{r, fig.height=6, fig.width=10,warning=F,message=F}
 Act = df_interaction %>%
@@ -353,18 +251,6 @@ Act = df_interaction %>%
   theme_minimal()+
   theme(text = element_text(size = 14))
 Act
-```
-
-
-```{r, fig.height=12, fig.width=10,warning=F,message=F}
-library(patchwork)
-p1 = ACC / Act
-
-p1
-
-ggsave(here::here("figure2.png"),p1,height = 12, width = 10, units = c("in"))
-
-
 ```
 
 
@@ -440,7 +326,7 @@ df_interaction %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-From the above plot we see that when we plot confidence on the Signed Stimulus scale we end up with a somewhat double increase pattern, when the stimulus encoding uncertainty is high (i.e. 3 or 5). Furthermore we see a somewhat folded X as before when stimulus encoding uncertainty  is low. Generally we see that meta uncertainty makes the confidence ratings regardless of their correctness more flat lined at 0.5.  
+From the above plot we see that when we plot confidence on the Signed Stimulus scale we end up with a somewhat double increase pattern, when the stimulus encoding uncertainty is high (i.e. 3 or 5). Furthermore we see a (")half) folded X when stimulus encoding uncertainty  is low. Generally we see that meta uncertainty makes the confidence ratings more flat lined at 0.5 regardless of their correctness.  
 
 Now we fix $\sigma_e = 1$ and then we look at $\sigma_k$ & $\sigma_m$:
 
@@ -463,7 +349,7 @@ df_interaction %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-Notice above that for the first row that as we increase meta uncertainty at a high choice consistency (low $\sigma_k$) we go from a double increase pattern to a somewhat folded X (flat line when incorrect). Additionally, we see that down the columns we generally move from a double increase to a real folded X.
+This plot generally shows the same as the one with $\sigma_k = 1$ but opposite in pattern. I.e. high $\sigma_k$ here is more of a folded X with lower values (espeically below 1) make a double increase.
 
 lastly we might plot $sigma_m = 1$
 
@@ -488,56 +374,33 @@ df_interaction %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-This plot makes it clear that the model ascribes to a double increase pattern and what it ascribes to a folded X (and everything in between). From the diagonal where $\sigma_e = \sigma_k$ we see that there generally is a half-folded X, with incorrect trials being flat or not decreasing with stimulus strength to the same degree as correct trials. Going to the upper triangle we move into the space where $\sigma_k > \sigma_e$ where we see folded-X patterns of varying "strengths". Moving to the lower triangle we see the opposite pattern with double increase patterns emerging again with varying "strengths". 
+We see that the diagonal where $\sigma_e = \sigma_k$ that there generally is a half-folded X, with incorrect trials being flat with stimulus strength with correct trials increasing in confidence with stimulus strength. Going to the upper triangle we move into the space where $\sigma_k > \sigma_e$ where we see folded-X patterns of varying "strengths". Moving to the lower triangle we see the opposite pattern with double increase patterns emerging again with varying "strengths". 
 
 This means that from the models perspective double increase and Folded-X patterns of meta cognition arise from the ratio of uncertainty in the encoding of the stimulus and the choice variability. When choice variability is high compared to stimulus encoding a folded X pattern arises whereas choice variability is low compared to stimulus encoding a double increase pattern arises. $\sigma_m$, meta uncertainty is agnostic to the accuracy of the rater and as it increases it makes the curves of the confidence ratings more flat when increased.
 
 ## Fitting
 
-In order to fit this model we will be using full bayesian inference using the NUTS MCMC sampler of Stan. Here we will treat the latent evidences for action and confidence as latent parameters that gets estimated together with the varabilities $\sigma's$. 
+We fit this model using full Bayesian inference with Stan's NUTS sampler, treating latent trial-by-trial evidence as parameters estimated jointly with the noise parameters.
 
+## A heuristic model
 
+While the mechanistic model is powerful, its computational demands (especially in hierarchical settings) motivate a simpler heuristic approximation. The key challenge is that confidence requires trial-specific evidence $r_i$, which cannot be marginalized analytically.
 
+**Heuristic approach**: Instead of computing confidence from trial-specific evidence, we compute it from the marginalized psychometric function:
 
-## Practical considerations and A heurestic model
+$$P(a = D) = \Phi\left(\frac{|D_i \cdot X_i|}{\sqrt{\sigma^2 + \sigma_m^2}}\right)$$
 
-We acknowledge that this model of trial-by-trial evidence estimation is powerful and can be used in various additional settings where it will be possible to use or constrain these trial-by-trial evidences further by the incorporation of addition response variables such as response time or (neuro)physiological measures, as has been seen with dynamic models such as the drift diffusion model. 
+where $\sigma = \sqrt{\sigma_e^2 + \sigma_c^2}$.
 
-However, with increased complexity in the model fitting procedure also comes increased responsibility of faithful fitting of these models. This can partly be accessed by various techniques that can help show internal validity (parameter recovery and simulation based calibration), but also faithful external comparison (model comparison). These steps can be very computationally demanding. Thus, sometimes it can beneficial to introduce heuristic models that are easier to fit and can produce the same behavioral patterns as the full mechanistic model. This can be of particular interest if and when one can obtain parameter estimates that resemble those of the mechanistic model but from a simpler model that is not only faster but also easier to fit. One particular aspect that comes to mind is with the use of hierarchical models where parameter estimates from subjects are thought to be generated from a group level distribution. These types of models can be shown to increase statistical power compared to models fit on a single subject basis. However, with such models comes a computational problem of optimization as these models are generally much harder to estimate especially when all parameters are thought to arise from a group level distribution (also called a full random effects structure). These full hierarchical models are desirable as error-rates can be incredibly inflated if not accounted for. By using Bayesian inference approach to obtain posterior distributions of the parameters can greatly help convergence of such models by the inclusion of priors. However there is no grantee that these models will converge, but with newer software such as STAN models will express when convergence is problematic. Some of these problems stem from geometry of the posterior space, which can produce funnels that make the sampling algorithm stuck and give unreliable samples for the posterior distribution. These funnels are especially present in hierarchical models and data augmentation models as presented here. Therefore below we propose a simplified heurestic model based on the mechanistic model described above. We will show that with this heurestic model it is possible to decipher some of the parameters of the mechanistic model and thus argue that if these parameters are of interest then fitting this heurestic model hierarchically will be statistically beneficial compared to fitting the mechanistic model to each subject (assuming that the hierarchical version of the mechanistic model is not able to fit).
+**Critical distinction**: The mechanistic model computes $\mathbb{E}_{r_i}[g(r_i)]$ (average confidence over evidence), while the heuristic computes $g(\mathbb{E}_{r_i}[r_i])$ (confidence from average evidence). By Jensen's inequality, these differ.
 
-The main problem with the full mechanistic model is that trial by trial evidence $e_i$ and rater information $r_i$ has to be computed in order to compute the trial by trial probability that the actor made the correct decision i.e.
+**Asymmetry**: Simulations show the heuristic requires different slopes for correct vs. error trials due to different evidence distributions conditional on accuracy. For correct trials: $C_i = g(\beta_{\text{correct}} \cdot |X_i|)$; for errors: $C_i = g(\beta_{\text{error}} \cdot |X_i|)$.
 
-$$
-P(\text{correct} \mid r_i, a) = 
-\begin{cases}
-g\Big(\frac{2 \cdot r_i \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big) & \text{if } a = 1 \\
-1 - g\Big(\frac{2 \cdot r_i \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big) & \text{if } a = -1
-\end{cases}
-$$
+**When to use each**: 
+- **Mechanistic**: When fundamental noise parameters are of interest, or when physiological measures constrain evidence
+- **Heuristic**: When computational constraints are severe (hierarchical models), or when the mechanistic model fails to converge
 
-Because $r_i \sim \mathcal{N(e_i,\sigma_m^2)}$ one needs to estimate both trial by trial parameters because one can not marginalize $r_i$ in the above equation. To simplify this we take another approach we, instead of computing confidence as a function of a noisy evidence sample now assume that we wont be able to disentangle choice and evidence variability and then assume that the probability of an action taking on a value of 1 becomes.
-
-$$
-P(a = 1 \mid D) = \Phi\left(\frac{D_i \cdot X_i}{\sigma}\right)
-$$
-with $\sigma = \sqrt{\sigma_e^2 + \sigma_k^2}$ from the mechanistic model.
-
-We then use this marginalized choice probability to get an already marginalized probability of being correct. which can conveniently be written as 
-
-$$
-P(a = D) = \Phi\left(\frac{|D_i \cdot X_i|}{\sigma}\right)
-$$
-
-with the inclusion of additional noise for the computation of meta-cognition be might write:
-
-$$
-P(a = D) = \Phi\left(\frac{|D_i \cdot X_i|}{\sqrt{\sigma^2 + \sigma_m^2}}\right)
-$$
-
-with $\sigma_m$ being the metacognitive noise. This formula can be used to calculate the subjective probability of being correct given the physical stimulus and not the latent evidence only accessible to the rater. This marginalization works quite well for correct trials as we will show below, but not for incorrect trials
-
-
-## simulations Heurestic model
+## simulations Heuristic model
 
 
 ```{r}
@@ -652,103 +515,12 @@ df_interaction %>%
 
 
 
+### Mathematical Distinction
 
+The mechanistic model marginalizes after computing confidence (via MCMC), while the heuristic marginalizes before. By Jensen's inequality, these differ. The heuristic requires separate slopes for correct/error trials due to different conditional evidence distributions.
 
-### Mathematical Distinction: Order of Marginalization
+**When to use**: Mechanistic for fundamental parameters; heuristic for hierarchical models or when mechanistic fails to converge.
 
-The critical difference between the mechanistic and heuristic models lies in the **order in which expectations are taken** over the evidence distribution.
-
-**Mechanistic Model (Marginalize Last):**
-
-In the mechanistic model, confidence is computed conditional on **specific trial-by-trial evidence realizations**:
-
-$$
-C_i = P(\text{correct} \mid r_i, a_i, X_i) = g\left(\frac{2 \cdot a_i \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right)
-$$
-
-The expectation over evidence is taken **after** computing the confidence function, implicitly through MCMC sampling of the latent variables $\{e_i, r_i\}_{i=1}^N$:
-
-$$
-\mathbb{E}_{r_i}\left[g\left(\frac{2 \cdot a_i \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) \Bigg| \text{data}\right]
-$$
-
-This means: **(1) sample specific evidence → (2) compute confidence for that evidence → (3) average over samples**.
-
-**Heuristic Model (Marginalize First):**
-
-In the heuristic model, we **first marginalize over the evidence distribution** to obtain the psychometric function:
-
-$$
-\theta(X_i) = \mathbb{E}_{e_i}\left[P(a_i = 1 \mid e_i, X_i, D_i)\right] = \Phi\left(\frac{D_i \cdot X_i}{\sqrt{\sigma_e^2 + \sigma_k^2}}\right)
-$$
-
-Then, confidence is computed as a **function of this marginalized probability** rather than of specific evidence:
-
-$$
-C_i = f(\theta(X_i), \text{ACC}_i)
-$$
-
-This means: **(1) marginalize evidence to get psychometric function → (2) compute confidence from the average**.
-
-**Why These Are Different:**
-
-By Jensen's inequality, for a nonlinear function $g$ (such as the logistic function):
-
-$$
-\mathbb{E}_{e,r}[g(e, r)] \neq g(\mathbb{E}_{e,r}[e, r])
-$$
-
-Therefore, these two approaches yield systematically different confidence predictions. The mechanistic model computes the expected confidence by averaging over specific evidence-conditional confidences, while the heuristic computes confidence based on the average evidence strength.
-
-### Implementation of the Heuristic Model
-
-For the heuristic model, we approximate confidence using the absolute stimulus strength:
-
-$$
-P(\text{correct} | X_i, \text{ACC}_i) \approx g\left(\beta \cdot |X_i|\right)
-$$
-
-where $\beta$ is an effective slope parameter that absorbs both the evidence noise and metacognitive noise.
-
-**Critical Finding: Asymmetry Between Correct and Error Trials**
-
-Through simulation, we demonstrate that while the heuristic model can approximate the mechanistic model for **correct trials**, it requires a **different effective slope** for **error trials**. Specifically:
-
-For **correct trials** (ACC = 1):
-$$
-C_i^{\text{correct}} = g\left(\beta_{\text{correct}} \cdot |X_i| + \text{bias}_{\text{correct}}\right)
-$$
-
-For **error trials** (ACC = 0):
-$$
-C_i^{\text{error}} = g\left(\beta_{\text{error}} \cdot |X_i| + \text{bias}_{\text{error}}\right)
-$$
-
-This asymmetry arises because:
-
-1. **Different evidence distributions**: When conditioning on correct vs. error outcomes, the underlying distribution of evidence $e_i$ is fundamentally different. Correct trials occur when evidence is generally aligned with the stimulus, while errors occur when evidence is misaligned or weak combined with criterion variability.
-
-2. **Different truncation/reweighting**: The evidence distribution is implicitly truncated or reweighted differently for correct vs. error trials. For correct trials, evidence tends to be above threshold; for errors, evidence was either below threshold or on the wrong side of the criterion due to decision noise.
-
-3. **Jensen's inequality applies differently**: The nonlinearity of the confidence function (logistic) interacts differently with the reweighted evidence distributions for correct vs. error trials.
-
-**Parameter Interpretation:**
-
-- $\beta_{\text{correct}}$: Effective confidence slope for correct trials, reflects the combined influence of $\sigma_e$ and $\sigma_m$ from the mechanistic model
-- $\beta_{\text{error}}$: Effective confidence slope for error trials, captures the different relationship between stimulus strength and confidence when errors occur
-
-**Empirical Validation:**
-
-Through extensive simulation (see Supplementary Materials), we show that:
-
-1. $\beta_{\text{correct}}$ recovers a systematic relationship with $(\sigma_e, \sigma_m)$ from the mechanistic model
-2. $\beta_{\text{error}}$ does not map cleanly to mechanistic parameters but is necessary for capturing error trial confidence
-3. The heuristic model can reproduce key behavioral patterns (folded-X, double-increase) with appropriate parameter settings
-
-**When to Use Each Model:**
-
-- **Mechanistic model**: When interested in the fundamental noise parameters ($\sigma_e$, $\sigma_m$, $\sigma_k$), when additional physiological measurements constrain evidence, or when computational resources permit
-- **Heuristic model**: When computational constraints are severe (e.g., hierarchical models with many subjects), when behavioral patterns are of primary interest, or when the mechanistic model fails to converge
 
 
 
