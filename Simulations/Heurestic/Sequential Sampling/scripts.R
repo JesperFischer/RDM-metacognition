@@ -271,10 +271,10 @@ sim_new_subjects = function(max_subjects = 100){
   
   plan(multisession, workers = 5)  # Windows-friendly
   
-  n_subj <- c(5, 10, 15,20,30)
+  n_subj <- c(5,6,7,8,9, 10,12, 14,20,25,30,40,50)
   library(furrr)
   
-  for(i in 1:5){
+  for(i in 1:10){
     
     draws_id = sample(nrow(post_draws), 1)
     
