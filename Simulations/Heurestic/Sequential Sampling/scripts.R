@@ -300,8 +300,8 @@ sim_new_subjects = function(max_subjects = 100){
     
     new_subjects =
       post_draws %>% filter(draw %in% draws_id) %>% 
-      mutate(`gm.8.` =`gm.8.` + 0.1,
-             `gm.9.` = `gm.9.` + 0.1) %>% 
+      mutate(`gm.8.` =`gm.8.` + 0.05,
+             `gm.9.` = `gm.9.` + 0.05) %>% 
       rowwise() %>% 
       mutate(sim = list(simulate_subjects(cur_data(), S = max_subjects,P = 9))) %>% 
       unnest(sim) %>% 
