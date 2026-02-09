@@ -19,6 +19,10 @@ output:
 ```{r}
 pacman::p_load(tidyverse,posterior,bayesplot,cmdstanr,patchwork,ordbetareg,shiny,statConfR)
 
+```
+
+
+```{r}
 simulate_data = function(n = 1000){
   # -----------------------------
   # Set parameters
