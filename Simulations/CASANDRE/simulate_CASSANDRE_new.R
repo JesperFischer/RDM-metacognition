@@ -267,11 +267,21 @@ data =
 
   
 ## Plots
+PR = map_dfr(results_list,1) %>% filter(div==0 & rhat<1.01) %>% filter(variable %in% c("sigma_e","bias","crit")) %>% 
+  filter(!(variable == "sigma_e" & mean>10)) %>% filter(!(variable == "crit" & mean<45 & simulated>47)) %>%
+  ggplot(aes(x = simulated, y = mean, ymin=q5, ymax = q95))+geom_abline(alpha = 0.7, linetype = "dashed", size = 2, color = "grey20")+
+  geom_point(color = "black", alpha = 1, size = 4)+theme_classic(base_size = 30)+
+  facet_wrap(~variable, nrow = 1, scales = "free", labeller = labeller( variable = c( bias = "Bias[hat(sigma)]", crit = "C[d]", sigma_e = "sigma[e]"), ,.default = label_parsed))+ 
+  labs(x = "Simulated", y="Estimated", title = "Parameter recovery") + theme(plot.title = element_text(hjust = 0.5, size = rel(1.5)),
+                                                                             axis.title = element_text(size = rel(1.2)),
+                                                                             axis.text = element_text(size = rel(1),
+                                                                             strip.text = element_text(size = rel(1.2))))
+
 PR1 = map_dfr(results_list,1) %>% filter(div==0 & rhat<1.01) %>% filter(variable == "sigma_e")%>% filter(mean<10) %>% 
       ggplot(aes(x = simulated, y = mean, ymin=q5, ymax = q95))+geom_abline(alpha = 0.7, linetype = "dashed", size = 2, color = "grey20")+
       geom_point(color = "black", alpha = 1, size = 4)+theme_classic(base_size = 30)+ 
         theme(axis.title.x = element_text(angle = 0, hjust = 0.5, size = 70,), 
-              plot.title = element_textbox( size = 70,padding = margin(c(10, 20, 10, 20)), margin = margin(10, 0, 10, 0), 
+              plot.title = element_textbox( size = 70, width = unit(1, "npc"),padding = margin(5, 10, 5, 10), margin = margin(10, 0, 10, 0), 
                                             fill = "grey",  linewidth = 1, r = unit(5, "pt"), halign = 0.5))+
       labs(x = NULL, y=NULL, title = " σₑ")+scale_x_continuous(limits = c(1, 6), expand = c(0, 0), breaks = c(1,3.5,6)) +
         scale_y_continuous(limits = c(1,10), expand = c(0, 0), breaks = c(5.5,10))
@@ -281,7 +291,7 @@ PR2 = map_dfr(results_list,1) %>% filter(div==0 & rhat<1.01) %>% filter(variable
       ggplot(aes(x = simulated, y = mean, ymin=q5, ymax = q95))+geom_abline(alpha = 1, linetype = "dashed", size = 2,color = "grey20")+
       geom_point(color = "black", alpha = 1, size = 4)+theme_classic(base_size = 30)+ 
       theme(axis.title.x = element_text( angle = 0,hjust = 0.5, size = 70),
-            plot.title = element_textbox( size = 70,padding = margin(c(10, 20, 10, 20)), margin = margin(10, 0, 10, 0), 
+            plot.title = element_textbox( size = 70, width = unit(1, "npc"),padding = margin(5,10, 5, 10), margin = margin(10, 0, 10, 0), 
                                           fill = "grey",  linewidth = 1, r = unit(5, "pt"), halign = 0.5))+
       labs(x = NULL, y=NULL, title = "Bias(σ̂)")+scale_x_continuous(limits = c(0, 1.6), expand = c(0, 0), breaks = c(0,0.8,1.6)) +
       scale_y_continuous(limits = c(0,2), expand = c(0, 0), breaks = c(1,2))
@@ -291,7 +301,7 @@ PR3 = map_dfr(results_list,1) %>%filter(div==0 & rhat<1.01) %>%  filter(variable
       ggplot(aes(x = simulated, y = mean, ymin=q5, ymax = q95))+geom_abline(alpha = 1, linetype = "dashed", size = 2, color = "grey20")+
       geom_point(color = "black", alpha = 1, size = 4)+theme_classic(base_size = 30)+ 
       theme(axis.title.x = element_text( angle = 0,hjust = 0.5, size = 70), 
-            plot.title = element_textbox( size = 70,padding = margin(c(10, 20, 10, 20)), margin = margin(10, 0, 10, 0), 
+            plot.title = element_textbox( size = 70, width = unit(1, "npc"),padding = margin(5,10, 5, 10), margin = margin(10, 0, 10, 0), 
                                           fill = "grey",  linewidth = 1, r = unit(5, "pt"), halign = 0.5))+
       labs(x = NULL, y=NULL, title = "Criterion")+
       scale_x_continuous(limits = c(30, 60), expand = c(0, 0), breaks = c(30,45,60)) +
@@ -357,7 +367,7 @@ Type_1 = bind_rows(results_list[[sim_1]][[2]] %>% mutate(sim = sim_1),results_li
           geom_ribbon(data = posterior, aes(x=temps,ymin=ymin,ymax=ymax, fill=as.factor(sim)), alpha=0.1)+
           scale_color_manual(values = setNames(c("#1f77b4", "#ff7f0e"),c(as.character(sim_1), as.character(sim_2))))+
           scale_fill_manual( values = setNames(c("#1f77b4", "#ff7f0e"), c(as.character(sim_1), as.character(sim_2))), guide = "none")+
-          labs(y = "P(pain)", x= "Temperature (°C)", color = "Simulated Participant", title = "Binary Response")+
+          labs(y = "P(pain)", x= "Temperature (°C)", color = "Simulated Participant", title = "Binary Response fit")+
           theme_classic(base_size =20)+ 
           theme(legend.position = c(0.2,0.8),
                 plot.title = element_text(margin = margin(b = 30), family = "bold",hjust = 0.5))
@@ -379,14 +389,15 @@ conf = df_conf %>%
           scale_color_manual(values = setNames(c("#1f77b4", "#ff7f0e"),c(as.character(sim_1), as.character(sim_2))))+
           scale_fill_manual( values = setNames(c("#1f77b4", "#ff7f0e"), c(as.character(sim_1), as.character(sim_2))), guide = "none")+
           scale_y_continuous(limits=c(0,1))+geom_hline(aes(yintercept=0.5), linetype = "dashed")+ 
-          labs(y = "Confidence", x= "Temperature (°C)", title = "Confidence")+
+          labs(y = "Confidence", x= "Temperature (°C)", title = "Confidence fit")+
           facet_wrap(~ sim, ncol = 1, labeller = labeller( sim = c( "60" = "Participant 60", "93" = "Participant 93")))+
           theme_classic(base_size =20)+ 
           theme(legend.position = "none",
                 plot.title = element_text(margin = margin(b = 30), family = "bold",hjust = 0.5))
 
-Type_1|conf
 
+
+(Type_1|conf)
 
 
 
