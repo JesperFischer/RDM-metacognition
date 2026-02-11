@@ -27,13 +27,18 @@ shinyApp(
       sidebarPanel(
         sliderInput("sigma_e", 
                     "Evidence Noise (σe):", 
-                    min = 0, max = 10, value = 1, step = 0.1),
+                    min = 0, max = 5, value = 1, step = 0.1),
         sliderInput("sigma_k", 
                     "Threshold Noise (σk):", 
-                    min = 0, max = 10, value = 1, step = 0.1),
+                    min = 0, max = 5, value = 1, step = 0.1),
         sliderInput("sigma_m", 
                     "Metacognitive Noise (σm):", 
-                    min = 0, max = 10, value = 1, step = 0.1),
+                    min = 0, max = 5, value = 1, step = 0.1),
+        sliderInput("sigma_x", 
+                    "X Noise (σx):", 
+                    min = 0, max = 5, value = 1, step = 0.1),
+        
+        
         hr(),
         h4("Summary Statistics"),
         p("Fixed: 5000 trials per simulation"),
@@ -59,16 +64,17 @@ shinyApp(
     
     # Reactive expression to generate simulated data whenever sliders change
     sim_data <- reactive({
-      req(input$sigma_e, input$sigma_k, input$sigma_m)
+      req(input$sigma_e, input$sigma_k, input$sigma_m,input$sigma_x)
       
       # Set seed for reproducibility
-      set.seed(199742)
+      # set.seed(rnorm(1,0,1))
       
       # Simulation parameters
       n_trials <- 5000
       sigma_e <- max(input$sigma_e, 0.001)
       sigma_k <- max(input$sigma_k, 0.001)
       sigma_m <- max(input$sigma_m, 0.001)
+      sigma_x <- max(input$sigma_x, 0.001)
       conf_prec <- 500
       c0 <- -3
       c1 <- 3
@@ -81,16 +87,18 @@ shinyApp(
       k_gauss <- rnorm(n_trials, 0, sigma_k)
       p_gauss <- pnorm(e / sigma_k)
       a <- rbinom(n_trials, 1, p_gauss)
+      Xhat = rnorm(n_trials, X,sigma_x)
       
       c_mu <- ifelse(a == 1, 
-                     plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)),
-                     1 - plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)))
+                     plogis(2 * ehat * Xhat / (sigma_e^2 + sigma_m^2)),
+                     1 - plogis(2 * ehat * Xhat / (sigma_e^2 + sigma_m^2)))
       c_mu <- pmax(0.001, pmin(0.999, c_mu))
       C <- ordbetareg::rordbeta(n_trials, c_mu, conf_prec, c(c0, c1))
       
       ACC <- ifelse(a == 0 & D == -1, 1, ifelse(a == 1 & D == 1, 1, 0))
       SS <- D * X
       
+
       df <- data.frame(
         e = e,
         ehat = ehat,
@@ -102,6 +110,7 @@ shinyApp(
         SS = SS
       )
       
+       print(summary(lm(c_mu~ACC+X+ACC:X, data = df %>% mutate(SS = D*X))))
       
       return(df)
     })
@@ -113,6 +122,7 @@ shinyApp(
       
       library(statConfR)
 
+      
       
       data = df %>% mutate(conf_bin = cut(C,4),
                             stimulus  = as.factor(D),
@@ -127,7 +137,9 @@ shinyApp(
       
       # Bin evidence into 10 bins
       df %>%
-        mutate(e_bin = cut(e, breaks = 10, include.lowest = TRUE)) %>%
+        group_by(ACC) %>% 
+        mutate(e_bin = cut(e, breaks = 11, include.lowest = TRUE)) %>%
+        ungroup() %>% 
         group_by(e_bin, ACC) %>%
         summarize(
           mean_C = mean(C),
@@ -178,7 +190,7 @@ shinyApp(
       # Bin signed stimulus into 10 bins
       df %>%
         mutate(SS = D*X,
-               SS_bin = cut(SS, breaks = 10, include.lowest = TRUE)) %>%
+               SS_bin = cut(SS, breaks = 11, include.lowest = TRUE)) %>%
         group_by(SS_bin, ACC) %>%
         summarize(
           mean_C = mean(C),

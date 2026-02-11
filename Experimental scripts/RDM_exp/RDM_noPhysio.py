@@ -160,7 +160,7 @@ else:
      raise TypeError('Unknown keyboard name')
 
 # Creating DotMotion stimulus
-DotMotion = vis.DotStim(win, units='pix', nDots= 120, fieldSize = 300, fieldShape='circle', dotSize=7  , dotLife=15, speed=1.5, color='white', 
+DotMotion = vis.DotStim(win, units='pix', nDots= 120, fieldSize = 300, fieldShape='circle', dotSize=7  , dotLife=15, speed=1, color='white', 
                         signalDots='same', noiseDots='walk') #https://www.psychopy.org/api/visual/dotstim.html 
 
 # Creating a slider to rate confidence or clarity 
@@ -513,16 +513,18 @@ coherence = 0.3 # Set fixed value to find dotlife (task difficulty) where thresh
 #def weibull_cdf(x, alpha, beta, gamma =0.5, lapse =0):
     #return 1 - lapse - (1 - gamma - lapse) * (np.exp(-(x / alpha)**beta))
  
-threshold_prior = norm.pdf(np.linspace(5, 50, 50), loc=30, scale=20)
-threshold_prior = threshold_prior / threshold_prior.sum()  # normalize
+#threshold_prior = norm.pdf(np.linspace(5, 50, 50), loc=30, scale=20)
 
+threshold_prior = norm.pdf(np.linspace(1, 20, 50), loc=10, scale=5)
+threshold_prior = threshold_prior / threshold_prior.sum()  # normalize
+    
 slope_prior = norm.pdf(np.linspace(1, 10, 10), loc=5, scale=2)
 slope_prior = slope_prior / slope_prior.sum()  # normalize
 
 # STAIRCASE (https://questplus.readthedocs.io/en/latest/qp.html)
-SC = QuestPlusHandler(nTrials = n_SC1, intensityVals = list(range(5, 50, 2)), 
-                      thresholdVals = np.linspace(5,50,50), slopeVals=np.linspace(1,10,10),lowerAsymptoteVals = 0.5, lapseRateVals=0,
-                      responseVals = [1,0], prior={"threshold": threshold_prior, "slope": slope_prior}, psychometricFunc = "weibull", startIntensity = 29,
+SC = QuestPlusHandler(nTrials = n_SC1, intensityVals = list(range(1, 20, 2)), 
+                      thresholdVals = np.linspace(1,20,50), slopeVals=np.linspace(1,10,10),lowerAsymptoteVals = 0.5, lapseRateVals=0.03,
+                      responseVals = [1,0], prior={"threshold": threshold_prior, "slope": slope_prior}, psychometricFunc = "weibull", startIntensity =11,
                       stimScale="linear", stimSelectionMethod="minEntropy", paramEstimationMethod = "mean")
 
 if SC_dotlife:

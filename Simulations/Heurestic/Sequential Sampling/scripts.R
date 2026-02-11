@@ -1,6 +1,12 @@
 library(future)
 library(future.apply)
 library(ordbetareg)
+
+pacman::p_load(cmdstanr, tidyverse,posterior, bayesplot, tidybayes,
+               brms, patchwork, cowplot,ggpubr,flextable)
+
+
+
 extract_Lu = function(row, P) {
   row %>%
     select(matches("^L_u\\.")) %>%
@@ -55,16 +61,24 @@ sim_trials = function(df){
   # -----------------------------
   # Simulated confidence
   # -----------------------------
+  interval = runif(length(X), 1,5)
+  
   conf_mu = numeric(length(X))
+  
   for(i in 1:length(X)){
     if(ACC[i] == 1){
-      conf_mu[i] <- pnorm(exp(df$beta1 - exp(df$meta_un_cor1)) * abs(X[i] - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))       # Confidence for correct trials
+      conf_mu[i] <- pnorm(exp(df$beta1 - exp(df$meta_un_cor1)+ df$meta_un_beta * interval[i]) * abs(X[i] - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))       # Confidence for correct trials
     } else {
-      conf_mu[i] <- pnorm(df$meta_un_inc1 * abs(X[i] - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))    # Confidence for incorrect trials
+      conf_mu[i] <- pnorm((df$meta_un_inc1) * abs(X[i] - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))    # Confidence for incorrect trials
     }
   }
   
-  conf = rordbeta(n = length(X), mu = conf_mu, phi = exp(df$conf_prec1), cutpoints = c(c0, c1))  # Simulated confidence values
+  conf = numeric(length(conf_mu))
+  
+  for(i in 1:length(X)){
+    conf[i] = rordbeta(n = 1, mu = brms::inv_logit_scaled(brms::logit_scaled(conf_mu[i]) + df$meta_bias + df$meta_bias_beta * interval[i]), phi = exp(df$conf_prec1), cutpoints = c(c0, c1))  # Simulated confidence values
+  }
+  
   
   # -----------------------------
   # Dataframe
@@ -78,14 +92,44 @@ sim_trials = function(df){
     meta_un_cor = df$meta_un_cor1,
     meta_un_inc1 = df$meta_un_inc1,
     conf_prec1 = df$conf_prec1,
+    meta_un_beta = df$meta_un_beta,
+    meta_bias_beta = df$meta_bias_beta,
     X = X,
-    interval = runif(length(X), 1,5),
+    interval = interval,
     ACC = ACC,
     resp = resp,
     c_mu = conf_mu,
     C = conf,
     theta = theta
-  )
+  ) %>% mutate(trial = 1:n())
+  
+
+  dataplot = df %>% pivot_longer(cols = c("resp","C")) %>% 
+    mutate(ACC = as.factor(ifelse(name == "resp",NA,ACC))) %>% 
+    group_by(ACC,name,X) %>% 
+    summarize(mean = mean(value),
+              se = sd(value) / sqrt(n())) %>% 
+    ggplot(aes(x = X, y = mean, ymin = mean-2*se, ymax = mean+2*se, col = (ACC)))+
+    geom_pointrange()+
+    geom_smooth()+
+    facet_wrap(~name,ncol = 1)+
+    theme(legend.position = "top")
+  
+  effectplot = df %>% 
+    filter(ACC == 1) %>% 
+    mutate(cut_interval = as.factor(cut(interval,3))) %>% 
+    group_by(X,cut_interval) %>% 
+    summarize(mean = mean(c_mu),
+              se = sd(c_mu) / sqrt(n())) %>% 
+    ggplot()+
+    geom_pointrange(aes(x = X, y = mean, ymin = mean-2*se, ymax = mean+2*se, col = (cut_interval)))+
+    geom_text(aes(x = 0, y = 0.8, label = paste0("bias = ",round(unique(df$meta_bias_beta),2), " \n meta_un = ",round(unique(df$meta_un_beta),2))))+
+    geom_smooth(aes(x = X, y = mean, col = (cut_interval)),se = F)+
+    theme(legend.position = "top")
+  
+  plot = dataplot | effectplot 
+  
+  df$plot <- c(list(plot), rep(list(NA), nrow(df) - 1))
   
   return(df)
 }
@@ -124,6 +168,7 @@ simulate_subjects = function(draw_row, S = 20, P = 9) {
       meta_bias_beta = param_new[9]
     )
   })
+  
 }
 
 fitter = function(new_subjects,subs){
@@ -165,8 +210,8 @@ fitter = function(new_subjects,subs){
   fit <-model$sample(
     data = datastan,
     refresh = 10,
-    iter_sampling = 1000,
-    iter_warmup = 1000,
+    iter_sampling = 500,
+    iter_warmup = 500,
     adapt_delta = 0.95,
     max_treedepth = 12,
     # init  = 0,
@@ -184,10 +229,10 @@ fitter = function(new_subjects,subs){
   BF = data.frame(bf8 = bf8, bf9 = bf9, n_subs = subs,sim_id = sim_id,
                   div = divs$mean_div, tree = divs$mean_tree, energi = divs$mean_energi, draw_id = unique(new_subjects$draw),prior_sd = prior_sd)
   
-  sim_subj = dd %>% select(c0,c1,beta,lapse,alpha,meta_un_cor,meta_un_inc1,conf_prec1,subj_id) %>% distinct() %>% 
+  sim_subj = dd %>% select(c0,c1,beta,lapse,alpha,meta_un_cor,meta_un_inc1,conf_prec1,meta_un_beta,meta_bias_beta,subj_id) %>% distinct() %>% 
     pivot_longer(-subj_id, names_to = "variable",values_to = "simulated")
   
-  esti_subj = fit$summary(c("c0","c1","beta1","lapse","alpha1","meta_un_cor1","meta_un_inc1","conf_prec1")) %>% 
+  esti_subj = fit$summary(c("c0","c1","beta1","lapse","alpha1","meta_un_cor1","meta_un_inc1","conf_prec1","meta_un_beta","meta_bias_beta")) %>% 
     mutate(
       subj_id = str_extract(variable, "(?<=\\[)\\d+(?=\\])") %>% as.integer(),
       variable   = str_remove(variable, "\\[\\d+\\]")
@@ -241,6 +286,7 @@ sim_new_subjects = function(max_subjects = 100){
 
   new_subjects =
     post_draws %>% filter(draw %in% draws_id) %>% 
+    mutate(`gm.8.` = 0.05) %>% 
     rowwise() %>% 
     mutate(sim = list(simulate_subjects(cur_data(), S = max_subjects,P = 9))) %>% 
     unnest(sim) %>% 
@@ -264,17 +310,17 @@ sim_new_subjects = function(max_subjects = 100){
   #   facet_wrap(~subj_id)+
   #   geom_point()
   
-  fits = fitter(new_subjects,5)
+  fits = fitter(new_subjects,10)
   
   
   
   
-  plan(multisession, workers = 5)  # Windows-friendly
+  plan(multisession, workers = 7)  # Windows-friendly
   
-  n_subj <- c(5, 10, 15,20,30)
+  n_subj <- c(5,6,7,8,9, 10,12, 14,20,25,30,40,50)
   library(furrr)
   
-  for(i in 1:5){
+  for(i in 1000:1010){
     
     draws_id = sample(nrow(post_draws), 1)
     
@@ -282,6 +328,7 @@ sim_new_subjects = function(max_subjects = 100){
     
     new_subjects =
       post_draws %>% filter(draw %in% draws_id) %>% 
+      mutate(`gm.8.` = 0.05) %>% 
       rowwise() %>% 
       mutate(sim = list(simulate_subjects(cur_data(), S = max_subjects,P = 9))) %>% 
       unnest(sim) %>% 
@@ -301,29 +348,41 @@ sim_new_subjects = function(max_subjects = 100){
       .options = furrr_options(seed = TRUE)
     )
     
-    saveRDS(results_list,here::here(paste0("test_ss",i,".RData")))
+    saveRDS(results_list,here::here(paste0("test_0.05effect_both_ss",i,".RData")))
     
     
   }
 
-  results_list = results_list[-which(results_list == "Error")]
   
   files = list.files((here::here("Simulations","Heurestic","Sequential Sampling","results")), full.names = T)
-  
+  files = files[3:5]
   results_list = list()
-  
+  q = 0
   for(i in 1:length(files)){
-    results_list[[i]] = readRDS(files[i])
+    q = q+1
+    results_list[[q]] = readRDS(files[i])
   }
   
+  
+  # results_list = results_list[-which(results_list == "Error")]
+  
   purrr::map_dfr(
-    results_list[1:length(results_list)],
-    ~ dplyr::bind_rows(purrr::map(.x, purrr::pluck, 1))
-  ) %>%   
+    results_list,
+    function(x) {
+      valid <- purrr::keep(x, ~ !identical(.x, "Error"))
+      dplyr::bind_rows(purrr::map(valid, purrr::pluck, 1))
+    }
+  ) %>% 
+    # filter(div == 0) %>%
+    # filter(draw_id == 2100 |draw_id == 1535) %>% 
     # mutate(draw_id = if_else(row_number() <= 6, draw_id + 1, draw_id)) %>% 
     pivot_longer(cols = c("bf8","bf9")) %>% 
-    ggplot(aes(x = n_subs, y =value, group = draw_id))+geom_line()+facet_wrap(~name)+
+    ggplot(aes(x = n_subs, y =value, group = draw_id))+
+    geom_line()+
+    geom_point()+
+    facet_wrap(~name)+
     geom_hline(yintercept = c(1/30), linetype = 2)+
+    # scale_y_continuous(limits = c(0,1))+
     theme_classic()
   
   
@@ -345,6 +404,8 @@ sim_new_subjects = function(max_subjects = 100){
     ~ dplyr::bind_rows(purrr::map(.x, purrr::pluck, 3))
   ) %>%   
     filter(grepl("gm",variable)) %>% 
+    filter(variable %in% c("gm[9]","gm[8]")) %>% 
+    filter(div == 0 & tree == 0) %>% 
     # mutate(draw_id = if_else(row_number() <= 6, draw_id + 1, draw_id)) %>% 
     ggplot(aes(x = simulated, y = mean,ymin = q5,ymax = q95, group = draw_id))+
     geom_pointrange()+

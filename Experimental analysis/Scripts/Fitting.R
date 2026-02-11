@@ -1,7 +1,7 @@
 fit_model_ss = function(df, model,samples){
   
+  model = cmdstanr::cmdstan_model(here::here("Stanmodels","MCMC","Emperical dataanalysis","Single Subject","Model1_ex.stan"))
   
-
   datastan = list(N = nrow(df),
                 a = df$Y,
                 RT = df$RT,
@@ -18,10 +18,10 @@ fit_model_ss = function(df, model,samples){
 
   fit <-model$sample(
     data = datastan,
-    refresh = 300,
+    refresh = 20,
     iter_sampling = samples,
     iter_warmup = samples,
-    adapt_delta = 0.99,
+    adapt_delta = 0.90,
     max_treedepth = 12,
     init  = 0,
     parallel_chains = 4)

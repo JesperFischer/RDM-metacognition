@@ -162,6 +162,138 @@ P(D=1 \mid e) = g\Big(\frac{2 \cdot e \cdot \mu}{\sigma_e^2}\Big)
 $$
 
 
+# Noisy Knowledge of Stimulus Strength
+
+## Motivation
+
+In the formulations above, we assumed the agent has **perfect knowledge** of the stimulus strength $\mu$ (or $X$, the coherence level). This is necessary to compute the posterior $P(D=1 \mid e)$ from the evidence. However, in many real experiments, participants may not have perfect knowledge of the stimulus strength on each trial. Instead, they may:
+
+- Learn stimulus strengths imperfectly through experience
+- Receive noisy perceptual cues about coherence
+- Make errors in estimating task difficulty
+
+We can model this uncertainty by assuming the agent has a **noisy internal estimate** of the stimulus strength:
+
+$$
+\hat{\mu} \sim \mathcal{N}(\mu, \sigma_{\mu}^2)
+$$
+
+or equivalently, using $X$ notation:
+
+$$
+\hat{X} \sim \mathcal{N}(X, \sigma_X^2)
+$$
+
+where $\sigma_X^2$ represents the **uncertainty or noise in the agent's knowledge of stimulus strength**.
+
+## Properties of Stimulus Uncertainty
+
+- When $\sigma_X = 0$: Perfect knowledge of stimulus strength (previous models)
+- When $\sigma_X > 0$: Imperfect knowledge, agent uses noisy estimate $\hat{X}$
+- Larger $\sigma_X$ means greater uncertainty about stimulus strength
+
+## Consequences for Posterior Computation
+
+When computing the posterior probability, the agent must use their estimate $\hat{\mu}$ rather than the true $\mu$:
+
+$$
+P(D=1 \mid e, \hat{\mu}) = g\Big(\frac{2 \cdot e \cdot \hat{\mu}}{\sigma_e^2}\Big)
+$$
+
+### Trial-by-Trial Variability
+
+Since $\hat{\mu}$ varies randomly around $\mu$ on each trial, this introduces **additional variability** in the posterior computation:
+
+- Even with the same evidence $e$ and true stimulus $\mu$, the computed posterior will vary
+- This affects both decisions and confidence judgments
+- The variability is **multiplicative** with the evidence (through the product $e \cdot \hat{\mu}$)
+
+### Distribution of Posterior Given Evidence
+
+To understand how this noise propagates, consider that:
+
+$$
+\frac{2 \cdot e \cdot \hat{\mu}}{\sigma_e^2} = \frac{2 \cdot e}{\sigma_e^2} \cdot \hat{\mu}
+$$
+
+where $\hat{\mu} \sim \mathcal{N}(\mu, \sigma_X^2)$. 
+
+The product of a Gaussian random variable with a constant is still Gaussian, so:
+
+$$
+\frac{2 \cdot e \cdot \hat{\mu}}{\sigma_e^2} \sim \mathcal{N}\Big(\frac{2 \cdot e \cdot \mu}{\sigma_e^2}, \Big(\frac{2 \cdot e}{\sigma_e^2}\Big)^2 \sigma_X^2\Big)
+$$
+
+**Key insight**: The variance of the log-odds scales with the **square of the evidence**. This means:
+- Strong evidence amplifies the effect of stimulus uncertainty
+- Weak evidence minimizes the effect of stimulus uncertainty
+- This creates a **heteroscedastic** (non-constant variance) noise structure
+
+### Impact on Choice Behavior
+
+The decision policy $a = \text{sign}(e - k)$ remains based on comparing evidence to criterion. However, when computing probabilities or fitting models that depend on the posterior (e.g., for confidence), the noisy $\hat{\mu}$ affects the computed probabilities.
+
+### Identifiability Considerations
+
+This model introduces an important **identifiability challenge**:
+
+1. **Evidence noise** ($\sigma_e^2$): Affects the distribution of $e$ given $D \cdot \mu$
+2. **Stimulus uncertainty** ($\sigma_X^2$): Affects how $\mu$ is used in posterior computation
+3. **Combined effect**: Both contribute to variability in behavior
+
+From choice data alone with varying stimulus strengths, it may be difficult to separate:
+- Increased evidence noise at high coherence
+- Increased uncertainty about stimulus strength
+- Their interaction effects
+
+However, confidence ratings may help distinguish these sources:
+- Evidence noise affects the relationship between $e$ and confidence
+- Stimulus uncertainty affects how coherence modulates confidence
+- Different predictions for confidence variability across coherence levels
+
+## Key Difference from Metacognitive Evidence Noise
+
+It's important to distinguish **noisy stimulus knowledge** from **noisy evidence readout** (discussed in the next section):
+
+### Noisy Stimulus Knowledge (this section):
+$$
+\hat{\mu} \sim \mathcal{N}(\mu, \sigma_X^2) \quad \Rightarrow \quad P(D=1 \mid e, \hat{\mu}) = g\Big(\frac{2 \cdot e \cdot \hat{\mu}}{\sigma_e^2}\Big)
+$$
+
+- Noise is **multiplicative** with evidence: $e \cdot \hat{\mu}$
+- Effect **scales with evidence strength**: $\text{Var}(e \cdot \hat{\mu}) = e^2 \cdot \sigma_X^2$
+- Strong evidence → large posterior variance
+- Weak evidence → small posterior variance
+- Creates **heteroscedastic** (non-constant) noise
+
+### Noisy Evidence Readout (next section):
+$$
+\hat{e} \sim \mathcal{N}(e, \sigma_m^2) \quad \Rightarrow \quad P(D=1 \mid \hat{e}) = g\Big(\frac{2 \cdot \hat{e} \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big)
+$$
+
+- Noise is **additive** on evidence: $\hat{e} = e + \epsilon_m$
+- Effect is **constant** across all evidence levels
+- Variance in posterior does not depend on $e$
+- Creates **homoscedastic** (constant) noise
+
+### Empirical Predictions
+
+These models make **different predictions**:
+
+1. **Confidence variability**:
+   - Noisy stimulus knowledge → Higher confidence variability at high coherence
+   - Noisy evidence readout → Constant confidence variability across coherence
+
+2. **Coherence effects**:
+   - Noisy stimulus knowledge → Uncertainty about how to weight evidence by coherence
+   - Noisy evidence readout → Uncertainty about the evidence itself
+
+3. **Combined model**: Both could operate simultaneously:
+   - $\hat{\mu} \sim \mathcal{N}(\mu, \sigma_X^2)$ (multiplicative)
+   - $\hat{e} \sim \mathcal{N}(e, \sigma_m^2)$ (additive)
+   - Different noise sources at different processing stages
+
+
 # Metacognitive Noise: Noisy additional Evidence Readout
 
 ## Motivation
@@ -559,8 +691,8 @@ simulate_interaction <- function(sigma_m, sigma_k,sigma_e) {
   p_gauss <- pnorm(e / sigma_k)
   a <- rbinom(n_trials, 1, p_gauss)
   C_mu <- ifelse(a == 1, 
-                 plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)),
-                 1 - plogis(2 * ehat * X / (sigma_e^2 + sigma_m^2)))
+                 plogis(2 * ehat * abs(ehat) / (sigma_e^2 + sigma_m^2)),
+                 1 - plogis(2 * ehat * abs(ehat) / (sigma_e^2 + sigma_m^2)))
   c_mu <- pmax(0.001, pmin(0.999, C_mu))
   C <- ordbetareg::rordbeta(n_trials, c_mu, conf_prec, c(c0, c1))
   
@@ -762,7 +894,8 @@ df_interaction <- expand.grid(
 ```
 
 ```{r, include = F}
-df_interaction %>% filter(sigma_e == 1, sigma_k == 1, ehat < 0.1 & ehat > -0.1) %>% group_by(sigma_m,a) %>% summarize(D = mean(D)) %>% ggplot(aes(x = sigma_m, y = D, col = as.factor(a)))+geom_jitter()+geom_smooth()
+df_interaction %>% filter(sigma_e == 1, sigma_k == 1, ehat < 0.1 & ehat > -0.1) %>% 
+  group_by(sigma_m,a) %>% summarize(D = mean(D)) %>% ggplot(aes(x = sigma_m, y = D, col = as.factor(a)))+geom_jitter()+geom_smooth()
 ```
 
 
