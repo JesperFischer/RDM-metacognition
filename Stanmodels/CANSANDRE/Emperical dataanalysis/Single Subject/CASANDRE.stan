@@ -59,7 +59,7 @@ functions{
 data {
   int<lower=1> N;
 
-  array[N] int<lower=-1, upper=1> D;   // true stimulus
+  //array[N] int<lower=-1, upper=1> D;   // true stimulus
   array[N] int<lower=0, upper=1> a;   // observed choice
   vector[N] X;                         // stimulus strength
   vector[N] C;                         // stimulus strength
@@ -69,47 +69,50 @@ data {
 
 
 parameters {
-  vector[N] evidence_std;
+  //vector[N] evidence_std;
   vector[N] sigma_dhat_std;
-  real sigma_choice_log;              // decision bias
-  real sigma_m_log;              // decision bias
+  //real sigma_choice_log;              // decision bias
+  //real sigma_m_log;              // decision bias
   real prec_conf_log;              // decision bias
   real sigma_e_log;              // decision bias
-  real mean_choice;
+  real crit;
+  real bias1;
+  //real bias;
+  //real mean_choice;
   real c11;
   real c0;
 }
 
 
 transformed parameters{
-  vector[N] evidence;
+  //vector[N] evidence;
   vector[N] p_action;
+  real mu_sigma_log;
   vector[N] sigma_dhat;
   vector[N] mu_conf;
   
+  mu_sigma_log = sigma_e_log +exp(bias1);
+  
   for(i in 1:N){
-    evidence[i] = mean_choice + X[i] * D[i] + exp(sigma_e_log) * evidence_std[i];
-    sigma_dhat[i] = exp(sigma_e_log + exp(sigma_m_log) * sigma_dhat_std[i]);
+    //evidence[i] = mean_choice + X[i] * D[i] + exp(sigma_e_log) * evidence_std[i];
+    sigma_dhat[i] = mu_sigma_log + 0.1 * sigma_dhat_std[i];
 
-    p_action[i] = Phi((evidence[i])/exp(sigma_choice_log));
-    
-    if(a[i] == 1){
-      mu_conf[i] = Phi((evidence[i])/(sigma_dhat[i]));
-    ;
-    }else if(a[i] == 0){
-      mu_conf[i] = 1 - Phi((evidence[i])/(sigma_dhat[i]));
-    }
-  }
+    p_action[i] = Phi((X[i]-crit)/exp(sigma_e_log));
+
+    mu_conf[i] = Phi(abs(X[i]-crit)/exp(sigma_dhat[i]));}
+
 }
 
 model {
-  sigma_choice_log ~ normal(-1, 1);
-  sigma_e_log ~ normal(-1, 1);
-  sigma_m_log ~ normal(-1, 1);
+  //sigma_choice_log ~ normal(-1, 1);
+  sigma_e_log ~ normal(1, 1.5);
+  //sigma_m_log ~ normal(-1, 1);
   prec_conf_log ~ normal(3, 3);
-  mean_choice ~ normal(0, 0.3);
+  //mean_choice ~ normal(0, 0.3);
+  crit ~ normal(47,3);
+  bias1 ~ normal(-1,1);
   
-  evidence_std ~ std_normal();
+  //evidence_std ~ std_normal();
   sigma_dhat_std ~ std_normal();
   
   
@@ -129,10 +132,12 @@ model {
 generated quantities{
   real c1 = c0 + exp(c11);
 
-  real sigma_choice = exp(sigma_choice_log);
-  real sigma_m = exp(sigma_m_log);
+  //real sigma_choice = exp(sigma_choice_log);
+  
+  //real sigma_m = exp(sigma_m_log);
+  real bias = exp(bias1);
   real sigma_e = exp(sigma_e_log);
   real prec_conf = exp(prec_conf_log);
-
+  //real bias = exp(bias_log);
 
 }
