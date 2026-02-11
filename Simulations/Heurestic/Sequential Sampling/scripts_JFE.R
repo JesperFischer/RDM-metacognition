@@ -67,7 +67,7 @@ sim_trials = function(df){
   
   for(i in 1:length(X)){
     if(ACC[i] == 1){
-      conf_mu[i] <- pnorm(exp(df$beta1 - exp(df$meta_un_cor1)+ df$meta_un_beta * interval[i]) * abs(X[i] - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))       # Confidence for correct trials
+      conf_mu[i] <- pnorm(exp(df$beta1 - exp(df$meta_un_cor1 + df$meta_un_beta * interval[i])) * abs(X[i] - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))       # Confidence for correct trials
     } else {
       conf_mu[i] <- pnorm((df$meta_un_inc1) * abs(X[i] - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))    # Confidence for incorrect trials
     }
@@ -78,7 +78,6 @@ sim_trials = function(df){
   for(i in 1:length(X)){
     conf[i] = rordbeta(n = 1, mu = brms::inv_logit_scaled(brms::logit_scaled(conf_mu[i]) + df$meta_bias + df$meta_bias_beta * interval[i]), phi = exp(df$conf_prec1), cutpoints = c(c0, c1))  # Simulated confidence values
   }
-  
   
   # -----------------------------
   # Dataframe
@@ -101,35 +100,7 @@ sim_trials = function(df){
     c_mu = conf_mu,
     C = conf,
     theta = theta
-  ) %>% mutate(trial = 1:n())
-  
-
-  dataplot = df %>% pivot_longer(cols = c("resp","C")) %>% 
-    mutate(ACC = as.factor(ifelse(name == "resp",NA,ACC))) %>% 
-    group_by(ACC,name,X) %>% 
-    summarize(mean = mean(value),
-              se = sd(value) / sqrt(n())) %>% 
-    ggplot(aes(x = X, y = mean, ymin = mean-2*se, ymax = mean+2*se, col = (ACC)))+
-    geom_pointrange()+
-    geom_smooth()+
-    facet_wrap(~name,ncol = 1)+
-    theme(legend.position = "top")
-  
-  effectplot = df %>% 
-    filter(ACC == 1) %>% 
-    mutate(cut_interval = as.factor(cut(interval,3))) %>% 
-    group_by(X,cut_interval) %>% 
-    summarize(mean = mean(c_mu),
-              se = sd(c_mu) / sqrt(n())) %>% 
-    ggplot()+
-    geom_pointrange(aes(x = X, y = mean, ymin = mean-2*se, ymax = mean+2*se, col = (cut_interval)))+
-    geom_text(aes(x = 0, y = 0.8, label = paste0("bias = ",round(unique(df$meta_bias_beta),2), " \n meta_un = ",round(unique(df$meta_un_beta),2))))+
-    geom_smooth(aes(x = X, y = mean, col = (cut_interval)),se = F)+
-    theme(legend.position = "top")
-  
-  plot = dataplot | effectplot 
-  
-  df$plot <- c(list(plot), rep(list(NA), nrow(df) - 1))
+  )
   
   return(df)
 }
@@ -286,7 +257,8 @@ sim_new_subjects = function(max_subjects = 100){
 
   new_subjects =
     post_draws %>% filter(draw %in% draws_id) %>% 
-    mutate(`gm.8.` = 0.05) %>% 
+    mutate(`gm.8.` =`gm.8.` + 0.05,
+           `gm.9.` = `gm.9.` + 0.05) %>% 
     rowwise() %>% 
     mutate(sim = list(simulate_subjects(cur_data(), S = max_subjects,P = 9))) %>% 
     unnest(sim) %>% 
@@ -310,7 +282,7 @@ sim_new_subjects = function(max_subjects = 100){
   #   facet_wrap(~subj_id)+
   #   geom_point()
   
-  fits = fitter(new_subjects,10)
+  fits = fitter(new_subjects,5)
   
   
   
@@ -320,7 +292,7 @@ sim_new_subjects = function(max_subjects = 100){
   n_subj <- c(5,6,7,8,9, 10,12, 14,20,25,30,40,50)
   library(furrr)
   
-  for(i in 1000:1010){
+  for(i in 100:110){
     
     draws_id = sample(nrow(post_draws), 1)
     
@@ -328,7 +300,8 @@ sim_new_subjects = function(max_subjects = 100){
     
     new_subjects =
       post_draws %>% filter(draw %in% draws_id) %>% 
-      mutate(`gm.8.` = 0.05) %>% 
+      mutate(`gm.8.` =`gm.8.` + 0.05,
+             `gm.9.` = `gm.9.` + 0.05) %>% 
       rowwise() %>% 
       mutate(sim = list(simulate_subjects(cur_data(), S = max_subjects,P = 9))) %>% 
       unnest(sim) %>% 
@@ -348,23 +321,23 @@ sim_new_subjects = function(max_subjects = 100){
       .options = furrr_options(seed = TRUE)
     )
     
-    saveRDS(results_list,here::here(paste0("test_0.05effect_both_ss",i,".RData")))
+    saveRDS(results_list,here::here(paste0("test_0.1effect_both_ss",i,".RData")))
     
     
   }
 
   
   files = list.files((here::here("Simulations","Heurestic","Sequential Sampling","results")), full.names = T)
-  files = files[3:5]
+  
   results_list = list()
   q = 0
-  for(i in 1:length(files)){
+  for(i in 2:length(files)){
     q = q+1
     results_list[[q]] = readRDS(files[i])
   }
   
   
-  # results_list = results_list[-which(results_list == "Error")]
+  results_list = results_list[-which(results_list == "Error")]
   
   purrr::map_dfr(
     results_list,
@@ -373,7 +346,7 @@ sim_new_subjects = function(max_subjects = 100){
       dplyr::bind_rows(purrr::map(valid, purrr::pluck, 1))
     }
   ) %>% 
-    # filter(div == 0) %>%
+    filter(div == 0) %>%
     # filter(draw_id == 2100 |draw_id == 1535) %>% 
     # mutate(draw_id = if_else(row_number() <= 6, draw_id + 1, draw_id)) %>% 
     pivot_longer(cols = c("bf8","bf9")) %>% 
@@ -382,7 +355,6 @@ sim_new_subjects = function(max_subjects = 100){
     geom_point()+
     facet_wrap(~name)+
     geom_hline(yintercept = c(1/30), linetype = 2)+
-    # scale_y_continuous(limits = c(0,1))+
     theme_classic()
   
   
@@ -404,8 +376,6 @@ sim_new_subjects = function(max_subjects = 100){
     ~ dplyr::bind_rows(purrr::map(.x, purrr::pluck, 3))
   ) %>%   
     filter(grepl("gm",variable)) %>% 
-    filter(variable %in% c("gm[9]","gm[8]")) %>% 
-    filter(div == 0 & tree == 0) %>% 
     # mutate(draw_id = if_else(row_number() <= 6, draw_id + 1, draw_id)) %>% 
     ggplot(aes(x = simulated, y = mean,ymin = q5,ymax = q95, group = draw_id))+
     geom_pointrange()+
