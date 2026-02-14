@@ -26,7 +26,9 @@ df = load_data()
 
 ## plotting the behavioral data:
 ```{r, fig.height=6,fig.width=8, message=F,warning=F}
-plot_beh_data(df,NULL,F)
+plot_beh_data(df %>% filter(Trialtype == "Main"),7,F)
+plot_beh_data(df %>% filter(ID == "Rasmus_2026_04_02" & Trialtype == "Main"),NULL,F)
+
 ```
 
 ## fit the standard model with meta-uncertainty and meta-bias
@@ -40,7 +42,7 @@ dd = df %>%
 
 
 ```{r}
-dd_by_subj <- split(dd, dd$subject)
+dd_by_subj <- split(dd, dd$ID)
 
 fits <- lapply(dd_by_subj, function(d) {
   fit_model_ss(d, model1, 500)
@@ -52,7 +54,7 @@ fits <- lapply(dd_by_subj, function(d) {
 models = list.files(here::here("Experimental analysis","Heurestic models","saved models"), full.names = T)
 
 fits = list()
-for(model in models[1:8]){
+for(model in models[1:9]){
   fit = readRDS(model)
   fits[[str_remove(str_remove(str_split(model, "/")[[1]][8],".rds"),"fit_")]] = fit  
 }

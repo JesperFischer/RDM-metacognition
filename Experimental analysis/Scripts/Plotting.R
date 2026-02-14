@@ -61,9 +61,16 @@ plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
       group_by(X,ID) %>%
       summarize(
         name = "Type-1",
-        mean = mean(Y, na.rm = T),
-        q5 = mean(Y, na.rm = T) - 2* (mean(Y, na.rm = T) * (1-mean(Y, na.rm = T)) / sqrt(n())),
-        q95 = mean(Y, na.rm = T) + 2 * (mean(Y, na.rm = T) * (1-mean(Y, na.rm = T)) / sqrt(n())),
+        
+        k = sum(Y),
+        n = n(),
+        mean = k / n,
+        
+        a_post = k + 1,
+        b_post = (n - k) + 1,
+        
+        q5 = qbeta(0.025, a_post, b_post),
+        q95 = qbeta(0.975, a_post, b_post),
         .groups = "drop"
       )
   }
@@ -116,6 +123,185 @@ plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
   
   
 }
+
+
+plot_beh_data_tog = function(df,n_bins,ACC = F, r_data = F){
+  subjects = unique(df$subject)
+  IDs = unique(df$ID)
+  # If more than one subject → apply function per subject
+  if(length(subjects) != 1){
+    
+    df_split = split(df, df$subject)
+    
+    out = lapply(df_split, function(d){
+      plot_beh_data_tog(d, n_bins = n_bins, ACC = ACC, r_data  = r_data)
+    })
+    
+    if(is.ggplot(out[[1]][[1]])){
+      for(i in 1:length(out)){
+        out[[i]][[1]] = out[[i]][[1]] + ggtitle(unique(df_split[[i]]$ID))
+        out[[i]][[2]] = out[[i]][[2]] + ggtitle(unique(df_split[[i]]$ID))
+      }      
+    }
+    return(out)
+  }
+  
+  
+  if(r_data == T){
+    return(df %>% mutate(trial = 1:n()))
+  }
+  
+  
+  # Prepare observed data
+  if (!is.null(n_bins)) {
+    # Create common bin boundaries based on the range of both datasets
+    all_X <- c(df$X)
+    X_range <- range(all_X, na.rm = TRUE)
+    bin_breaks <- seq(X_range[1], X_range[2], length.out = n_bins + 1)
+    
+    # Calculate bin centers (midpoints)
+    bin_centers <- (bin_breaks[-1] + bin_breaks[-length(bin_breaks)]) / 2
+    
+    # Bin the data using the common breaks and assign bin centers
+    df <- df %>%
+      mutate(X_bin = cut(X, breaks = bin_breaks, labels = FALSE, include.lowest = TRUE),
+             X = bin_centers[X_bin]) %>%
+      select(-X_bin)%>% mutate(trial = 1:n())
+    
+  }
+  
+  if(ACC){
+    bin = df %>% mutate(trial = 1:n())%>%
+      mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
+      group_by(X,ID) %>%
+      summarize(
+        name = "Type-1",
+        mean = mean(ACC, na.rm = T),
+        q5 = mean(ACC) - 2* (mean(ACC, na.rm = T) * (1-mean(ACC, na.rm = T)) / sqrt(n())),
+        q95 = mean(ACC) + 2 * (mean(ACC, na.rm = T) * (1-mean(ACC, na.rm = T)) / sqrt(n())),
+        .groups = "drop"
+      )
+  }else{
+    bin = df %>% 
+      mutate(trial = 1:n()) %>% 
+      mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
+      group_by(X,ID) %>%
+      summarize(
+        name = "Type-1",
+        
+        k = sum(Y),
+        n = n(),
+        mean = k / n,
+        
+        a_post = k + 1,
+        b_post = (n - k) + 1,
+        
+        q5 = qbeta(0.025, a_post, b_post),
+        q95 = qbeta(0.975, a_post, b_post),
+        .groups = "drop"
+        )
+  }
+  
+  
+  
+  
+  df1 = bind_rows(
+    bin,
+    df %>%
+      mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
+      group_by(X) %>%
+      summarize(name = "RT",
+                mean = mean(RT, na.rm = T),
+                q5 = mean(RT, na.rm = T) - 2 * (sd(RT, na.rm = T) / sqrt(n())),
+                q95 = mean(RT, na.rm = T) + 2 * (sd(RT, na.rm = T) / sqrt(n())),
+                .groups = "drop"),
+    
+    df %>%
+      mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
+      group_by(X, Correct,ID) %>%
+      summarize(name = "Confidence",
+                mean = mean(Confidence, na.rm = T),
+                q5 = mean(Confidence, na.rm = T) - 2 * (sd(Confidence, na.rm = T) / sqrt(n())),
+                q95 = mean(Confidence, na.rm = T) + 2 * (sd(Confidence, na.rm = T) / sqrt(n())),
+                .groups = "drop")
+  ) 
+  
+  
+  # Plot 1: Expected means (main plot)
+  plot_mean_ACC = data.frame() %>% 
+    ggplot() +
+    geom_pointrange(data = df1 %>% filter(name == "Confidence"), aes(x = X, y = mean, ymin = q5, ymax = q95, fill = Correct),
+                    shape = 21, color = "black", size = 0.8) +
+    geom_pointrange(data = df1 %>% filter(name == "Type-1"), aes(x = X, y = mean, ymin = q5, ymax = q95), size = 0.8,
+                    shape = 21, color = "black", fill = "black") +
+    
+    (if (!is.null(n_bins)) 
+      geom_line(data = df1 %>% filter(name == "Confidence"), aes(x = X, y = mean, color = Correct),
+                size = 0.8) 
+    else NULL) +
+    (if (!is.null(n_bins)) 
+      geom_line(data = df1 %>% filter(name == "Type-1"), aes(x = X, y = mean), size = 0.8)
+     else NULL) +
+    scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
+    scale_color_manual(values = c("red","green","black"))+
+    theme_classic(base_size = 14) +
+    labs(color = "Correct", fill = "Correct",
+         y = "Value") +
+    geom_vline(xintercept = 0, linetype = 2) +
+    theme(legend.position = "top")
+  
+  
+  
+  df1 = bind_rows(
+    bin,
+    df %>%
+      mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
+      group_by(X) %>%
+      summarize(name = "RT",
+                mean = mean(RT, na.rm = T),
+                q5 = mean(RT, na.rm = T) - 2 * (sd(RT, na.rm = T) / sqrt(n())),
+                q95 = mean(RT, na.rm = T) + 2 * (sd(RT, na.rm = T) / sqrt(n())),
+                .groups = "drop"),
+    
+    df %>%
+      mutate(Y = ifelse(Y == 1, "Right", "Left")) %>%
+      group_by(X, Y,ID) %>%
+      summarize(name = "Confidence",
+                mean = mean(Confidence, na.rm = T),
+                q5 = mean(Confidence, na.rm = T) - 2 * (sd(Confidence, na.rm = T) / sqrt(n())),
+                q95 = mean(Confidence, na.rm = T) + 2 * (sd(Confidence, na.rm = T) / sqrt(n())),
+                .groups = "drop")
+  ) 
+  
+
+  plot_mean_dec = data.frame() %>% 
+    ggplot() +
+    geom_pointrange(data = df1 %>% filter(name == "Confidence"), aes(x = X, y = mean, ymin = q5, ymax = q95, fill = Y),
+                    shape = 21, color = "black", size = 0.8) +
+    geom_pointrange(data = df1 %>% filter(name == "Type-1"), aes(x = X, y = mean, ymin = q5, ymax = q95), size = 0.8,
+                    shape = 21, color = "black", fill = "black") +
+    
+    (if (!is.null(n_bins)) 
+      geom_line(data = df1 %>% filter(name == "Confidence"), aes(x = X, y = mean, color = Y),
+                size = 0.8) 
+     else NULL) +
+    (if (!is.null(n_bins)) 
+      geom_line(data = df1 %>% filter(name == "Type-1"), aes(x = X, y = mean), size = 0.8)
+     else NULL) +
+    scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
+    scale_color_manual(values = c("red","green","black"))+
+    theme_classic(base_size = 14) +
+    labs(color = "Y", fill = "Y",
+         y = "Value") +
+    geom_vline(xintercept = 0, linetype = 2) +
+    theme(legend.position = "top")
+  
+  
+  return(list(plot_mean_ACC,plot_mean_dec))
+  
+  
+}
+
 
 get_marginal_estimates = function(fit){
   

@@ -1,6 +1,6 @@
 fit_model_ss = function(df, model,samples){
   
-  model = cmdstanr::cmdstan_model(here::here("Stanmodels","MCMC","Emperical dataanalysis","Single Subject","Model1_ex.stan"))
+  # model = cmdstanr::cmdstan_model(here::here("Stanmodels","MCMC","Emperical dataanalysis","Single Subject","Model1_ex.stan"))
   
   datastan = list(N = nrow(df),
                 a = df$Y,
@@ -26,13 +26,13 @@ fit_model_ss = function(df, model,samples){
     init  = 0,
     parallel_chains = 4)
   
-  if(grepl("MCMC",model1$stan_file())){
+  if(grepl("MCMC",model$stan_file())){
     fit$save_object(here::here("Experimental analysis","MCMC","saved models",paste0("fit_",unique(df$ID),".rds")))
   }
-  if(grepl("CANSANDRE",model1$stan_file())){
+  if(grepl("CANSANDRE",model$stan_file())){
     fit$save_object(here::here("Experimental analysis","CANSANDRE","saved models",paste0("fit_",unique(df$ID),".rds")))
   }
-  if(grepl("Heurestic models",model1$stan_file())){
+  if(grepl("Heurestic models",model$stan_file())){
     fit$save_object(here::here("Experimental analysis","Heurestic models","saved models",paste0("fit_",unique(df$ID),".rds")))
   }
   
@@ -94,7 +94,7 @@ pp = function(fit,df,n_bins){
   available <- names(as_draws_df(fit$draws()))
   parameters = c("sigma_choice","mean_choice","prec_conf","sigma_m","sigma_e", "meta_bias")
   
-  if(length(intersect(parameters, available)) != 0){
+  if(length(intersect(parameters, available)) > 3){
     params <- intersect(parameters, available)
     
     
@@ -212,7 +212,8 @@ pp = function(fit,df,n_bins){
     
   
   
-  pp_plot = behplot %>% filter(name != "RT") %>% 
+  pp_plot = behplot %>% 
+    filter(name != "RT") %>%
     ggplot() +
     geom_pointrange(data = behplot%>% filter(name != "RT"), aes(x = X, y = mean, ymin = q5, ymax = q95, fill = Correct),
                     shape = 21, color = "black", alpha = 0.5) +

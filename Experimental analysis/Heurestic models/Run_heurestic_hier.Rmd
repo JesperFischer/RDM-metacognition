@@ -27,11 +27,17 @@ df = load_data()
 ## plotting the behavioral data:
 ```{r, fig.height=6,fig.width=8, message=F,warning=F}
 plot_beh_data(df,NULL,F)
+
+plot_beh_data_tog(df %>% filter(Trialtype == "Main"), NULL, F)
+
+plot_beh_data_tog(df %>% filter(Trialtype == "Main"), 6, F)
 ```
 
 ## fit the standard model with meta-uncertainty and meta-bias
 ```{r}
-model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","hierarchical","full_model1.stan"))
+# model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","hierarchical","full_model3.stan"))
+model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","hierarchical","lapse","full_model3_lapse.stan"))
+
 
 dd = df %>% 
   mutate(subject = as.numeric(as.factor(subject))) %>% 
@@ -49,7 +55,7 @@ datastan = list(N = nrow(dd),
                 XD = dd$X,
                 minRT = min(dd$RT),
                 ACC = dd$Correct,
-                interval = dd$interTrial.interval)
+                interval = dd$interval)
 
 
 fit <-model$sample(
@@ -63,25 +69,35 @@ fit <-model$sample(
   parallel_chains = 4)
 
 
-fit$save_object(here::here("Experimental analysis","Heurestic models","saved models hier",paste0("fit_hier.rds")))
+fit$save_object(here::here("Experimental analysis","Heurestic models","saved models","saved models hier",paste0("fit_hier3_lapse.rds")))
 
 ```
 
 
 ```{r}
-models = list.files(here::here("Experimental analysis","Heurestic models","saved models hier"), full.names = T)
+models = list.files(here::here("Experimental analysis","Heurestic models","saved models","saved models hier"), full.names = T)
 
 fits = list()
-for(model in models){
+loos = list()
+for(model in models[1:6]){
   fit = readRDS(model)
-  fits[[str_remove(str_remove(str_split(model, "/")[[1]][8],".rds"),"fit_")]] = fit  
+  fits[[str_remove(str_remove(str_split(model, "/")[[1]][9],".rds"),"fit_")]] = fit  
+  
+  loo = fit$loo("log_lik")
+  
+  loos[[str_remove(str_remove(str_split(model, "/")[[1]][9],".rds"),"fit_")]] = loo
+  
 }
 
+modelcompar = data.frame(loo::loo_compare(loos)) %>% rownames_to_column("models")
+
+
+fit_hier <- readRDS(models[grepl(modelcompar$models[1],models)])
 ```
 
 
-```{r, fig.width=8,fig.height=6}
-dia_hier(fits$hier, dd)
+```{r, fig.width=16,fig.height=12}
+dia_hier(fit_hier, dd)
 ```
 
 
@@ -89,7 +105,7 @@ dia_hier(fits$hier, dd)
 # posterior predictives:
 
 ```{r, fig.width=8,fig.height=6, error=F,message=F,warning=F}
-pps = pp_hier(fits$hier, dd, n_bins = 20)
+pps = pp_hier(fit_hier, dd, n_bins = 20)
 
 pps[[1]]
 ```
@@ -97,6 +113,15 @@ pps[[1]]
 
 ```{r, fig.width=8,fig.height=6, error=F,message=F,warning=F}
 pps[[2]]
+```
+```{r,fig.height=8,fig.width=8}
+correlation_matrix(fit_hier)
+```
+
+
+```{r, fig.width=12,fig.height=8}
+get_marginal_estimates(fit_hier)
+
 ```
 
 

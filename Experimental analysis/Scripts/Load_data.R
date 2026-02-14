@@ -8,7 +8,7 @@ load_data = function(){
   df = data.frame()
   for(path in paths){
     print(path)
-    subjectID = strsplit(path, '/')[[1]][[8]]
+    subjectID = strsplit(path, '/')[[1]][[7]]
     
     dq = read.csv(path)
 
@@ -29,7 +29,6 @@ load_data = function(){
              interval,interTrial.interval,
              subject,age,gender,ID,handedness)
     
-  
   
   df = rbind(df,dd)
   }
