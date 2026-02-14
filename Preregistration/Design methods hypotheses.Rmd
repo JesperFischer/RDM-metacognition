@@ -1,0 +1,76 @@
+---
+title: "Design Methods and Hypotheses"
+author: Jesper Fischer Ehmsen^1^,
+        Siebe Everaets^xx^,
+        Micah G. Allen^1,2,\*^,
+        Francesca Fardo^1,3,\*^
+output:
+  html_document: default
+  word_document:
+    # reference_docx: Knitting files/docx_template.docx
+  pdf_document:
+    latex_engine: xelatex
+# bibliography: 
+  # - "Knitting files/References.bib"
+link-citations: yes
+linkcolor: blue
+# csl: Knitting files/science-advances.csl
+always_allow_html: yes
+---
+
+::: {custom-style="Title text"}
+^1^Center of Functionally Integrative Neuroscience (CFIN), Department of Clinical Medicine, Aarhus University
+
+^2^Cambridge Psychiatry, University of Cambridge, United Kingdom
+
+^3^Danish Pain Research Center, Department of Clinical Medicine, Aarhus University
+
+^\*^Equal contributions
+
+Corresponding author: Jesper Fischer Ehmsen (jesperfischer@cfin.au.dk)
+
+:::
+
+```{r load packages, warning = F, message = F, echo = F, include=FALSE}
+knitr::opts_chunk$set(dpi=300)
+
+# seed
+set.seed(123)
+
+# packages
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load("here", "knitr","yaml")
+
+knitr::opts_chunk$set(echo = TRUE)
+
+#renv::restore(project=here::here())
+
+required_packages = c("cowplot", "magick", "tidyverse", "flextable")
+lapply(required_packages, library, character.only = TRUE)
+```
+
+
+
+
+
+
+## Experimental study
+
+The current study examines motion discrimination and metacognition in a Random Dot Motion (RDM) task. Specifically, we are interested in the question of whether post-decisional timing influence meta-cognitive uncertainty, i.e. does confidence ratings follow the probability of being correct more closely when subjects are forced to wait longer before giving their confidence ratings compared to when they can respond directly. Dynamic models of metacognition assume that evidence is accumulated until a response boundary is reached and a binary decision is initialized. After the binary choice is given, additional evidence is accumulated (i.e. post decisional) in order to give a confidence rating to the binary choice. Here we investigate whether increasing the post decisional time window has an effect on the quality of the confidence ratings. Previous studies have generally found insignificant effects, both when stimulus is viewed in the post decisional windown and when removed (REF). We therefore set out to test this in a bayesian framewoork using sequential sampling to also be able to provide evidence for the NULL-hypothesis that post-decisional time does not change the quality of the confidence ratings.
+
+Our hypotheses are as follows:
+
+1. Increasing the Post-decisional time-window will lead to no improvement in the relationship between confidence ratings and the probability of being correct on the given choice.
+* This Hypothesis will be tested by letting the $\sigma_\gamma$ parameter from the heuristic model vary by the Post-decisional time-window. The primary test is whether this parameter-value (on a group level) is different from 0. Specifically we test this using a sequential sampling approach in a bayesian framework with the bounds for terminating being a bayesfator of either 30 or 1/30.
+
+2. Increasing the Post-decisional time-window will lead to no difference in confidence bias.
+* This Hypothesis will be tested by letting the $C_\beta$ parameter from the heuristic model vary by the Post-decisional time-window. The primary test is whether this parameter-value (on a group level) is different from 0 (i.e. does the 95% HDI include 0). 
+
+3. We expect a positive correlation across subjects between how much confidence ratings on correct trials deviate from optimal (the psychometric function) and the slope of confidence ratings in incorrect trials.
+* This Hypothesis will be tested by looking at the correlation between $\sigma_\gamma$ and $\sigma_\eta$ which we will extract from the correlation matrix. Thus we will test the $\sigma_\gamma$ / $\sigma_\eta$ cell in the correlation matrix and investigate if its different from 0 (i.e. does the 95% HDI include 0). 
+
+
+## Sequential sampling
+
+To limit the number of subjects needed to get sufficient evidence for our inference we will conduct a sequential sampling paradigm. Here we choose to terminate recruitment when the above explained bayesfactor reaches either 30 or 1/30, or we have collected 50 subjects. We will start examaing the bayesfactors in increments of 5 subjects when we have reached 20 total subjects. This is mainly due to stability of the model estimation, as well as expecting to test around 5 subjects per day. Below we show some simulated trajectories of bayesfactors across subjects (simulated from the same model, but fit to pilot data). The black traces show the bayesfactor for the unmodified joint posterior distribution as subjects increase, whereas the red traces show the same but with an increase in the effect of interest at a group level of 0.05.  
+
