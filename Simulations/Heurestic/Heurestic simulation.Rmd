@@ -17,7 +17,7 @@ output:
 ---
 
 ```{r}
-pacman::p_load(tidyverse,posterior,bayesplot,cmdstanr,patchwork,ordbetareg,shiny,statConfR)
+pacman::p_load(tidyverse,posterior,bayesplot,cmdstanr,patchwork,ordbetareg,shiny,statConfR,truncnorm)
 
 ```
 
@@ -28,39 +28,39 @@ simulate_data = function(n = 1000){
   # Set parameters
   # -----------------------------
   n_trials <- n        # number of trials
-  sigma_e <- abs(rnorm(1,1,2))           # noise on evidence (needs to be fixed for now)
+  sigma_e <- (rnorm(1,-1,1))           # noise on evidence (needs to be fixed for now)
+  bias <- rnorm(1,0,0.3)           # noise on evidence (needs to be fixed for now)
   
-  sigma_m = abs(rnorm(1,1,2))
-  conf_prec = abs(rnorm(1,100,50))
+  sigma_m = (rnorm(1,-1,1))
+  conf_prec = (rnorm(1,100,50))
   c0 = -abs(rnorm(1,5,1))
   c1 = abs(rnorm(1,5,1))
   
-  mu_k <- 0                  # criterion mean on the evidence scale (gaussian distribution)
-  sigma_k <- abs(rnorm(1,1,2))                 # criterion sd on the evidence scale (gaussian distribution)
   
+  mu_k <- 0                  # criterion mean on the evidence scale (gaussian distribution)
+  sigma_k <- (rnorm(1,-2,1))                 # criterion sd on the evidence scale (gaussian distribution)
   
   # Coherence level (stimulus intensity)
-  X <- abs(rnorm(n_trials,0,1))
+  X <- rtruncnorm(n_trials,0,1,0.3,0.2)
   
   # stimuli (left or right)
   D <- sample(c(-1, 1), n_trials, replace = TRUE)  # true stimulus
   
   # Simulate evidence
-  e <- rnorm(n_trials, mean = D * X, sd = sigma_e)
+  # e <- rnorm(n_trials, mean = D * X - bias, sd = exp(sigma_e))
   
   # Compute posterior P(D=1|e)
   
-  ehat = rnorm(n_trials,e,sigma_m)
   
-  # Evidence-based stochastic policy (guassian distribution for citera)
-  k_gauss <- rnorm(n_trials, mu_k, sigma_k)          # citerion on trial t
-  p_gauss = pnorm((e-mu_k)/sigma_k)                  #  probability of response on trial t given the citerion
-  a_gauss = rbinom(n_trials,1,p_gauss)               # binary response
+  e <- rnorm(n_trials, mean = D * X - bias, sd = exp(sigma_e))
+  c <- rnorm(n_trials, 0, exp(sigma_k))
+  a_gauss <- as.numeric(e > c)  # Direct comparison
+  ehat <- rnorm(n_trials, e, exp(sigma_m))
+
+  c_mu = ifelse(a_gauss == 1, brms::inv_logit_scaled(2*ehat*X / (exp(sigma_e)^2 + exp(sigma_m)^2)),
+                1-brms::inv_logit_scaled(2*ehat*X / (exp(sigma_e)^2 + exp(sigma_m)^2)))
   
-  c_mu = ifelse(a_gauss == 1, brms::inv_logit_scaled(2*ehat*X / (sigma_e^2 + sigma_m^2)),
-                1-brms::inv_logit_scaled(2*ehat*X / (sigma_e^2 + sigma_m^2)))
-  
-  
+  c_mu = ifelse(c_mu > 0.99, 0.99,ifelse(c_mu < 0.01, 0.01,c_mu))
   
   C = ordbetareg::rordbeta(n_trials,c_mu,conf_prec,c(c0,c1))
   
@@ -72,6 +72,82 @@ simulate_data = function(n = 1000){
     sigma_e = sigma_e,
     conf_prec = conf_prec,
     sigma_m = sigma_m,
+    bias = bias,
+    slope = sqrt(exp(sigma_k)^2 + exp(sigma_e)^2),
+    sigma2 = (exp(sigma_e)^2 + exp(sigma_m)^2),
+    # e = e,
+    ehat = ehat,
+    D = D,
+    X =X,
+    ACC = ifelse(a_gauss == 0 & D == -1, 1, ifelse(a_gauss == 1 & D == 1, 1,0)),
+    c_mu = c_mu,
+    C = C,
+    a_gauss = a_gauss
+  )
+}
+
+
+simulate_data_p = function(n = 1000, sigma_e,sigma_m,sigma_k,bias, seed = 1997){
+  
+  set.seed(seed)
+  # -----------------------------
+  # Set parameters
+  # -----------------------------
+  n_trials <- n        # number of trials
+  # sigma_e <- (rnorm(1,-1,0.5))           # noise on evidence (needs to be fixed for now)
+  # bias <- rnorm(1,0,0.2)           # noise on evidence (needs to be fixed for now)
+  
+  # sigma_m = (rnorm(1,-1,0.5))
+  conf_prec = (rnorm(1,100,50))
+  c0 = -abs(rnorm(1,5,1))
+  c1 = abs(rnorm(1,5,1))
+  
+  
+  mu_k <- 0                  # criterion mean on the evidence scale (gaussian distribution)
+  # sigma_k <- (rnorm(1,-2,0.25))                 # criterion sd on the evidence scale (gaussian distribution)
+  
+  # Coherence level (stimulus intensity)
+  X <- rtruncnorm(n_trials,0,1,0.5,1)
+  
+  # stimuli (left or right)
+  D <- sample(c(-1, 1), n_trials, replace = TRUE)  # true stimulus
+  
+  # Simulate evidence
+  e <- rnorm(n_trials, mean = D * X - bias, sd = exp(sigma_e))
+  
+    
+  ehat = rnorm(n_trials,e,(exp(sigma_m)))
+  
+  # Evidence-based stochastic policy (guassian distribution for citera)
+  # k_gauss <- rnorm(n_trials, mu_k, sigma_k)          # citerion on trial t
+  
+  # p_gauss = pnorm((D * X - bias) / sqrt(exp(sigma_k)^2 + exp(sigma_e)^2))                  #  probability of response on trial t given the citerion
+
+  # Evidence-based stochastic policy (guassian distribution for citera)
+  # k_gauss <- rnorm(n_trials, mu_k, sigma_k)          # citerion on trial t
+  
+  p_gauss = pnorm(e / exp(sigma_k))                  #  probability of response on trial t given the citerion
+  
+  a_gauss = rbinom(n_trials,1,p_gauss)               # binary response
+  
+  c_mu = ifelse(a_gauss == 1, brms::inv_logit_scaled(2*ehat*X / (exp(sigma_e)^2 + exp(sigma_m)^2)),
+                1-brms::inv_logit_scaled(2*ehat*X / (exp(sigma_e)^2 + exp(sigma_m)^2)))
+  
+  c_mu = ifelse(c_mu > 0.99, 0.99,ifelse(c_mu < 0.01, 0.01,c_mu))
+  
+  C = ordbetareg::rordbeta(n_trials,c_mu,conf_prec,c(c0,c1))
+  
+  # Dataframe
+  df = data.frame(
+    c0 = c0,
+    c1 = c1,
+    sigma_k = sigma_k,
+    sigma_e = sigma_e,
+    conf_prec = conf_prec,
+    sigma_m = sigma_m,
+    bias = bias,
+    slope = sqrt(exp(sigma_k)^2 + exp(sigma_e)^2),
+    sigma2 = (exp(sigma_e)^2 + exp(sigma_m)^2),
     e = e,
     ehat = ehat,
     D = D,
@@ -81,31 +157,308 @@ simulate_data = function(n = 1000){
     C = C,
     a_gauss = a_gauss
   )
-}  
+}
+
+simulate_data_margin = function(n = 1000, sigma_e,sigma_m,sigma_k,bias, seed = 1997){
+  
+  set.seed(seed)
+  # -----------------------------
+  # Set parameters
+  # -----------------------------
+  n_trials <- n        # number of trials
+  # sigma_e <- (rnorm(1,-1,0.5))           # noise on evidence (needs to be fixed for now)
+  # bias <- rnorm(1,0,0.2)           # noise on evidence (needs to be fixed for now)
+  
+  # sigma_m = (rnorm(1,-1,0.5))
+  conf_prec = (rnorm(1,100,50))
+  c0 = -abs(rnorm(1,5,1))
+  c1 = abs(rnorm(1,5,1))
+  
+  
+  mu_k <- 0                  # criterion mean on the evidence scale (gaussian distribution)
+  # sigma_k <- (rnorm(1,-2,0.25))                 # criterion sd on the evidence scale (gaussian distribution)
+  
+  # Coherence level (stimulus intensity)
+  X <- rtruncnorm(n_trials,0,1,0.5,1)
+  
+  # stimuli (left or right)
+  D <- sample(c(-1, 1), n_trials, replace = TRUE)  # true stimulus
+  
+  # Simulate evidence
+  # e <- rnorm(n_trials, mean = D * X - bias, sd = exp(sigma_e))
+  
+  # Compute posterior P(D=1|e)
+  
+  # ehat = rnorm(n_trials,D * X - bias,sqrt(exp(sigma_m)^2 + exp(sigma_e)^2))
+  
+  # Evidence-based stochastic policy (guassian distribution for citera)
+  # k_gauss <- rnorm(n_trials, mu_k, sigma_k)          # citerion on trial t
+  
+  p_gauss = pnorm((D * X - bias) / sqrt(exp(sigma_k)^2 + exp(sigma_e)^2))                  #  probability of response on trial t given the citerion
+  
+
+  a_gauss = rbinom(n_trials,1,p_gauss)               # binary response
+  
+  e = qnorm(p_gauss) * (exp(sigma_k))
+
+  Cc = 2/1.7
+  sigma2 = exp(sigma_m)^2 + exp(sigma_e)^2
+  
+
+  c_mu = ifelse(a_gauss == 1, pnorm((1/(sqrt(1 + (Cc^2*X^2) / sigma2))) * (signed_evidence * X * Cc) / sigma2),
+                1-pnorm((1/(sqrt(1 + (Cc^2*X^2) / sigma2))) * (signed_evidence * X * Cc) / sigma2))
+  
+
+  c_mu = ifelse(c_mu > 0.99, 0.99,ifelse(c_mu < 0.01, 0.01,c_mu))
+  
+  C = ordbetareg::rordbeta(n_trials,c_mu,conf_prec,c(c0,c1))
+  
+  
+
+  
+  
+  
+  
+  ## testing
+  
+  # After observing the choice
+  a_gauss = rbinom(n_trials, 1, p_gauss)
+  
+  # Compute evidence conditional on choice (Mills ratio)
+  mu_e = D * X - bias
+  sigma_total = sqrt(exp(sigma_k)^2 + exp(sigma_e)^2)
+  z = mu_e / sigma_total
+  
+  # Correction factor
+  correction_factor = exp(sigma_e)^2 / sigma_total
+  
+  # Conditional expectation (different Mills ratios for each choice)
+  e_cond = ifelse(a_gauss == 1,
+                  mu_e + correction_factor * dnorm(z) / pnorm(z),
+                  mu_e - correction_factor * dnorm(z) / pnorm(-z))  # Note: pnorm(-z) here!
+  
+  # Now use e_cond in the confidence formula
+  Cc = 2/1.7
+  sigma2 = exp(sigma_m)^2 + exp(sigma_e)^2
+  
+  c_mu = ifelse(a_gauss == 1,
+                pnorm((1/(sqrt(1 + (Cc^2*X^2) / sigma2))) * (e_cond * X * Cc) / sigma2),
+                1-pnorm((1/(sqrt(1 + (Cc^2*X^2) / sigma2))) * (e_cond * X * Cc) / sigma2))
+    
+  
+  ### testing
+  
+  
+  
+  
+  
+  
+  
+  
+  # Dataframe
+  df = data.frame(
+    c0 = c0,
+    c1 = c1,
+    sigma_k = sigma_k,
+    sigma_e = sigma_e,
+    conf_prec = conf_prec,
+    sigma_m = sigma_m,
+    bias = bias,
+    slope = sqrt(exp(sigma_k)^2 + exp(sigma_e)^2),
+    sigma2 = (exp(sigma_e)^2 + exp(sigma_m)^2),
+    # e = e,
+    # ehat = ehat,
+    D = D,
+    X =X,
+    ACC = ifelse(a_gauss == 0 & D == -1, 1, ifelse(a_gauss == 1 & D == 1, 1,0)),
+    c_mu = c_mu,
+    C = C,
+    a_gauss = a_gauss
+  )
+}
+
+
+
+```
+
+
+```{r, fig.height=7,fig.width=8}
+df = simulate_data_p(1000, sigma_e = -1.5, sigma_k = -2, sigma_m = -1, bias = 0, seed = 1997)
+
+df[1,]
+df %>% ggplot(aes(x = X*D, y = a_gauss))+geom_point()+geom_smooth(method = glm, method.args= list(family="binomial"))
+
+df %>% ggplot(aes(x = X*D, y = C, col = as.factor(ACC)))+geom_point()+geom_smooth()
+df %>% ggplot(aes(x = X*D, y = C, col = as.factor(a_gauss)))+geom_point()+geom_smooth()
+
+
+psy = df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,10)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss))
+conf = df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,10)) %>% group_by(XD,a_gauss) %>% summarize(mean = mean(c_mu))
+
+data.frame() %>% ggplot()+
+  geom_point(data = psy, aes(x = XD, y = mean), col = "black")+
+  geom_point(data = conf, aes(XD, y = mean, col = as.factor(a_gauss)))
+
+
+psy = df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,10)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss))
+conf = df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,10)) %>% group_by(XD,ACC) %>% summarize(mean = mean(c_mu))
+
+data.frame() %>% ggplot()+
+  geom_point(data = psy, aes(x = XD, y = mean), col = "black")+
+  geom_point(data = conf, aes(XD, y = mean, col = as.factor(ACC)))
+```
+
+
+```{r, fig.height=7,fig.width=8}
+df = simulate_data_p(1000, sigma_e = -1.5, sigma_k = -2, sigma_m = -0.5, bias = 0, seed = 1997)
+
+df[1,]
+df %>% ggplot(aes(x = X*D, y = a_gauss))+geom_point()+geom_smooth(method = glm, method.args= list(family="binomial"))
+
+df %>% ggplot(aes(x = X*D, y = C, col = as.factor(ACC)))+geom_point()+geom_smooth()
+df %>% ggplot(aes(x = X*D, y = C, col = as.factor(a_gauss)))+geom_point()+geom_smooth()
+
+
+psy = df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,10)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss))
+conf = df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,10)) %>% group_by(XD,a_gauss) %>% summarize(mean = mean(c_mu))
+
+data.frame() %>% ggplot()+
+  geom_point(data = psy, aes(x = XD, y = mean), col = "black")+
+  geom_point(data = conf, aes(XD, y = mean, col = as.factor(a_gauss)))
+
+
+psy = df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,10)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss))
+conf = df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,10)) %>% group_by(XD,ACC) %>% summarize(mean = mean(c_mu))
+
+data.frame() %>% ggplot()+
+  geom_point(data = psy, aes(x = XD, y = mean), col = "black")+
+  geom_point(data = conf, aes(XD, y = mean, col = as.factor(ACC)))
+```
+
+
+```{r}
+breaks <- seq(-1, 1, by = 0.05)
+midpoints <- breaks[-length(breaks)] + 0.1
+
+
+df_mech = simulate_data_p(500000, sigma_e = -1.5, sigma_k = -3, sigma_m = -1, bias = 0, seed = 1) %>% 
+    mutate(XD = X * D,
+    bin = cut(XD, breaks = breaks, include.lowest = TRUE, labels = FALSE),
+    XD = (breaks[bin] + breaks[bin + 1]) / 2) %>% 
+  group_by(XD, ACC) %>%
+  summarize(mean = mean(c_mu), se = sd(c_mu)/sqrt(n())) 
+
+df_mech%>% ggplot(aes(x = XD, y = mean, col = as.factor(ACC)))+geom_point()
+
+df_heu = simulate_data_margin(1000, sigma_e = -1.5, sigma_k = -3, sigma_m = -1, bias = 0, seed = 1) %>% mutate(XD = X*D)
+
+df_heu %>% ggplot(aes(x = XD, y = c_mu, col = as.factor(ACC)))+geom_point()
+
+data.frame() %>% ggplot()+
+  geom_pointrange(data = df_mech, aes(x = XD,y = mean,ymin = mean-2*se, ymax = mean+2*se, fill = as.factor(ACC)), shape = 21, col = "black")+
+  geom_line(data = df_heu, aes(x = XD,y = c_mu, col = as.factor(ACC)), linewidth = 2)
+
+```
+
+```{r}
+breaks <- seq(-1, 1, by = 0.05)
+midpoints <- breaks[-length(breaks)] + 0.1
+
+
+df_mech = simulate_data_p(500000, sigma_e = -1.5, sigma_k = -5, sigma_m = -2, bias = 0, seed = 1) %>% 
+    mutate(XD = X * D,
+    bin = cut(XD, breaks = breaks, include.lowest = TRUE, labels = FALSE),
+    XD = (breaks[bin] + breaks[bin + 1]) / 2) %>% 
+  group_by(XD, ACC) %>%
+  summarize(mean = mean(c_mu), se = sd(c_mu)/sqrt(n())) 
+
+df_mech%>% ggplot(aes(x = XD, y = mean, col = as.factor(ACC)))+geom_point()
+
+df_heu = simulate_data_margin(1000, sigma_e = -1.5, sigma_k = -5, sigma_m = -2, bias = 0, seed = 1) %>% mutate(XD = X*D)
+
+df_heu %>% ggplot(aes(x = XD, y = c_mu, col = as.factor(ACC)))+geom_point()
+
+data.frame() %>% ggplot()+
+  geom_pointrange(data = df_mech, aes(x = XD,y = mean,ymin = mean-2*se, ymax = mean+2*se, fill = as.factor(ACC)), shape = 21, col = "black")+
+  geom_line(data = df_heu, aes(x = XD,y = c_mu, col = as.factor(ACC)), linewidth = 2)
+
+
+```
+
+
+```{r}
+breaks <- seq(-1, 1, by = 0.05)
+midpoints <- breaks[-length(breaks)] + 0.1
+
+
+df_mech = simulate_data_p(500000, sigma_e = -1, sigma_k = -1, sigma_m = -2, bias = 0.5, seed = 1) %>% 
+    mutate(XD = X * D,
+    bin = cut(XD, breaks = breaks, include.lowest = TRUE, labels = FALSE),
+    XD = (breaks[bin] + breaks[bin + 1]) / 2) %>% 
+  group_by(XD, a_gauss) %>%
+  summarize(mean = mean(c_mu), se = sd(c_mu)/sqrt(n())) 
+
+df_mech%>% ggplot(aes(x = XD, y = mean, col = as.factor(a_gauss)))+geom_point()
+
+df_heu = simulate_data_margin(1000, sigma_e = -1, sigma_k = -1, sigma_m = -2, bias = 0.5, seed = 1) %>% mutate(XD = X*D)
+
+df_heu %>% ggplot(aes(x = XD, y = c_mu, col = as.factor(a_gauss)))+geom_point()
+
+data.frame() %>% ggplot()+
+  geom_pointrange(data = df_mech, aes(x = XD,y = mean,ymin = mean-2*se, ymax = mean+2*se, fill = as.factor(a_gauss)), shape = 21, col = "black")+
+  geom_point(data = df_heu, aes(x = XD,y = c_mu, col = as.factor(a_gauss)), alpha = 0.25)
+
+
+```
+
+
+
+
+```{r, fig.height=7,fig.width=8}
+df = simulate_data_margin(1000, sigma_e = -1.5, sigma_k = -2, sigma_m = -1, bias = 0, seed = 19997)
+
+df[1,]
+df %>% ggplot(aes(x = X*D, y = a_gauss))+geom_point()+geom_smooth(method = glm, method.args= list(family="binomial"))
+
+df %>% ggplot(aes(x = X*D, y = c_mu, col = as.factor(ACC)))+geom_point()+geom_smooth()
+df %>% ggplot(aes(x = X*D, y = c_mu, col = as.factor(a_gauss)))+geom_point()+geom_smooth()
+
+
+psy = df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,10)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss))
+conf = df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,10)) %>% group_by(XD,a_gauss) %>% summarize(mean = mean(c_mu))
+
+data.frame() %>% ggplot()+
+  geom_point(data = psy, aes(x = XD, y = mean), col = "black")+
+  geom_point(data = conf, aes(XD, y = mean, col = as.factor(a_gauss)))
+
+
+psy = df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,10)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss))
+conf = df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,10)) %>% group_by(XD,ACC) %>% summarize(mean = mean(c_mu))
+
+data.frame() %>% ggplot()+
+  geom_point(data = psy, aes(x = XD, y = mean), col = "black")+
+  geom_point(data = conf, aes(XD, y = mean, col = as.factor(ACC)))
 
 ```
 
 
 ```{r, fig.height=12,fig.width=8}
-df = simulate_data()
-df %>% ggplot(aes(x = X*D, y = a_gauss))+geom_point()
-df %>% ggplot(aes(x = X*D, y = C, col = as.factor(ACC)))+geom_point()+geom_smooth()
-
-
 
 fit = function(){
   
   qq = rnorm(1,1,1)
   
-  df = simulate_data()
+  df = simulate_data(n = 300)
 
-  mod = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","heurestic_no_metabias.stan"))
+  mod = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Simulations","old.stan"))
   
   datastan = list(a = df$a_gauss,
                   ACC = df$ACC,
                   C = df$C,
+                  # rts = df$rts,
                   N = nrow(df),
-                  X = df$X * df$D)
+                  XD = df$X * df$D,
+                  X = df$X)
   
   
   fit = mod$sample(data = datastan,
@@ -117,21 +470,48 @@ fit = function(){
   div = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq,
                                                         time = fit$time()$total)
   
-  estimated = fit$summary("gm") %>% mutate(variable = c("beta",
-                                            "conf_prec",
-                                            "meta_un_cor",
-                                            "meta_un_inc"
-                                            # "meta_bias_cor",
-                                            # "meta_bias_inc"
+  estimated = fit$summary("gm") %>% mutate(variable = c("alpha","beta","confprec","metauncor","metauninc","metabias"
                                             )) %>% mutate(div = max(div$num_divergent))
   
-  estimated2 = fit$summary(c("beta",
-                                            "conf_prec",
-                                            "meta_un_cor",
-                                            "meta_un_inc"
-                                            # "meta_bias_cor",
-                                            # "meta_bias_inc"
-                             )) %>% mutate(div = max(div$num_divergent))
+  loo = fit$loo()
+  
+  pareto_o7 = sum(loo$diagnostics$pareto_k > 0.7)
+  
+  
+  modnew = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Simulations","final_heu.stan"))
+
+  datastan = list(a = df$a_gauss,
+                ACC = df$ACC,
+                C = df$C,
+                N = nrow(df),
+                XD = df$X * df$D,
+                X = df$X)
+
+    
+
+  fita = modnew$sample(data = datastan,
+                   iter_warmup = 500,
+                   refresh = 0,
+                   iter_sampling = 500,
+             parallel_chains = 4)
+  
+  diva = data.frame(fita$diagnostic_summary())%>% mutate(sim = qq,
+                                                        time = fit$time()$total)
+  
+  estimateda = fita$summary("gm") %>% mutate(variable = c("beta","sigma_e","sigma_k","sigma_m","confprec"
+                                            )) %>% mutate(div = max(diva$num_divergent))
+  
+  looa = fita$loo()
+  
+  pareto_o7a = sum(looa$diagnostics$pareto_k > 0.7)
+  
+  loo_comparison = data.frame(loo::loo_compare(list(old = loo, action = looa))) %>% 
+    rownames_to_column("model") %>% 
+    arrange(model) %>% 
+    mutate(pareto_k = c(pareto_o7a,pareto_o7))
+  
+  additional = fita$summary(c("sigma1","sigma2"))%>% 
+    mutate(div = max(diva$num_divergent))
   
   
   simulated = data.frame(c0 = unique(df$c0),
@@ -139,7 +519,8 @@ fit = function(){
                          sigma_k = unique(df$sigma_k),
                          sigma_e =unique(df$sigma_e),
                          sigma_m =unique(df$sigma_m),
-                         conf_prec =unique(df$conf_prec)) %>% mutate(sim = qq)
+                         bias = unique(df$bias),
+                         conf_prec =unique(df$conf_prec)) %>% mutate(sim_n = qq)
   
   data = df %>% mutate(conf_bin = cut(C,4),
                       stimulus  = as.factor(D),
@@ -152,18 +533,21 @@ fit = function(){
   mratio = fitMetaDprime(data)
   
     
-  result = list(simulated %>% mutate(sim = qq),
-                estimated%>% mutate(sim = qq),
-                estimated2%>% mutate(sim = qq),
-                df%>% mutate(sim = qq),
+  result = list(simulated = simulated %>% mutate(sim_n = qq),
+                estimated = estimated%>% mutate(sim_n = qq, model = "old"),
+                estimateda = estimateda%>% mutate(sim_n = qq, model = "action"),
+                additional = additional%>% mutate(sim_n = qq),
+                loo = loo_comparison %>% mutate(sim_n = qq),
+                data = df%>% mutate(sim_n = qq),
                 div = div,
-                mratio = mratio %>% mutate(sim = qq))
+                diva = diva,
+                mratio = mratio %>% mutate(sim_n = qq))
   
   return(result)
 }
 
-# qq = fit()
-
+qq = fit()
+2+2
 
 library(furrr)
 library(purrr)
@@ -174,9 +558,9 @@ plan(multisession, workers = 10)  # Windows-friendly
 safe_function <- possibly(fit, otherwise = "Error")
 
 # Run 20 times in parallel
-results_list <- future_map(1:50, ~ safe_function(), .progress = T)
+results_list <- future_map(1:10000, ~ safe_function(), .progress = T)
 
-saveRDS(results_list,here::here("Simulations","Heurestic","Saved models","1000sim_1000trials_Heu.RData"))
+saveRDS(results_list,here::here("Simulations","Heurestic","Saved models","10000sim_300trials_finalHeu.RData"))
 
 results_list = results_list[-which(results_list == "Error")]
 ```
@@ -184,101 +568,206 @@ results_list = results_list[-which(results_list == "Error")]
 ```{r}
 inner_join(
   map_dfr(results_list,1), 
-  map_dfr(results_list,3) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest() %>% rename(esti_conf_prec = conf_prec)
+  map_dfr(results_list,3) %>% 
+    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
+    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
+    mutate(sim_n = esti_sim_n)
 ) %>% 
-  ggplot(aes(x = beta, y = 1/sqrt(sigma_k^2+sigma_e^2)))+geom_point()+geom_abline()
-
+    # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
+  ggplot(aes(x = esti_sigma_e, y = sigma_e))+geom_point(alpha = 0.1)+geom_abline()+
+  ggtitle("action model")
 
 inner_join(
   map_dfr(results_list,1), 
-  map_dfr(results_list,3) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest() %>% rename(esti_conf_prec = conf_prec)
+  map_dfr(results_list,2) %>% 
+    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest()
 ) %>% 
-  ggplot(aes(x = meta_un_cor, y = 1/sqrt(sigma_m^2+sigma_e^2)))+geom_point()+geom_abline()
+    # filter(div == 0 &  1/sqrt(sigma_k^2+sigma_e^2) < 20 & exp(beta) < 50) %>% 
+  ggplot(aes(x = exp(beta), y = 1/sqrt(exp(sigma_k)^2+exp(sigma_e)^2)))+geom_point()+geom_abline()+
+  ggtitle("old model")
+```
 
-
-
+```{r}
 inner_join(
   map_dfr(results_list,1), 
-  map_dfr(results_list,3) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest() %>% rename(esti_conf_prec = conf_prec)
+  map_dfr(results_list,3) %>% 
+    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
+    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
+    mutate(sim_n = esti_sim_n)
 ) %>% 
-  ggplot(aes(x = esti_conf_prec, y = conf_prec))+geom_point()+geom_abline()
+    # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
+  ggplot(aes(x = esti_sigma_k, y = sigma_k))+geom_point(alpha = 0.1)+geom_abline()+
+  ggtitle("action model")
+
+```
 
 
 
+```{r}
 inner_join(
   map_dfr(results_list,1), 
-  map_dfr(results_list,3) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest() %>% rename(esti_conf_prec = conf_prec)
+  map_dfr(results_list,3) %>% 
+    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
+    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
+    mutate(sim_n = esti_sim_n)
 ) %>% 
-  ggplot(aes(x = meta_un_inc, y = sigma_m+sigma_e))+geom_point()+geom_abline()
+    # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
+  ggplot(aes(x = esti_sigma_m, y = sigma_m))+geom_point(alpha = 0.1)+geom_abline()+
+  ggtitle("action model")
 
-
+```
+```{r}
 inner_join(
   map_dfr(results_list,1), 
-  map_dfr(results_list,3) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest() %>% rename(esti_conf_prec = conf_prec)
+  map_dfr(results_list,4) %>% 
+    filter(variable == "sigma1")%>% 
+    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+    select(mean,variable,div,sim_n) %>% 
+    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
+    unnest()
 ) %>% 
-  ggplot(aes(x = meta_un_inc, y = sigma_k))+geom_point()+geom_abline()
-
-
+    filter(div == 0) %>% 
+  ggplot(aes(x = sigma1, y = (exp(sigma_k)^2+exp(sigma_e)^2)))+geom_point(alpha = 0.1)+geom_abline()+
+  ggtitle("action model")
 
 ```
 
 
 ```{r}
-
-divs = map_dfr(results_list,6) %>% group_by(sim) %>% 
-  summarise(mean_div = mean(num_divergent),
-            mean_tree = mean(num_max_treedepth)) 
-
-inner_join(inner_join(
+inner_join(
   map_dfr(results_list,1), 
-  map_dfr(results_list,7) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest() %>% rename(esti_conf_prec = prec_conf,
-                        esti_sigma_k = sigma_choice,
-                        esti_sigma_m = sigma_m,
-                        esti_sigma_e = sigma_e,
-                        esti_c0 = c0,
-                        esti_c1 = c1)
-),
-divs) %>% filter(mean_div == 0 & mean_tree == 0) %>% 
-  ggplot(aes(x = sigma_m, y = esti_sigma_m))+geom_point()+geom_abline()
+  map_dfr(results_list,4) %>% 
+    filter(variable == "sigma2")%>% 
+    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+    select(mean,variable,div,sim_n) %>% 
+    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
+    unnest()
+) %>% 
+    filter(div == 0) %>%
+  ggplot(aes(x = sigma2, y = (exp(sigma_m)^2+exp(sigma_e)^2)))+geom_point(alpha = 0.1)+geom_abline()+
+  ggtitle("action model")
+
+```
 
 
-
-inner_join(inner_join(
+```{r}
+inner_join(
   map_dfr(results_list,1), 
-  map_dfr(results_list,7) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest() %>% rename(esti_conf_prec = prec_conf,
-                        esti_sigma_k = sigma_choice,
-                        esti_sigma_m = sigma_m,
-                        esti_sigma_e = sigma_e,
-                        esti_c0 = c0,
-                        esti_c1 = c1)
-),
-divs) %>% filter(mean_div == 0 & mean_tree == 0) %>%  
-  ggplot(aes(x = sigma_e, y = esti_sigma_e))+geom_point()+geom_abline()
+  map_dfr(results_list,3) %>% 
+    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
+    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
+    mutate(sim_n = esti_sim_n)
+) %>% 
+    # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
+  ggplot(aes(x = (brms::inv_logit_scaled(esti_beta)-0.5)* 2, y = bias))+geom_point()+geom_abline()+
+  ggtitle("action model")
 
-
-
-inner_join(inner_join(
+inner_join(
   map_dfr(results_list,1), 
-  map_dfr(results_list,7) %>% select(mean,variable,sim) %>% pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest() %>% rename(esti_conf_prec = prec_conf,
-                        esti_sigma_k = sigma_choice,
-                        esti_sigma_m = sigma_m,
-                        esti_sigma_e = sigma_e,
-                        esti_c0 = c0,
-                        esti_c1 = c1)
-),
-divs) %>% filter(mean_div == 0 & mean_tree == 0) %>% 
-  ggplot(aes(x = sigma_k, y = esti_sigma_k))+geom_point()+geom_abline()
+  map_dfr(results_list,2) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest()
+) %>% 
+    # filter(div == 0 &  1/sqrt(sigma_k^2+sigma_e^2) < 20 & exp(beta) < 50) %>% 
+  ggplot(aes(x = (brms::inv_logit_scaled(alpha)-0.5) * 2, y = bias))+geom_point()+geom_abline()+
+  ggtitle("old model")
+```
+
+
+```{r}
+
+
+
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,3) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
+    mutate(sim_n = esti_sim_n)
+) %>% 
+  # filter(div == 0) %>% 
+  ggplot(aes(x = exp(esti_confprec), y = conf_prec))+geom_point()+geom_abline()+
+    ggtitle("action model")
+
+
+
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,2) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest() 
+) %>% 
+  filter(div == 0) %>% 
+  ggplot(aes(x = exp(confprec), y = conf_prec))+geom_point()+geom_abline()+
+    ggtitle("old model")
+
+```
+
+
+
+```{r}
+
+
+inner_join(
+  map_dfr(results_list,1),
+  map_dfr(results_list,9) 
+) %>% 
+  ggplot(aes(x = 1/sqrt(exp(sigma_e)), y = dprime))+
+  geom_point()+
+  geom_abline()
+
+inner_join(
+  map_dfr(results_list,1),
+  map_dfr(results_list,9) 
+) %>% 
+  ggplot(aes(x = 1/sqrt(exp(sigma_m)^2+exp(sigma_e)^2), y = metaD))+
+  geom_point()+
+  geom_abline()
+
+
+inner_join(
+  map_dfr(results_list,1),
+  map_dfr(results_list,9) 
+) %>% 
+  ggplot(aes(x = exp(sigma_e)/sqrt(exp(sigma_m)^2+exp(sigma_e)^2), y = Ratio))+
+  geom_point()+
+  geom_abline()
+
+
+vv = inner_join(
+  map_dfr(results_list,1),
+  map_dfr(results_list,9) 
+) 
+
+cor.test(1/sqrt(exp(vv$sigma_m)^2+exp(vv$sigma_e)^2), vv$metaD)
+
+
+cor.test(1/sqrt(exp(vv$sigma_e)), vv$dprime)
+
+cor.test(exp(vv$sigma_e)/sqrt(exp(vv$sigma_m)^2+exp(vv$sigma_e)^2), vv$Ratio)
+
+inner_join(map_dfr(results_list,5) %>% 
+             filter(elpd_diff != 0),map_dfr(results_list,1)) %>% 
+  ggplot(aes(x = abs(bias), y = elpd_diff, col = model))+geom_point()
 
 
 ```
+
+
 
 
 
@@ -322,115 +811,4 @@ inner_join(
 
 
 
-```
-
-
-## fit hierarchical version
-
-```{r}
-df4 <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_1.csv")) %>%
-  mutate(resp = ifelse(resp == "down",0,1),
-         interval = as.numeric(interval),
-       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
-  mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
-  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
-                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
-  filter(Trialtype == "Main") %>%
-  filter(SR_conf != "None") %>%
-  # filter(scale == "conf") %>%
-  mutate(SR_conf = as.numeric(SR_conf)) %>%
-  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
-  filter(RT < 2.5) %>% 
-  mutate(Confidence = (SR_conf+1)/2) %>% 
-  dplyr::select(Y,RT,D,Confidence,coherence,RTrating,X) %>% 
-  mutate(Subject = 4)
-
-
-
-df3 <- read_csv(here::here("Data","Pilots","Jesper_2025_17_12","RDM_reportz_sub5.csv")) %>%
-  mutate(resp = ifelse(resp == "down",0,1),
-         interval = as.numeric(interval),
-       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
-    mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
-  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
-                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
-  filter(Trialtype == "Main") %>%
-  filter(SR_conf != "None") %>%
-    # filter(scale == "conf") %>%
-  mutate(SR_conf = as.numeric(SR_conf)) %>%
-  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
-    mutate(Confidence = (SR_conf+1)/2) %>% 
-  dplyr::select(Y,RT,D,Confidence,coherence,RTrating,X) %>% 
-  mutate(Subject = 3) 
-
-
-df2 <- read_csv(here::here("Data","Pilots","Siebe_2025_03_12","data.csv")) %>%
-  mutate(resp = ifelse(resp == "down",0,1),
-         interval = as.numeric(interval),
-       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
-  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
-                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
-    mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
-  filter(Trialtype == "Main") %>%
-  filter(SR_conf != "None") %>%
-    # filter(scale == "conf") %>%
-  mutate(SR_conf = as.numeric(SR_conf)) %>%
-  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
-  mutate(Confidence = (SR_conf+1)/2) %>% 
-  filter(RT < 2.5) %>% 
-  dplyr::select(Y,RT,D,Confidence,coherence,RTrating,X) %>% 
-  mutate(Subject = 2) %>% 
-  drop_na()
-
-
-df1 <- read_csv(here::here("Data","Pilots","Siebe_2025_17_12","RDM_reportz_sub6.csv")) %>%
-  mutate(resp = ifelse(resp == "down",0,1),
-         interval = as.numeric(interval),
-       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
-  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
-                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
-    mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
-  filter(Trialtype == "Main") %>%
-  filter(SR_conf != "None") %>%
-    # filter(scale == "conf") %>%
-  mutate(SR_conf = as.numeric(SR_conf)) %>%
-  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
-  mutate(Confidence = (SR_conf+1)/2)  %>% 
-  filter(RT < 2.5) %>% 
-  dplyr::select(Y,RT,D,Confidence,coherence,RTrating,X) %>% 
-  mutate(Subject = 1) %>% 
-  drop_na()
-
-
-dd = rbind(df1,df2,df3,df4)
-
-
-mod = cmdstanr::cmdstan_model(here::here("Derivations","Hierarchical","nort.stan"))
-
-
-datastan = list(a = dd$Y,
-                D = dd$D,
-                C = dd$Confidence,
-                N = nrow(dd),
-                X = dd$coherence,
-                S = length(unique(dd$Subject)),
-                S_id = dd$Subject)
-
-
-fit = mod$sample(data = datastan,
-                 iter_warmup = 500,
-                 refresh = 100,
-                 adapt_delta = 0.95,
-                 max_treedepth = 12,
-                 iter_sampling = 500,
-           parallel_chains = 4)
-
-fit$save_object(here::here("Savedmodels","removed_models","fit1_hier_mec.rds"))
-
-
-parameters = c("gm","tau_u")
-sum = fit$summary(c(parameters))
-
-plot = mcmc_pairs(fit$draws(c(parameters)),np = nuts_params(fit))
-plot2 = mcmc_trace(fit$draws(c(parameters)),np = nuts_params(fit))
 ```
