@@ -20,7 +20,6 @@ def Intro(win):
             "finger on the “s” key. If you think the dots are moving up, press the\n"
             "“w”, and if you think they are moving down, press the “s”\n"
             "You will get feedback about your decision.\n"
-            "Try to be both fast and accurate."
         ),
         pos=(0, 50) ,
         height= 50,
@@ -60,7 +59,38 @@ def Intro(win):
     win.flip()
 
 
+def Tutorial(win):
+    main_text = vis.TextStim(
+        win,
+        text=(
+            "Good Job! We will now make the training a bit more difficult. \n"
 
+            "These next trials will be speeded so try to be both fast and accurate. \n"
+
+            "Good Luck!"
+        ),
+        pos=(0, 50) ,
+        height= 50,
+        color='white',
+        wrapWidth=1700,
+        alignText='center'
+    )
+    space_text = vis.TextStim(
+        win,
+        text= "Press SPACE to continue.",
+        pos=(0, -350) ,
+        height= 35,
+        color='white',
+        wrapWidth=1400,
+        alignText='center'
+    )
+
+    main_text.draw()
+    space_text.draw()
+    win.flip()
+
+
+Tutorial(win); core.wait(10); win.close(); core.quit
 #win.getMovieFrame(buffer='front')  
 #win.saveMovieFrames(r'C:\Users\User\OneDrive\Documenten\RDM_metacognition\Experiment\RDM_exp\Intro.jpg')
 
@@ -183,8 +213,8 @@ def Main3(win):
     slider.marker.color = "white"
     slider.marker.size = 20     
     slider.markerPos = 0.9                  
-    slider_label_wrong = vis.TextStim(win, text= "definitely wrong", pos=(-200, 105)) 
-    slider_label_right = vis.TextStim(win, text= "definitely right", pos=(200, 105)) 
+    slider_label_wrong = vis.TextStim(win, text= "certainly wrong", pos=(-200, 105)) 
+    slider_label_right = vis.TextStim(win, text= "certainly right", pos=(200, 105)) 
     slider_instructions = vis.TextStim(win, text = "How confident were you in your decision?", pos=(0,150))
 
     text_6 = vis.TextStim( win=win,
@@ -198,8 +228,8 @@ def Main3(win):
     slider_2.marker.color = "white"
     slider_2.marker.size = 20     
     slider_2.markerPos = 0.1                  
-    slider_label_wrong_2 = vis.TextStim(win, text= "definitely wrong", pos=(-200, -220)) 
-    slider_label_right_2 = vis.TextStim(win, text= "definitely right", pos=(200, -220)) 
+    slider_label_wrong_2 = vis.TextStim(win, text= "certainly wrong", pos=(-200, -220)) 
+    slider_label_right_2 = vis.TextStim(win, text= "certainly right", pos=(200, -220)) 
     slider_instructions_2 = vis.TextStim(win, text = "How confident were you in your decision?", pos=(0,-175))
 
     space_text = vis.TextStim(
@@ -253,8 +283,8 @@ def Main4(win):
     slider.marker.color = "white"
     slider.marker.size = 30     
     slider.markerPos = 0.5                  
-    slider_label_wrong = vis.TextStim(win, text= "definitely wrong", pos=(-300, 30), height = 23) 
-    slider_label_right = vis.TextStim(win, text= "definitely right", pos=(300, 30), height = 23) 
+    slider_label_wrong = vis.TextStim(win, text= "certainly wrong", pos=(-300, 30), height = 23) 
+    slider_label_right = vis.TextStim(win, text= "certainly right", pos=(300, 30), height = 23) 
     slider_instructions = vis.TextStim(win, text = "How confident were you in your decision?", pos=(0,100), height = 30, wrapWidth=1200)
     guessing =  vis.TextStim(win, text= "guessing", pos=(0, 30), height = 23) 
 
@@ -473,8 +503,8 @@ def Main7(win):
     slider.marker.color = "white"
     slider.marker.size = 30     
     slider.markerPos = 0.5                  
-    slider_label_wrong = vis.TextStim(win, text= "definitely wrong", pos=(-300, 30), color = "white", height=23) 
-    slider_label_right = vis.TextStim(win, text= "definitely right", pos=(300, 30), color = "white", height=23)
+    slider_label_wrong = vis.TextStim(win, text= "certainly wrong", pos=(-300, 30), color = "white", height=23) 
+    slider_label_right = vis.TextStim(win, text= "certainly right", pos=(300, 30), color = "white", height=23)
     confidence_question = vis.TextStim(win, text = "How confident were you in your decision?", pos=(0,120), height = 30, wrapWidth=1200)
 
     space_text = vis.TextStim(
