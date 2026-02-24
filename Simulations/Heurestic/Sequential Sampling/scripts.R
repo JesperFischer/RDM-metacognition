@@ -292,25 +292,25 @@ fitter = function(new_subjects,subs){
 
 sim_new_subjects = function(max_subjects = 100){
   
-  make_draws = function(){
-    # groupmean = fit_hier$draws(c("gm")) %>% as_draws_df() %>% select(-contains("."))
-    # between_subj = fit_hier$draws(c("tau_u")) %>% as_draws_df()%>% select(-contains("."))
-    # Lu = fit_hier$draws(c("L_u")) %>% as_draws_df()%>% select(-contains("."))
-    # 
-    # post_draws =
-    #   groupmean %>%
-    #   mutate(draw = row_number()) %>%
-    #   left_join(
-    #     between_subj %>% mutate(draw = row_number()),
-    #     by = "draw"
-    #   ) %>%
-    #   left_join(
-    #     Lu %>% mutate(draw = row_number()),
-    #     by = "draw"
-    #   )
-    # 
-    # write.csv(post_draws,here::here("Simulations","Heurestic","Sequential Sampling","post_draws.csv"))
-  }
+  # make_draws = function(){
+  #   groupmean = fit_hier$draws(c("gm")) %>% as_draws_df() %>% select(-contains("."))
+  #   between_subj = fit_hier$draws(c("tau_u")) %>% as_draws_df()%>% select(-contains("."))
+  #   Lu = fit_hier$draws(c("L_u")) %>% as_draws_df()%>% select(-contains("."))
+  # 
+  #   post_draws =
+  #     groupmean %>%
+  #     mutate(draw = row_number()) %>%
+  #     left_join(
+  #       between_subj %>% mutate(draw = row_number()),
+  #       by = "draw"
+  #     ) %>%
+  #     left_join(
+  #       Lu %>% mutate(draw = row_number()),
+  #       by = "draw"
+  #     )
+  # 
+  #   write.csv(post_draws,here::here("Simulations","Heurestic","Sequential Sampling","post_draws.csv"))
+  # }
 
   post_draws = read.csv(here::here("Simulations","Heurestic","Sequential Sampling","post_draws.csv"))
   
@@ -348,13 +348,13 @@ sim_new_subjects = function(max_subjects = 100){
   
   
   
-  plan(multisession, workers = 9)  # Windows-friendly
+  plan(multisession, workers = 4)  # Windows-friendly
   
-  n_subj <- c(5,6,7,8,9, 10,12, 14,20)
+  n_subj <- c(5,7,9, 12,15,20,25)
   library(furrr)
   
   
-  for(i in 1:10){
+  for(i in 1:5){
     
     draws_id = sample(nrow(post_draws), 1)
     
@@ -383,7 +383,7 @@ sim_new_subjects = function(max_subjects = 100){
       .options = furrr_options(seed = TRUE)
     )
     
-    saveRDS(results_list,here::here(paste0("test_effect_0.05_both_ss",i,".RData")))
+    saveRDS(results_list,here::here(paste0("test_effect_0_both_priors_0.5",i,".RData")))
     
     
   }

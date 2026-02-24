@@ -66,7 +66,7 @@ $$
 Here inorder to incompass **3** from the Patterns of metacognition section we introduce a parameter that can shift this evidence distribution, essentially introducing a bias in the encoding of evidence.
 
 $$
-e_i \sim \mathcal{N}(X_iD_i - \beta,\sigma_e)
+e_i \sim \mathcal{N}(X_iD_i - \beta,\sigma_e) 
 $$
 
 To produce an action the actor compares the internal evidence to criterion $c$:
@@ -111,7 +111,7 @@ $$
 Due to the fact that both $e_i$ and $c_i$ are normally distributed, it is possible to marginalize their difference which gives the probability of the action:
 
 $$
-P(a = 1 \mid D_i, X_i) = \Phi\left(\frac{D_i \cdot X_i- \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
+P(a = 1 \mid D_i, X_i) = \Phi\left(\frac{D_i \cdot X_i- \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right) \tag{1}
 $$
 
 From choices alone, only $\sigma_e^2 + \sigma_c^2$ is identifiable, as both noise sources equivalently flatten the psychometric function. However, by including confidence ratings these can be disentangled.
@@ -127,7 +127,7 @@ This can be shown to yield:
 See the full derivation in [Derivations](Derivations/inverselogit.Rmd).
 
 $$
-P(D=1 \mid r_i, \mu_i) = g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right)
+P(D=1 \mid X_i, \mu_i) = g\left(\frac{2 \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right)
 $$
 
 Assuming a uniform prior on D, i.e. $P(D_i = 1) = P(D_i = -1) = 0.5$
@@ -135,12 +135,19 @@ Assuming a uniform prior on D, i.e. $P(D_i = 1) = P(D_i = -1) = 0.5$
 Which gives the following equation for the trial by trial confidence ratings.
 
 $$
-P(\text{correct} \mid r_i, a, \mu_i) = \begin{cases}g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases}
+P(\text{correct} \mid r_i, a, X_i) = \begin{cases}g\left(\frac{2 \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - g\left(\frac{2 \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases} \tag{2}
 $$
+
+Here the function $g(.)$ is the inverse logit function i.e. $g(x)= \frac{1}{1+exp(-x)}$
 
 From confidence alone, only $\sigma_e^2 + \sigma_m^2$ is identifiable. However, combining choices and confidence allows estimating all three parameters: $\sigma_e$, $\sigma_c$, and $\sigma_m$. 
 
-Below we show simulations from this model in order to provide an intuition for the meaning of the parameters and their interactions.
+Before demonstrating simulations from this model to provide an intuition for the meaning of the parameters and their interactions we demonstrate how this kind of model can be argued for, consider the below plate notation. 
+
+An agent is presented with a stimulus that has a direction D (the true state of the world) and an intensity (X). This creates an internal evidence representation $e_i$. The brain then makes a copy of this evidence (an efference copy) (red split path). The internal evidence representation is then sent to the premotor and later motor cortex where an efferent signal is produced to generate an action, crucially this additional processing introduces noise 
+
+
+
 
 ## Simulations
 
@@ -364,29 +371,22 @@ The inverse logit function and the cummulative normal distribution are in practi
 ```
 
 
-By using this approximation it is possible to marginalize out the trial-by-trial evidence and thereby getting a computationally easier model to fit (and an equation for the expectation of confidence) with the same parameters. So with this approximation we go from
-
-
-$$
-P(\text{correct} \mid r_i, a, \mu_i) = \begin{cases}g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases}
-$$
-to
+By using this approximation it is possible to marginalize out the trial-by-trial evidence and thereby getting a computationally easier model to fit (and an equation for the expectation of confidence) with the same parameters. So with this approximation we go from equation (2) to the following approximation.
 
 $$
-P(\text{correct} \mid r_i, a, \mu_i) = \begin{cases}\Phi\left(\frac{C \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - \Phi\left(\frac{C \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases}
+P(\text{correct} \mid r_i, a, X_i) = \begin{cases}\Phi\left(\frac{C \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - \Phi\left(\frac{C \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases} \tag{3}
 $$
-
 with $C = \frac{2}{1.7}$. 
 
-Now we look at the instance where the choice was one.
+Focusing on the instance where the choice was one.
 
 $$
-\Phi\left(\frac{C \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right)
+\Phi\left(\frac{C \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right)
 $$
 
 We want to marginalize over $r_i$ i.e. calculating the expectation of above equation across $r_i$. 
 
-This is can be done using the general formula for the expectation of a random continous variable
+This is can be done using the general formula for the expectation of a random continuous variable
 
 $$
 \mathbb{E(X)} = \int_{-\infty}^\infty x \ p(x) dx
@@ -426,11 +426,7 @@ $$
 
 This equation thus gives us the probability of being correct, when the choice is 1, meaning that we need to get the expectation of meta cognitive evidence $r_i$ conditional on the fact that the choice was 1. 
 
-Equation (xx) thus now becomes
-
-$$
-P(\text{correct} \mid r_i, a, X_i) \sim \begin{cases}\Phi\left( \frac{Cr_iX_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - \Phi\left( \frac{Cr_iX_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases}
-$$
+Equation (3) thus now becomes
 
 $$
 P(\text{correct} \mid a, X_i) 
@@ -447,31 +443,32 @@ P(\text{correct} \mid a, X_i)
 
 & 
 
-\text{if } a = -1\end{cases}
+\text{if } a = -1\end{cases} \tag{4}
 $$
 
-Thus, now all that there is left to calculate is the two expectations of $r_i$ given the choice i.e.
-$\mathop{\mathbb{E}}(r_i \mid a = 1)$ & $\mathop{\mathbb{E}}(r_i \mid a = -1)$
+Lastly, we need tocalculate is the two expectations of $r_i$ given the choice i.e. $\mathop{\mathbb{E}}(r_i \mid a_i = 1)$ and $\mathop{\mathbb{E}}(r_i \mid a_i = -1)$
 
-### Calculating conditional expectations
+#### Calculating the conditional expectations
 
-To calculate these expectations, we need to account for the fact that the choice $a$ depends on the relationship between the evidence $e_i$ and the criterion $c_i$. We have:
+To calculate these expectations, we need to account for the fact that the choice $a_i$ depends on the relationship between the evidence $e_i$ and the criterion $c_i$. and given that $r_i$ is a noisy readout of $e_i$ there is a dependency structure.
+
+We have the following relationships:
 
 - Evidence: $e_i \sim \mathcal{N}(X_iD_i - \beta, \sigma_e^2)$
 - Criterion: $c_i \sim \mathcal{N}(0, \sigma_c^2)$
 - Metacognitive evidence: $r_i = e_i + \epsilon_m$ where $\epsilon_m \sim \mathcal{N}(0, \sigma_m^2)$
-- Choice: $a = 1$ if $e_i > c_i$, otherwise $a = -1$
+- Choice: $a_i = 1$ if $e_i > c_i$, otherwise $a_i = -1$
 
 
-we now treat the difference distribution $e_i - c_i$ as a joint bivariate normal distribution with $r_i$  and calculate the expectation of $r_i$ given that the $e_i - c_i$ random variable is above 0 (i.e. the choice was 1).
+we can treat the difference distribution $e_i - c_i$ as a joint bivariate normal distribution with $r_i$ and calculate the expectation of $r_i$ given that the $e_i - c_i$ random variable is above 0 (i.e. the choice was 1).
 
-As used before we have that the difference $e_i - c_i$ follows another Gaussian distribution, as both random variables are Gaussians.
+The difference $e_i - c_i$ follows a Gaussian distribution, as both random variables are Gaussians.
 
 $$
 e_i - c_i \sim \mathcal{N}(X_iD_i - \beta, \sigma_e^2 + \sigma_c^2)
 $$
+The joint bivariate normal distribution becomes:
 
-The joint bivariate normal distribution thus becomes:
 $$
 \begin{bmatrix}
 e_i - c_i \\
@@ -489,10 +486,29 @@ X_iD_i - \beta
 \right)
 $$
 
-The key insight here is that the **covariance** between $e_i-c_i$ and $r_i$ is $\sigma_e^2$, not zero. This is because $r_i$ is constructed as $e_i$ plus independent noise, so $\text{Cov}(e_i-c_i, r_i) = \text{Cov}(e_i-c_i, r_i + \epsilon_m) = \text{Var}(e) = \sigma_e^2$. This shared variance structure means that $e_i-c_i$ and $r_i$ are correlated with correlation coefficient: See definition of the correlation coefficient below.
+intuitively this makes sense as both the $e_i - c_i$ and $r_i$ distribution share $e_i$, with the same mean but are otherwise independent.
+
+
+The key mathematical insight is that the covariance between $e_i-c_i$ and $r_i$ is $\sigma_e^2$, not zero. 
+
+writing the full covariance and expanding it using this we get:  (https://www.probabilitycourse.com/chapter5/5_3_1_covariance_correlation.php#:~:text=The%20covariance%20between%20two%20random%20variables%20X,and%20X%20and%20Y%20are%20positively%20correlated.)
+
 
 $$
-\rho = \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_c^2)} \cdot \sqrt{(\sigma_e^2 + \sigma_m^2)}}
+\text{Cov}(e_i-c_i, r_i) = \text{Cov}(e_i-c_i, e_i + \epsilon_m)
+$$
+$$
+\text{Cov}(e_i-c_i, r_i) = \text{Cov}(e_i,e_i) + \text{Cov}(e_i, \epsilon_m) - \text{Cov}(c_i,e_i) - \text{Cov}(c_i, \epsilon_m)=  \text{Cov}(e_i,e_i) = \text{Var}(e) =\sigma_e^2
+$$
+As $e_i$ and $\epsilon_m$ and also $c_i$ are independent, these covariance are 0 and we get:
+
+$$
+\text{Cov}(e_i-c_i, r_i) = \text{Cov}(e_i,e_i) = \text{Var}(e) =\sigma_e^2
+$$
+This shared variance structure means that $e_i-c_i$ and $r_i$ are correlated with correlation coefficient: See definition of the correlation coefficient below.
+
+$$
+\rho = \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_c^2)} \cdot \sqrt{(\sigma_e^2 + \sigma_m^2)}} \tag{5}
 $$
 
 
@@ -503,66 +519,15 @@ To proceed, we need a general result from probability theory. Suppose we have tw
 $$
 \begin{pmatrix} Z \\ Y \end{pmatrix} \sim \mathcal{N}\left(\begin{pmatrix} \mu_Z \\ \mu_Y \end{pmatrix}, \begin{pmatrix} \sigma_Z^2 & \rho\sigma_Y\sigma_Z \\ \rho\sigma_Y\sigma_Z & \sigma_Y^2 \end{pmatrix}\right)
 $$
-
-where $\rho$ is the **correlation coefficient**, defined as:
-
-$$
-\rho = \frac{\text{Cov}(Z, Y)}{\sigma_Z \sigma_Y}
-$$
-
-
-We want to find $\mathbb{E}(Y \mid Z > 0)$, the expected value of $Y$ conditional on $Z$ being positive (i.e. the choice was 1).
-
-From standard bivariate normal theory, the conditional distribution of $Y$ given $Z = z$ is:
-
-$$
-Y \mid Z = z \sim \mathcal{N}\left(\mu_Y + \rho\cdot\frac{\sigma_Y}{\sigma_Z}(z - \mu_Z), \sigma_Y^2(1-\rho^2)\right)
-$$
-
-(see https://uregina.ca/~kozdron/Teaching/Regina/351Fall15/Handouts/351lect24.pdf)
-
-So if we take the expectation of this conditional distribution $\mathbb{E}(Y \mid Z = z) = \mu_Y + \rho\cdot \frac{\sigma_Y}{\sigma_Z}(z - \mu_Z)$ and instead of conditioning on Z we want the expectation of Y when Z > 0 (i.e. the expectation of $r_i$ when the choice was 1) i.e. $\mathbb{E}(Y \mid Z > 0)$ 
-
-$$
-\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \frac{\sigma_Y}{\sigma_Z}(\mathbb{E}(Z | Z >0) - \mu_Z)
-$$
-
-From here we have that the expectation of a truncated normal distribution can be written as: https://en.wikipedia.org/wiki/Truncated_normal_distribution
-
-$$
-\mathbb{E}(Z | Z > a) = \mu_Z + \sigma_Z \frac{\phi(\frac{a-\mu_Z}{\sigma_Z})}{1-\Phi(\frac{a-\mu_Z}{\sigma_Z})}
-$$
-
-which in this case reduces to when a = 0
-
-$$
-\mathbb{E}(Z | Z > 0) = \mu_Z + \sigma_Z \frac{\phi(-z_z)}{1-\Phi(-z_z)}
-$$
-
-given that $-Z_z = \frac{-\mu_Z}{\sigma_Z}$
-
-Now using that the pdf of the gaussian is symmetrical i.e. $\phi(x) = \phi(-x)$ and also that $1-\Phi(-x) = \Phi(x)$
-
-$$
-\mathbb{E}(Z | Z > 0) = \mu_Z + \sigma_Z \frac{\phi(z_z)}{\Phi(z_z)}
-$$
-
-Finally inserting this into the equation:
-
-$$
-\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \frac{\sigma_Y}{\sigma_Z}(\mathbb{E}(Z | Z >0) - \mu_Z)
-$$
-we get:
-
-$$
-\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \frac{\sigma_Y}{\sigma_Z}(\mu_Z + \sigma_Z \frac{\phi(z_z)}{\Phi(z_z)} - \mu_Z)
-$$
-
-which reduces to:
+It can be shown that the expectation of Y given that Z>0 is:
+See the full derivation in [Derivation](Derivations/Truncated Normal.Rmd).
 
 $$
 \mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \sigma_Y\frac{\phi(z_z)}{\Phi(z_z)}
 $$
+
+With $-Z_z = \frac{-\mu_Z}{\sigma_Z}$
+
 
 Now replacing Y with $r_i$ and Z with $e_i - c_i$ we get:
 
@@ -570,51 +535,35 @@ $$
 \mathbb{E}(r_i \mid (e_i-c_i) > 0) =  (X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \frac{\phi(z_z)}{\Phi(z_z)}
 $$
 
-we further had $-Z_z = \frac{-\mu_Z}{\sigma_Z}$ which becomes $z_z = \frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}$
+With $z_z = \frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}$
 
-$$
-\mathbb{E}(r_i \mid (e_i-c_i) > 0) =  (X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \frac{\phi(z_z)}{\Phi(z_z)}
-$$
-
-Now lastly the correlation coefficient was:
-
-$$
-\rho = \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_c^2)} \cdot \sqrt{(\sigma_e^2 + \sigma_m^2)}}
-$$
-
-which then simplifies to:
-
-$$
-\mathbb{E}(r_i \mid (e_i-c_i) > 0) =  (X_iD_i - \beta) + \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_c^2)}} \cdot \frac{\phi(z_z)}{\Phi(z_z)}
-$$
+One might here use the correlation coefficient we found from equation (5) can be inserted see [Derivations](Derivations/no_correlation.Rmd).
 
 It can then easily be shown using the same steps that when the action is -1 i.e. $(e_i-c_i) < 0$ this becomes:
 
 $$
-\mathbb{E}(r_i \mid (e_i-c_i) \leq 0) =  (X_iD_i - \beta) - \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_c^2)}} \cdot \frac{\phi(-z_z)}{\Phi(-z_z)}
+\mathbb{E}(r_i \mid (e_i-c_i) > 0) =  (X_iD_i - \beta) - \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \frac{\phi(-z_z)}{\Phi(-z_z)}
 $$
 
-we might define $\lambda(x) = \frac{\phi(x)}{\Phi(x)}$ is the **inverse Mills ratio** giving us:
-
+we might define $\lambda(x) = \frac{\phi(x)}{\Phi(x)}$ which is the inverse Mills ratio giving us:
 
 $$
-\mathop{\mathbb{E}}(r_i \mid a = 1) = (X_iD_i - \beta) + \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}} \cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
+\mathop{\mathbb{E}}(r_i \mid a = 1) = (X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
 $$
 
 For $a = -1$ (when $e_i - c_i \leq 0$):
 
 $$
-\mathop{\mathbb{E}}(r_i \mid a = -1) = (X_iD_i - \beta) - \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}} \cdot \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
+\mathop{\mathbb{E}}(r_i \mid a = -1) = (X_iD_i - \beta) - \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
 $$
-
 Note that $\lambda(-x) = \frac{\phi(x)}{1-\Phi(x)}$ by properties of the normal distribution.
 
 ### Final confidence model
 
-Substituting these conditional expectations back into our marginalized confidence equation from earlier:
+Substituting these conditional expectations back into our marginalized confidence equation (4):
 
 $$
-P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) + \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}} 
+P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} 
 
 \cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)\right]
 
@@ -622,27 +571,49 @@ P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) 
 \cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
 $$
 
+and simplifying
+
 $$
-P(\text{correct} \mid a = -1, X_i, D_i) = 1 - \Phi\left(\frac{\left[(X_iD_i - \beta) - \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}} 
+P(\text{correct} \mid a = 1, X_i, D_i) = 
 
-\cdot \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)\right]
+\Phi\left(
+\frac{(CX_i^2D_i - C\beta X_i)}{\sigma_e^2 + \sigma_m^2} +
+
+\rho \cdot \frac{ \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)CX_i}{\sqrt{\sigma_e^2 + \sigma_m^2} } 
+
+\cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
+$$
 
 
-\cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
+which for the other choice becomes:
+
+
+$$
+P(\text{correct} \mid a = -1, X_i, D_i) = 
+
+\Phi\left(
+\frac{(CX_i^2D_i - C\beta X_i)}{\sigma_e^2 + \sigma_m^2} -
+
+\rho \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)CX_i}{\sqrt{\sigma_e^2 + \sigma_m^2} } 
+
+\cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
 $$
 
 with:
 
 $$
 \lambda(x) = \frac{\phi(x)}{\Phi(x)}
+\\
+C = \frac{2}{1.7}
 $$
 
+This gives us a fully marginalized model for confidence ratings that depends only on the parameters $\Theta_1 = (\beta, \sigma_e, \sigma_c, \sigma_m)$ and the observed data (choices $a_i$, stimuli $X_i$, true states $D_i$), without requiring trial-by-trial estimation of latent evidence variables $e_i$ and $r_i$.
 
-where:
-- $C = \frac{2}{1.7}$ (the scaling constant from the logit-normal approximation)
-- $\lambda(x) = \frac{\phi(x)}{\Phi(x)}$ (inverse Mills ratio)
+In order to encompass idiosyncrasies in the task, as well as probabilistic relate the above formulation to our confidence ratings we introduce 5 additional parameters. $\Theta_2 = (c_0,c_1, \kappa_c, \lambda, \mu_{\beta})$. $\lambda$ is the lapse rate on the binary choices this is a stimulus independent factor that shifts the asympote of the psychometric function away from certainty i.e. the asymptotic becomes $\lambda$ and $1-\lambda$. Further we define $\mu_{\beta}$ as meta cognitive bias, which serves as an independent shift of confidence ratings. Lastly, the parameters $(c_0,c_1, \kappa_c)$ are the lower, upper cut-points of the ordered beta likelihood and the precision of the likelihood respectively. These parameters serve to probabilistically relate the expected value of the confidence ratings to the confidence rating data. See (XXX) for the ordered beta likelihood. 
 
-This gives us a fully marginalized model for confidence ratings that depends only on the parameters $\Theta = (\beta, \sigma_e, \sigma_c, \sigma_m)$ and the observed data (choices $a_i$, stimuli $X_i$, true states $D_i$), without requiring trial-by-trial estimation of latent evidence variables $e_i$ and $r_i$.
+
+Below we showcase this heuristic model fit to data simulated from equation (2) to show that the two are approximately close. Furthermore, we fit this model to our pilot data hierarchically and compare to the single subject estimated from equation (2). Lastly, we demonstrate parameter recovery simulating from equation (2) and fitting with the heuristic model derived above. 
+
 
 
 

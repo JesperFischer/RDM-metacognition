@@ -1,0 +1,71 @@
+---
+title: "truncated normal"
+output: html_document
+---
+
+We start with two jointly normal random variables:
+
+$$
+\begin{pmatrix} Z \\ Y \end{pmatrix} \sim \mathcal{N}\left(\begin{pmatrix} \mu_Z \\ \mu_Y \end{pmatrix}, \begin{pmatrix} \sigma_Z^2 & \rho\sigma_Y\sigma_Z \\ \rho\sigma_Y\sigma_Z & \sigma_Y^2 \end{pmatrix}\right)
+$$
+
+where $\rho$ is the correlation coefficient, defined as:
+
+$$
+\rho = \frac{\text{Cov}(Z, Y)}{\sigma_Z \sigma_Y}
+$$
+
+
+We want to find $\mathbb{E}(Y \mid Z > 0)$, the expected value of $Y$ conditional on $Z$ being positive (i.e. the choice was 1).
+
+From standard bivariate normal theory, the conditional distribution of $Y$ given $Z = z$ is:
+
+$$
+Y \mid Z = z \sim \mathcal{N}\left(\mu_Y + \rho\cdot\frac{\sigma_Y}{\sigma_Z}(z - \mu_Z), \sigma_Y^2(1-\rho^2)\right)
+$$
+
+(see https://uregina.ca/~kozdron/Teaching/Regina/351Fall15/Handouts/351lect24.pdf)
+
+So if we take the expectation of this conditional distribution 
+$\mathbb{E}(Y \mid Z = z) = \mu_Y + \rho\cdot \frac{\sigma_Y}{\sigma_Z}(z - \mu_Z)$ (instead of conditioning on Z we want the expectation of Y when Z > 0, i.e. the expectation of $r_i$ when the choice was 1) 
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \frac{\sigma_Y}{\sigma_Z}(\mathbb{E}(Z | Z >0) - \mu_Z)
+$$
+
+From here we have that the expectation of a truncated normal distribution can be written as: https://en.wikipedia.org/wiki/Truncated_normal_distribution
+
+$$
+\mathbb{E}(Z | Z > a) = \mu_Z + \sigma_Z \frac{\phi(\frac{a-\mu_Z}{\sigma_Z})}{1-\Phi(\frac{a-\mu_Z}{\sigma_Z})}
+$$
+
+which in this case reduces to when a = 0
+
+$$
+\mathbb{E}(Z | Z > 0) = \mu_Z + \sigma_Z \frac{\phi(-z_z)}{1-\Phi(-z_z)}
+$$
+
+given that $-Z_z = \frac{-\mu_Z}{\sigma_Z}$
+
+Now using that the pdf of the Gaussian is symmetrical i.e. $\phi(x) = \phi(-x)$ and also that $1-\Phi(-x) = \Phi(x)$
+
+$$
+\mathbb{E}(Z | Z > 0) = \mu_Z + \sigma_Z \frac{\phi(z_z)}{\Phi(z_z)}
+$$
+
+Finally inserting this into the equation:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \frac{\sigma_Y}{\sigma_Z}(\mathbb{E}(Z | Z >0) - \mu_Z)
+$$
+we get:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \frac{\sigma_Y}{\sigma_Z}(\mu_Z + \sigma_Z \frac{\phi(z_z)}{\Phi(z_z)} - \mu_Z)
+$$
+
+which reduces to:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \sigma_Y\frac{\phi(z_z)}{\Phi(z_z)}
+$$

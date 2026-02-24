@@ -20,7 +20,7 @@ fit_model_ss = function(df, model,samples){
     refresh = 500,
     iter_sampling = samples,
     iter_warmup = samples,
-    adapt_delta = 0.90,
+    adapt_delta = 0.99,
     max_treedepth = 12,
     init  = 0,
     parallel_chains = 4)
@@ -52,7 +52,7 @@ dia = function(fit,df){
   }
   
   available <- names(as_draws_df(fit$draws()))
-  parameters = c("sigma_choice","mean_choice","prec_conf","sigma_m","sigma_e", "meta_bias")
+  parameters = c("sigma_choice_log","mean_choice","prec_conf_log","sigma_m_log","sigma_e_log", "meta_bias")
   
   if(length(intersect(parameters, available)) > 5){
     params <- intersect(parameters, available)

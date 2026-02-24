@@ -76,7 +76,7 @@ parameters {
   real prec_conf_log;              // decision bias
   real sigma_e_log;              // decision bias
   real mean_choice;
-  real meta_bias;
+  // real meta_bias;
   real c11;
   real c0;
 }
@@ -89,7 +89,7 @@ transformed parameters{
   vector[N] mu_conf;
   
   for(i in 1:N){
-    evidence[i] = mean_choice + X[i] * D[i] + exp(sigma_e_log) * evidence_std[i];
+    evidence[i] = mean_choice - X[i] * D[i] + exp(sigma_e_log) * evidence_std[i];
     ehat[i] = evidence[i] + exp(sigma_m_log) * evidence_ind[i];
     
     p_action[i] = Phi((evidence[i])/exp(sigma_choice_log));
@@ -109,7 +109,7 @@ model {
   sigma_m_log ~  normal(-1, 1);
   prec_conf_log ~ normal(3, 3);
   mean_choice ~ normal(0, 0.3);
-  meta_bias ~ normal(0,0.5);
+  // meta_bias ~ normal(0,0.5);
   evidence_std ~ std_normal();
   evidence_ind ~ std_normal();
   
@@ -119,7 +119,7 @@ model {
   
   for(i in 1:N){
     
-    target += ord_beta_reg_lpdf(C[i] | logit(mu_conf[i]) + meta_bias, exp(prec_conf_log), c0, c11);
+    target += ord_beta_reg_lpdf(C[i] | logit(mu_conf[i]), exp(prec_conf_log), c0, c11);
 
     
   }
@@ -131,13 +131,6 @@ model {
 }
 
 generated quantities{
-  real c1 = c0 + exp(c11);
-
-  real sigma_choice = exp(sigma_choice_log);
-  real sigma_m = exp(sigma_m_log);
-  real sigma_e = exp(sigma_e_log);
-  real prec_conf = exp(prec_conf_log);
-
 
   vector[N] loglik_conf;
   vector[N] loglik_act;
@@ -145,7 +138,7 @@ generated quantities{
   
   for(i in 1:N){
     
-    loglik_conf[i] = ord_beta_reg_lpdf(C[i] | logit(mu_conf[i]) + meta_bias, exp(prec_conf_log), c0, c11);
+    loglik_conf[i] = ord_beta_reg_lpdf(C[i] | logit(mu_conf[i]), exp(prec_conf_log), c0, c11);
     
     loglik_act[i] = bernoulli_lpmf(a[i] | p_action[i]);
     

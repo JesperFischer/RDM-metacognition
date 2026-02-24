@@ -1,0 +1,71 @@
+---
+title: "no_correlation"
+output: html_document
+---
+
+we start from:
+
+$$
+\mathbb{E}(r_i \mid (e_i-c_i) > 0) =  (X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \frac{\phi(z_z)}{\Phi(z_z)}
+$$
+
+
+One might here use the correlation coefficient we found from equation (5)
+
+$$
+\mathbb{E}(r_i \mid (e_i-c_i) > 0) =  (X_iD_i - \beta) + \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_c^2)}} \cdot \frac{\phi(z_z)}{\Phi(z_z)}
+$$
+
+It can then easily be shown using the same steps that when the action is -1 i.e. $(e_i-c_i) < 0$ this becomes:
+
+$$
+\mathbb{E}(r_i \mid (e_i-c_i) \leq 0) =  (X_iD_i - \beta) - \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_c^2)}} \cdot \frac{\phi(-z_z)}{\Phi(-z_z)}
+$$
+
+we might define $\lambda(x) = \frac{\phi(x)}{\Phi(x)}$ which is the inverse Mills ratio giving us:
+
+$$
+\mathop{\mathbb{E}}(r_i \mid a = 1) = (X_iD_i - \beta) + \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}} \cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
+$$
+
+For $a = -1$ (when $e_i - c_i \leq 0$):
+
+$$
+\mathop{\mathbb{E}}(r_i \mid a = -1) = (X_iD_i - \beta) - \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}} \cdot \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
+$$
+Note that $\lambda(-x) = \frac{\phi(x)}{1-\Phi(x)}$ by properties of the normal distribution.
+
+### Final confidence model
+
+Substituting these conditional expectations back into our marginalized confidence equation (4):
+
+$$
+P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) + \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}} 
+
+\cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)\right]
+
+
+\cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
+$$
+
+
+
+
+
+$$
+P(\text{correct} \mid a = -1, X_i, D_i) = 1 - \Phi\left(\frac{\left[(X_iD_i - \beta) - \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}} 
+
+\cdot \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)\right]
+
+
+\cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
+$$
+
+
+with:
+
+$$
+\lambda(x) = \frac{\phi(x)}{\Phi(x)}
+\\
+C = \frac{2}{1.7}
+$$

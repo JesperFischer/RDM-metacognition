@@ -39,6 +39,9 @@ plot_beh_data_tog(df %>% mutate(subject = as.numeric(as.factor(subject))) %>%
 ```{r}
 model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","hierarchical","Full_Heurestic.stan"))
 
+# model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","hierarchical","vectorized.stan"))
+
+
 dd = df %>% 
   mutate(subject = as.numeric(as.factor(subject))) %>% 
   filter(ID != "Rasmus_2026_04_02") %>% 
@@ -49,6 +52,7 @@ datastan = list(N = nrow(dd),
                 S = length(unique(dd$ID)),
                 S_id = as.numeric(as.factor(dd$ID)),
                 a = dd$Y,
+                a_vec = dd$Y,
                 RT = dd$RT,
                 D = dd$D,
                 C = dd$Confidence,
@@ -58,7 +62,7 @@ datastan = list(N = nrow(dd),
                 ACC = dd$Correct,
                 interval = dd$interval)
 
-pf = model$pathfinder(data = datastan)
+pf = model$pathfinder(data = datastan, num_threads = 4, psis_resample = F, calculate_lp = F)
 
 
 fit <-model$sample(

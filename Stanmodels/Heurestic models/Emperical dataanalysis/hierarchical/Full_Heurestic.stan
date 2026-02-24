@@ -1,12 +1,7 @@
 functions {
 
 real lambda(real z){
-  if (z > -5.0) {
     return exp(std_normal_lpdf(z)) / Phi(z);
-  } else {
-    // Asymptotic expansion for z << 0
-    return -1.0 / z;
-  }
 }
   
   real psycho_ACC(real x, real beta, real alpha, real lapse){
@@ -128,7 +123,7 @@ transformed parameters{
   vector[S]  meta_bias_beta = param[,9];  // meta uncertainty on incorrect trials
 
 
-  vector[S] sigma1 = exp(sigma_e)^2 + exp(sigma_k)^2;  // Now squaring to get variances
+  vector[S] sigma1 = sqrt(exp(sigma_e)^2 + exp(sigma_k)^2);  // Now squaring to get variances
 
 
  
@@ -141,13 +136,13 @@ transformed parameters{
   
   real mu = (XD[n] - (inv_logit(beta[S_id[n]])-0.5)*2);
 
-  theta[n] = (inv_logit(lapse[S_id[n]])/2) + (1-2*inv_logit(lapse[S_id[n]])/2) * Phi( mu / sqrt(sigma1[S_id[n]]));
+  theta[n] = (inv_logit(lapse[S_id[n]])/2) + (1-2*inv_logit(lapse[S_id[n]])/2) * Phi( mu / sigma1[S_id[n]]);
 
   if(a[n] == 1){
-    theta_conf[n] = Phi( (((mu + exp(sigma_e[S_id[n]])^2/sqrt(sigma1[S_id[n]]) * lambda(mu/sqrt(sigma1[S_id[n]]))) * Cc*X[n]) / sigma2) * 1/(sqrt(1 + ((Cc^2*X[n]^2) / sigma2))));
+    theta_conf[n] = Phi( (((mu + exp(sigma_e[S_id[n]])^2/sigma1[S_id[n]] * lambda(mu/sigma1[S_id[n]])) * Cc*X[n]) / sigma2) * 1/(sqrt(1 + ((Cc^2*X[n]^2) / sigma2))));
     
   }else if(a[n] == 0){
-    theta_conf[n] =  1-Phi( (((mu - exp(sigma_e[S_id[n]])^2/sqrt(sigma1[S_id[n]]) * lambda(-mu/sqrt(sigma1[S_id[n]]))) * Cc*X[n]) / sigma2) * 1/(sqrt(1 + ((Cc^2*X[n]^2) / sigma2))));
+    theta_conf[n] =  1-Phi( (((mu - exp(sigma_e[S_id[n]])^2/sigma1[S_id[n]] * lambda(-mu/sigma1[S_id[n]])) * Cc*X[n]) / sigma2) * 1/(sqrt(1 + ((Cc^2*X[n]^2) / sigma2))));
   }
   
 
@@ -180,13 +175,11 @@ model {
 
   target += bernoulli_lpmf(a | theta);   // likelihood for the outcomes
 
-
+  profile("likelihood") {
   for (n in 1:N) {
-
     target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias[S_id[n]]+  meta_bias_beta[S_id[n]] * interval[n], exp(confprec[S_id[n]]), c0[S_id[n]], c11[S_id[n]]);   // likelihood for confidence on correct trials 
-
   }
-  
+  }
   for(s in 1:S){
     c0[s] ~ induced_dirichlet([1,10,1]', 0, 1, c0[s], c11[s]);
     c11[s] ~ induced_dirichlet([1,10,1]', 0, 2, c0[s], c11[s]);
