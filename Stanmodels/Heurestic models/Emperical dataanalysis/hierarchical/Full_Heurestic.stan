@@ -162,9 +162,9 @@ model {
   
   gm[1] ~ normal(0,0.5); //global mean of threshold 
   gm[2] ~ normal(-2,2); //global mean of slope
-  gm[3] ~ normal(-3,2); //global mean of confidence precision
+  gm[3] ~ normal(-2,2); //global mean of confidence precision
   gm[4] ~ normal(-2,2); //global mean of meta uncertainty
-  gm[5] ~ normal(0,1); //global mean of meta bias
+  gm[5] ~ normal(0,0.5); //global mean of meta bias
   gm[6] ~ normal(-4,2); //global mean of meta bias
   
   gm[7] ~ normal(2,2); //global mean of meta bias
@@ -173,8 +173,7 @@ model {
   
   to_vector(z_expo) ~ std_normal();
 
-  tau_u[1] ~ normal(0 , 1);
-  tau_u[2:7] ~ normal(0 , 2);
+  tau_u[1:7] ~ normal(1 , 1);
   tau_u[8] ~ normal(0 , 0.5);
   tau_u[9] ~ normal(0 , 0.5);
   
