@@ -269,8 +269,8 @@ data =
 ## Plots
 PR = map_dfr(results_list,1) %>% filter(div==0 & rhat<1.01) %>% filter(variable %in% c("sigma_e","bias","crit")) %>% 
   filter(!(variable == "sigma_e" & mean>10)) %>% filter(!(variable == "crit" & mean<45 & simulated>47)) %>%
-  ggplot(aes(x = simulated, y = mean, ymin=q5, ymax = q95))+geom_abline(alpha = 0.7, linetype = "dashed", size = 2, color = "grey20")+
-  geom_point(color = "black", alpha = 1, size = 4)+theme_classic(base_size = 30)+
+  ggplot(aes(x = simulated, y = mean, ymin=q5, ymax = q95))+
+  geom_pointrange(color = "black", alpha = 0.3, size = 0.5)+theme_classic(base_size = 30)+geom_point(size = 3.2)+geom_abline(alpha = 0.5, linetype = "dashed", size = 2, color = "red")+
   facet_wrap(~variable, nrow = 1, scales = "free", labeller = labeller( variable = c( bias = "Bias[hat(sigma)]", crit = "C[d]", sigma_e = "sigma[e]"), ,.default = label_parsed))+ 
   labs(x = "Simulated", y="Estimated", title = "Parameter recovery") + theme(plot.title = element_text(hjust = 0.5, size = rel(1.5)),
                                                                              axis.title = element_text(size = rel(1.2)),
@@ -278,20 +278,20 @@ PR = map_dfr(results_list,1) %>% filter(div==0 & rhat<1.01) %>% filter(variable 
                                                                              strip.text = element_text(size = rel(1.2))))
 
 PR1 = map_dfr(results_list,1) %>% filter(div==0 & rhat<1.01) %>% filter(variable == "sigma_e")%>% filter(mean<10) %>% 
-      ggplot(aes(x = simulated, y = mean, ymin=q5, ymax = q95))+geom_abline(alpha = 0.7, linetype = "dashed", size = 2, color = "grey20")+
-      geom_point(color = "black", alpha = 1, size = 4)+theme_classic(base_size = 30)+ 
+      ggplot(aes(x = simulated, y = mean, ymin=q5, ymax = q95))+geom_abline(alpha = 1, linetype = "dashed", size = 2, color = "grey20")+
+      geom_pointrange(color = "black", alpha = 0.4, size = 1)+theme_classic(base_size = 30)+ geom_point(size =5)+
         theme(axis.title.x = element_text(angle = 0, hjust = 0.5, size = 70,), 
               plot.title = element_textbox( size = 70, width = unit(1, "npc"),padding = margin(5, 10, 5, 10), margin = margin(10, 0, 10, 0), 
                                             fill = "grey",  linewidth = 1, r = unit(5, "pt"), halign = 0.5))+
       labs(x = NULL, y=NULL, title = " σₑ")+scale_x_continuous(limits = c(1, 6), expand = c(0, 0), breaks = c(1,3.5,6)) +
-        scale_y_continuous(limits = c(1,10), expand = c(0, 0), breaks = c(5.5,10))
+        scale_y_continuous(limits = c(1,12), expand = c(0, 0), breaks = c(6,12))
 
 
 PR2 = map_dfr(results_list,1) %>% filter(div==0 & rhat<1.01) %>% filter(variable == "bias") %>% 
       ggplot(aes(x = simulated, y = mean, ymin=q5, ymax = q95))+geom_abline(alpha = 1, linetype = "dashed", size = 2,color = "grey20")+
-      geom_point(color = "black", alpha = 1, size = 4)+theme_classic(base_size = 30)+ 
+      geom_pointrange(color = "black", alpha = 0.4, size = 1)+theme_classic(base_size = 30)+ geom_point(size =5)+
       theme(axis.title.x = element_text( angle = 0,hjust = 0.5, size = 70),
-            plot.title = element_textbox( size = 70, width = unit(1, "npc"),padding = margin(5,10, 5, 10), margin = margin(10, 0, 10, 0), 
+            plot.title = element_textbox( size = 60, width = unit(1, "npc"),padding = margin(5,10, 5, 10), margin = margin(10, 0, 10, 0), 
                                           fill = "grey",  linewidth = 1, r = unit(5, "pt"), halign = 0.5))+
       labs(x = NULL, y=NULL, title = "Bias(σ̂)")+scale_x_continuous(limits = c(0, 1.6), expand = c(0, 0), breaks = c(0,0.8,1.6)) +
       scale_y_continuous(limits = c(0,2), expand = c(0, 0), breaks = c(1,2))
@@ -299,13 +299,13 @@ PR2 = map_dfr(results_list,1) %>% filter(div==0 & rhat<1.01) %>% filter(variable
 
 PR3 = map_dfr(results_list,1) %>%filter(div==0 & rhat<1.01) %>%  filter(variable == "crit") %>% filter(!(mean<45&simulated>47)) %>% 
       ggplot(aes(x = simulated, y = mean, ymin=q5, ymax = q95))+geom_abline(alpha = 1, linetype = "dashed", size = 2, color = "grey20")+
-      geom_point(color = "black", alpha = 1, size = 4)+theme_classic(base_size = 30)+ 
-      theme(axis.title.x = element_text( angle = 0,hjust = 0.5, size = 70), 
-            plot.title = element_textbox( size = 70, width = unit(1, "npc"),padding = margin(5,10, 5, 10), margin = margin(10, 0, 10, 0), 
+      geom_pointrange(color = "black", alpha = 0.4, size = 1)+theme_classic(base_size = 30)+ geom_point(size =5)+ 
+      theme(axis.title.x = element_text( angle = 0,hjust = 0.5, size = 50), 
+            plot.title = element_textbox( size = 60, width = unit(1, "npc"),padding = margin(5,10, 5, 10), margin = margin(10, 0, 10, 0), 
                                           fill = "grey",  linewidth = 1, r = unit(5, "pt"), halign = 0.5))+
       labs(x = NULL, y=NULL, title = "Criterion")+
-      scale_x_continuous(limits = c(30, 60), expand = c(0, 0), breaks = c(30,45,60)) +
-      scale_y_continuous(limits = c(30,60), expand = c(0, 0), breaks = c(45,60))
+      scale_x_continuous(limits = c(36, 56), expand = c(0, 0), breaks = c(36,46,56)) +
+      scale_y_continuous(limits = c(36,56), expand = c(0, 0), breaks = c(46,56))
 
 sim = 6
 results_list[[sim]][[2]] %>% select(temps, a) %>% group_by(temps) %>% summarise(mean = mean(a)) %>% 
@@ -325,21 +325,14 @@ for (i in 1:90){
 }
 
 
-sim_1 = 93
-sim_2 = 60
+sim_1 = 60
 
-param_df <- bind_rows(
-  results_list[[sim_1]][[1]] %>% 
-    filter(variable %in% c("crit", "sigma_e", "bias")) %>%
-    select(variable, mean) %>%
-    mutate(sim = sim_1),
-  
-  results_list[[sim_2]][[1]] %>% 
-    filter(variable %in% c("crit", "sigma_e", "bias")) %>%
-    select(variable, mean) %>%
-    mutate(sim = sim_2)
-) %>%
-  tidyr::pivot_wider(names_from = variable, values_from = mean)
+
+param_df = results_list[[sim_1]][[1]] %>% 
+            filter(variable %in% c("crit", "sigma_e", "bias")) %>%
+            select(variable, mean)
+          
+ 
 
 posterior_draw = results_list[[sim_1]][[4]]%>% crossing(temps=seq(
   min(unique(results_list[[sim_1]][[2]]$temps)), 
@@ -349,28 +342,19 @@ posterior_draw = results_list[[sim_1]][[4]]%>% crossing(temps=seq(
   group_by(temps) %>% summarise(ymin = min(y_pred), ymax = max(y_pred), cmin =min(c_pred),cmax = max(c_pred)) %>% 
   mutate(sim = sim_1)
 
-posterior_draw_2 = results_list[[sim_2]][[4]]%>% crossing(temps=seq(
-  min(unique(results_list[[sim_2]][[2]]$temps)), 
-  max(unique(results_list[[sim_2]][[2]]$temps)),
-  length.out = 200)) %>% 
-  mutate(y_pred = pnorm((temps-crit)/sigma_e)) %>%mutate(c_pred = pnorm(abs(temps-crit)/(sigma_e+bias))) %>%  
-  group_by(temps) %>% summarise(ymin = min(y_pred), ymax = max(y_pred), cmin =min(c_pred),cmax = max(c_pred)) %>% 
-  mutate(sim = sim_2)
 
-posterior = bind_rows(posterior_draw, posterior_draw_2)
 
-Type_1 = bind_rows(results_list[[sim_1]][[2]] %>% mutate(sim = sim_1),results_list[[sim_2]][[2]] %>% mutate(sim=sim_2)) %>% 
-          select(temps, a, sim) %>% group_by(sim,temps) %>% summarise(mean = mean(a))  %>% 
-          left_join(param_df, by = "sim") %>% mutate(est = pnorm((temps-crit)/sigma_e)) %>% 
-          ggplot()+ geom_point(aes(x=temps, y = mean, color = as.factor(sim)), size = 2.5)+
-          geom_smooth(aes(x=temps,y=est, color =as.factor(sim)), size = 1.5, alpha = 0.8, se =FALSE, span = 0.5)+
-          geom_ribbon(data = posterior, aes(x=temps,ymin=ymin,ymax=ymax, fill=as.factor(sim)), alpha=0.1)+
-          scale_color_manual(values = setNames(c("#1f77b4", "#ff7f0e"),c(as.character(sim_1), as.character(sim_2))))+
-          scale_fill_manual( values = setNames(c("#1f77b4", "#ff7f0e"), c(as.character(sim_1), as.character(sim_2))), guide = "none")+
-          labs(y = "P(pain)", x= "Temperature (°C)", color = "Simulated Participant", title = "Binary Response fit")+
+Type_1 = results_list[[sim_1]][[2]] %>% 
+          select(temps, a) %>% group_by(temps) %>% summarise(mean = mean(a), sum = sum(a))  %>% mutate(aP = sum+1, bP = 10-sum+1) %>% 
+          mutate(lower = qbeta(0.025, aP,bP),upper = qbeta(0.975, aP, bP)) %>% 
+          bind_cols(param_df %>% pivot_wider(names_from = variable, values_from = mean)) %>% 
+          mutate(est = pnorm((temps-crit)/sigma_e)) %>% 
+          ggplot()+ geom_pointrange(aes(x=temps, y = mean, ymin = lower, ymax=upper), color ="#1f77b4", size = 1)+
+          geom_smooth(aes(x=temps,y=est), color = "#1f77b4", size = 1.5, alpha = 0.8, se =FALSE, span = 0.5)+
+          geom_ribbon(data = posterior_draw, aes(x=temps,ymin=ymin,ymax=ymax), fill = "#1f77b4", alpha=0.1)+
+          labs(y = "P(pain)", x= "Temperature (°C)", title = "Binary Response fit")+
           theme_classic(base_size =20)+ 
-          theme(legend.position = c(0.2,0.8),
-                plot.title = element_text(margin = margin(b = 30), family = "bold",hjust = 0.5))
+          theme(plot.title = element_text(margin = margin(b = 30), family = "bold",hjust = 0.5))
 
 
 
