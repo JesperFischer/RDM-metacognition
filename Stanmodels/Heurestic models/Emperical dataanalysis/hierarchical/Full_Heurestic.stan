@@ -141,7 +141,6 @@ transformed parameters{
   
   real mu = (XD[n] - (inv_logit(beta[S_id[n]])-0.5)*2);
 
-    
   theta[n] = (inv_logit(lapse[S_id[n]])/2) + (1-2*inv_logit(lapse[S_id[n]])/2) * Phi( mu / sqrt(sigma1[S_id[n]]));
 
   if(a[n] == 1){

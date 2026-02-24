@@ -348,13 +348,13 @@ sim_new_subjects = function(max_subjects = 100){
   
   
   
-  plan(multisession, workers = 5)  # Windows-friendly
+  plan(multisession, workers = 9)  # Windows-friendly
   
-  n_subj <- c(5,6,7,8,9, 10,12, 14,20,25,30,40,50)
+  n_subj <- c(5,6,7,8,9, 10,12, 14,20)
   library(furrr)
   
   
-  for(i in 10:20){
+  for(i in 1:10){
     
     draws_id = sample(nrow(post_draws), 1)
     
@@ -362,7 +362,8 @@ sim_new_subjects = function(max_subjects = 100){
     
     new_subjects =
       post_draws %>% filter(draw %in% draws_id) %>%
-      mutate(`gm.8.` = 0.05) %>%
+      mutate(`gm.8.` = 0,
+             `gm.9.` = 0) %>%
       rowwise() %>% 
       mutate(sim = list(simulate_subjects(cur_data(), S = max_subjects,P = 9))) %>% 
       unnest(sim) %>% 
