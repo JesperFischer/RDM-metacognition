@@ -830,8 +830,7 @@ pp_hier = function(fit,df,n_bins){
     # Prepare observed data
     if (!is.null(n_bins)) {
       # Create common bin boundaries based on the range of both datasets
-      df <- df %>%
-        group_by(ID) %>%
+      df_g <- df %>%
         mutate(
           X_bin = cut(
             X,
@@ -856,18 +855,23 @@ pp_hier = function(fit,df,n_bins){
     
     
     behplot = rbind(
-      bin = df %>%
+      bin = df_g %>%
         # mutate(action = ifelse(Y == 1, "up", "down")) %>%
         mutate(action = NA) %>%
         group_by(X,action) %>%
         summarize(
           name = "Type-1",
-          mean = mean(Y, na.rm = T),
-          q5 = mean(Y, na.rm = T) - 2* (mean(Y, na.rm = T) * (1-mean(Y, na.rm = T)) / sqrt(n())),
-          q95 = mean(Y, na.rm = T) + 2 * (mean(Y, na.rm = T) * (1-mean(Y, na.rm = T)) / sqrt(n())),
-          .groups = "drop"
-        ),
-      df %>%
+          k = sum(Y),
+          n = n(),
+          mean = k / n,
+          
+          a_post = k + 1,
+          b_post = (n - k) + 1,
+          
+          q5 = qbeta(0.025, a_post, b_post),
+          q95 = qbeta(0.975, a_post, b_post),
+          .groups = "drop") %>% mutate(k = NULL, n = NULL, a_post = NULL, b_post = NULL),
+      df_g %>%
         mutate(action = ifelse(Y == 1, "up", "down")) %>%
         group_by(X, action) %>%
         summarize(name = "Confidence",
@@ -889,7 +893,6 @@ pp_hier = function(fit,df,n_bins){
            y = "Value") +
       geom_vline(xintercept = 0, linetype = 2) +
       scale_y_continuous(limits = c(0,1), breaks = scales::pretty_breaks(n = 5))+
-      # theme(legend.position = "top")+
       geom_line(data = df1, aes(x = x, y = mean, col = action))+
       geom_ribbon(data = df1, aes(x = x, y = mean, ymin = q5, ymax = q95, fill = action), alpha = 0.5)
     
@@ -955,16 +958,41 @@ pp_hier = function(fit,df,n_bins){
     
     
     
+    # Prepare observed data
+    if (!is.null(n_bins)) {
+      # Create common bin boundaries based on the range of both datasets
+      df_s <- df %>%
+        group_by(ID) %>% 
+        mutate(
+          X_bin = cut(
+            X,
+            breaks = seq(min(X, na.rm = TRUE),
+                         max(X, na.rm = TRUE),
+                         length.out = n_bins + 1),
+            labels = FALSE,
+            include.lowest = TRUE
+          ),
+          # compute bin centers per subject
+          X = {
+            breaks_i <- seq(min(X, na.rm = TRUE),
+                            max(X, na.rm = TRUE),
+                            length.out = n_bins + 1)
+            centers_i <- (breaks_i[-1] + breaks_i[-length(breaks_i)]) / 2
+            centers_i[X_bin]
+          }
+        ) %>%
+        ungroup() %>%
+        select(-X_bin)
+    }
+    
+    
     
     behplot = rbind(
-      bin = df %>%
+      bin = df_s %>%
         mutate(action = NA) %>%
         group_by(X,ID,action) %>%
         summarize(
           name = "Type-1",
-          # mean = mean(Y, na.rm = T),
-          # q5 = mean(Y, na.rm = T) - 2* (mean(Y, na.rm = T) * (1-mean(Y, na.rm = T)) / sqrt(n())),
-          # q95 = mean(Y, na.rm = T) + 2 * (mean(Y, na.rm = T) * (1-mean(Y, na.rm = T)) / sqrt(n())),
           k = sum(Y),
           n = n(),
           mean = k / n,
@@ -975,7 +1003,7 @@ pp_hier = function(fit,df,n_bins){
           q5 = qbeta(0.025, a_post, b_post),
           q95 = qbeta(0.975, a_post, b_post),
           .groups = "drop") %>% mutate(k = NULL, n = NULL, a_post = NULL, b_post = NULL),
-      df %>%
+      df_s %>%
         mutate(action = ifelse(Y == 1, "up", "down")) %>%
         group_by(X,ID, action) %>%
         summarize(name = "Confidence",
@@ -986,8 +1014,20 @@ pp_hier = function(fit,df,n_bins){
     ) %>% mutate(variable = name, name = NULL)
     
     sub_plots = list()
+    qq = 0
     for(name in unique(df1_sub$ID)){
       
+      parameters = pred_subj %>% filter(ID == name) %>% 
+        pivot_longer(cols = c("sigma_e","sigma_m","sigma_k")) %>%
+        select(ID,name,value) %>% distinct() %>% 
+        mutate(name = ifelse(name == "sigma_e","S_e",ifelse(name == "sigma_m","S_m",ifelse(name == "sigma_k","S_c",name)))) %>% 
+        group_by(name) %>% summarize(mean = mean(value, na.rm = T),
+                                     q5 = quantile(value,0.05, na.rm = T),
+                                     q95 = quantile(value,0.95, na.rm = T)) %>% 
+        mutate(label = paste0(name," = ",round(mean,2)," [",round(q5,2)," ; ",round(q95,2),"]")) %>% 
+        mutate(variable = "Confidence") %>% mutate(param = c(0,0.15,0.3))
+      
+      qq = qq+1
       sub_plot = behplot  %>% 
         filter(variable != "RT" & ID == name) %>% 
         ggplot() +
@@ -997,13 +1037,15 @@ pp_hier = function(fit,df,n_bins){
         scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
         theme_classic(base_size = 14) +
         labs(color = "action", fill = "action",
-             y = "Value") +
+             y = "P(a=1) Or P(a=D)", x = "Signed Stimulus (XD)") +
         geom_vline(xintercept = 0, linetype = 2) +
-        labs(subtitle = name)+
+        # labs(subtitle = name)+
+        labs(subtitle = paste0("ID =", qq))+
         scale_y_continuous(limits = c(0,1), breaks = scales::pretty_breaks(n = 5))+
-        # theme(legend.position = "top")+
+        # geom_text(data = parameters, aes(x = 0, y = param,label = label), size = 4)+
         geom_line(data = df1_sub %>% filter(ID == name), aes(x = x, y = mean, col = action))+
         geom_ribbon(data = df1_sub%>% filter(ID == name), aes(x = x, y = mean, ymin = q5, ymax = q95, fill = action), alpha = 0.5)
+      
       
       sub_plots[[name]] = sub_plot
       

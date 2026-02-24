@@ -615,6 +615,10 @@ In order to encompass idiosyncrasies in the task, as well as probabilistic relat
 Below we showcase this heuristic model fit to data simulated from equation (2) to show that the two are approximately close. Furthermore, we fit this model to our pilot data hierarchically and compare to the single subject estimated from equation (2). Lastly, we demonstrate parameter recovery simulating from equation (2) and fitting with the heuristic model derived above. 
 
 
+## pilot data fit from Hierarchical Heurestic model
 
+```{r,fig.height=12, fig.width=18, message=F,error=F,warning=F}
+magick::image_read(here::here("Preregistration","Figures","Pilot_predictive_checks.PNG"))
+```
 
 

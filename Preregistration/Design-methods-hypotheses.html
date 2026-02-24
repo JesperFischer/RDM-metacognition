@@ -413,7 +413,7 @@ whether this parameter-value (on a group level) is different from 0
 </ul>
 </div>
 <div id="participants" class="section level2">
-<h2>## Participants</h2>
+<h2>Participants</h2>
 <p>Eligible participants will be 18–40 years old, have normal or
 corrected‑to‑normal vision, and be proficient in English. Individuals
 with neurological or psychiatric diagnoses or those taking medication
@@ -436,39 +436,36 @@ but with an increase in the effect of interest at a group level of
 0.05.</p>
 </div>
 <div id="design" class="section level2">
-<h2>## Design</h2>
+<h2>Design</h2>
 <p>This study consists of a single lab visit where participants perform
-a computer experiment on a COMPUTERSPEC ran in Psychopy. as previously
-mentioned, the experiment uses a random dot motion (RDM) decision‑making
-task. On each trial, participants view a random dot kinematogram in
-which a majority of dots move either upward or downward. While the dots
-are displayed, participants indicate whether the overall motion is ‘up’
-or ‘down’ by pressing the corresponding key. They have 2 seconds to
-respond, trials without a response within this window are classified as
-no‑response trials. After indicating their response, participants view a
-post‑decisional fixation cross. The duration of this interval is the
-main experimental manipulation and is randomly drawn from a uniform
-distribution ranging from the maximum response time of 2 seconds to 5
-seconds (<span class="math inline">\(PostD_i \sim \text{U}(2,
-5)\)</span>). After the interval, participants provide a metacognitive
-evaluation of their decision. They are asked, ‘How confident were you in
-your decision?’ and respond using a scale ranging from ‘certainly wrong’
-to ‘certainly right.’ Participants navigate the scale using the arrow
-keys and confirm their response with a key press. If no response is made
-within 3 seconds, the trial is classified as a no‑response trial. Before
-the start of each new trial, an inter‑trial interval is presented
-consisting of a fixation cross. The duration of this interval is drawn
-from a log‑normal distribution with a mean of 5 seconds and a standard
-deviation of 0.1 (<span class="math inline">\(ITI_i \sim
-\text{Lognormal}(1,0.1)\)</span>).</p>
-<pre class="r"><code>n_trials = 36
-n_blocks = 8
-n_total = n_trials * n_blocks</code></pre>
-<p>In total, participants will complete 288 trials, spread over 8 of 36.
-Before the main experiment begins, participants receive instructions on
-how to perform the decision task. They then complete six easy,
-non‑speeded practice trials without confidence ratings, followed by 120
-more difficult practice trials. Afterward, participants receive
+a computer experiment on a COMPUTERSPEC(XXX) run using Psychopy (REF)
+<!-- Remember to add -->. The experiment uses a random dot motion (RDM)
+decision‑making task. On each trial, participants view a random dot
+kinematogram in which a majority of dots move either upward or downward.
+While the dots are displayed, participants indicate whether the overall
+motion is ‘up’ or ‘down’ by pressing a corresponding key. They have 2
+seconds to respond, trials without a response within this window are
+classified as no‑response trials. After indicating their response,
+participants view a post‑decisional fixation cross. The duration of this
+interval is the main experimental manipulation and is randomly drawn
+from a uniform distribution ranging from the maximum response time of 2
+seconds to 5 seconds (<span class="math inline">\(PostD_i \sim
+\text{U}(2, 5)\)</span>). After the interval, participants provide a
+metacognitive evaluation of their decision. They are asked, ‘How
+confident were you in your decision?’ and respond using a scale ranging
+from ‘certainly wrong’ to ‘certainly right.’ Participants navigate the
+scale using the arrow keys and confirm their response with a key press.
+If no response is made within 3 seconds, the trial is classified as a
+no‑response trial. Before the start of each new trial, an inter‑trial
+interval is presented consisting of a fixation cross. The duration of
+this interval is drawn from a log‑normal distribution with a mean of 5
+seconds and a standard deviation of 0.1 (<span class="math inline">\(ITI_i \sim \text{Lognormal}(1,0.1)\)</span>).
+<!-- It says Inter-trial_interval is mean of 5 but the distribution thingy says 1 --></p>
+<p>In total, participants will complete 288 trials, spread over 8 blocks
+of 36 trials. Before the main experiment begins, participants receive
+instructions on how to perform the decision task. They then complete six
+easy, non‑speeded practice trials without confidence ratings, followed
+by 120 more difficult practice trials. Afterward, participants receive
 additional instructions about the confidence scale and complete 10 easy,
 non‑speeded practice trials that include confidence ratings, after which
 the main experiment begins. The key variables of interest are response
@@ -503,9 +500,7 @@ that difficulty is balanced across upward and downward motion
 directions.</p>
 </div>
 <div id="exclusion-criteria" class="section level2">
-<h2>## Exclusion criteria</h2>
-<pre class="r"><code>ACC_cut = 55
-no_resp_cut = 50</code></pre>
+<h2>Exclusion criteria</h2>
 <p>Because the task is a two‑alternative forced‑choice decision, chance
 performance is 50%. For each participant, we compute overall accuracy
 across all main‑task trials and will exclude all participants with an
