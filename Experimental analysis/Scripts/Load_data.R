@@ -8,7 +8,7 @@ load_data = function(){
   df = data.frame()
   for(path in paths){
     print(path)
-    subjectID = strsplit(path, '/')[[1]][[7]]
+    subjectID = strsplit(path, '/')[[1]][[8]]
     
     dq = read.csv(path)
 

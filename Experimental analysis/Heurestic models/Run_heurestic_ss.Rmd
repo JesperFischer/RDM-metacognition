@@ -33,15 +33,12 @@ plot_beh_data(df %>% filter(ID == "Rasmus_2026_04_02" & Trialtype == "Main"),NUL
 
 ## fit the standard model with meta-uncertainty and meta-bias
 ```{r}
-model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","Single Subject","model1.stan"))
+model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","Single Subject","Heurestic.stan"))
 
 dd = df %>% 
   mutate(subject = as.numeric(as.factor(subject))) %>% 
   filter(Trialtype == "Main", scale == "conf") %>% drop_na()
-```
 
-
-```{r}
 dd_by_subj <- split(dd, dd$ID)
 
 fits <- lapply(dd_by_subj, function(d) {
@@ -51,12 +48,12 @@ fits <- lapply(dd_by_subj, function(d) {
 
 
 ```{r}
-models = list.files(here::here("Experimental analysis","Heurestic models","saved models"), full.names = T)
+models = list.files(here::here("Experimental analysis","Heurestic models","saved models","single subject"), full.names = T)
 
 fits = list()
 for(model in models[1:9]){
   fit = readRDS(model)
-  fits[[str_remove(str_remove(str_split(model, "/")[[1]][8],".rds"),"fit_")]] = fit  
+  fits[[str_remove(str_remove(str_split(model, "/")[[1]][10],".rds"),"fit_")]] = fit  
 }
 
 ```
@@ -71,7 +68,7 @@ dia(fits, dd)
 # posterior predictives:
 
 ```{r, fig.width=8,fig.height=6, error=F,message=F,warning=F}
-pp(fits, dd, n_bins = NULL)
+pp(fits, dd, n_bins = 10)
 ```
 
 

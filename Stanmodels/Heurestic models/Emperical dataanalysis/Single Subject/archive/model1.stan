@@ -3,7 +3,9 @@ functions {
   real psycho_ACC(real x, real beta, real alpha){
     return (Phi(beta * (x-alpha)));
    }
-   
+ real psycho_ACC_lapse(real x, real beta, real alpha, real lapse){
+    return (lapse + (1-2*lapse) * Phi(beta * (x-alpha)));
+   }
   real psycho_conf(real x, real beta, real alpha){
     return (Phi(beta * abs(x-alpha)));
    }
@@ -66,21 +68,21 @@ functions {
 
 
 data {
-  int<lower=0> N;    // integer: amount of trials
+  int<lower=0> N;
 
-  array[N] int a;    // array: answers
-  
-  vector[N] C;      // vector: confidence ratings
+  vector[N] C;
 
-  vector[N] XD;      // vector: stimulus values
+  vector[N] X;
+  vector[N] XD;
+  vector[N] interval;
 
-
-  vector[N] ACC; // vector: outcome binary response
+  vector[N] ACC; // Vector of deltaBPM values that match the binary response
+  array[N] int a;
 
 }
 
 transformed data{
-  int P = 6;    // Number of subject-level parameters
+  int P = 9;    // Number of subject-level parameters
 }
 
 parameters {
@@ -95,22 +97,25 @@ transformed parameters{
 
   real alpha1 = gm[1]; // threshold
   real beta1 = gm[2]; // slope
+  real lapse1 = gm[3]; // lapse
 
-  real conf_prec1 = gm[3];  // confidence precision
-  real meta_un_cor1 = gm[4];  // meta uncertainty on correct trials
-  real meta_un_inc1 = gm[5];  // meta uncertainty on incorrect trials
-  real meta_bias = gm[6];
-
+  real conf_prec1 = gm[4];  // confidence precision
+  real meta_un_cor1 = gm[5];  // meta uncertainty on correct trials
+  real meta_un_inc1 = gm[6];  // meta uncertainty on incorrect trials
+  real meta_bias = gm[7];
+  
+  real  meta_un_beta = gm[8]; 
+  real  meta_bias_beta = gm[9];
 
   vector[N] conf_mu;
   vector[N] theta;
   vector[N] theta_conf;
 
   for (n in 1:N) {
-  theta[n] = psycho_ACC(XD[n], exp(beta1), (inv_logit(alpha1)-0.5)*2) ;
+  theta[n] = psycho_ACC_lapse(XD[n], exp(beta1), (inv_logit(alpha1)-0.5)*2, inv_logit(lapse1) / 2) ;
 
   if(ACC[n] == 1){
-    theta_conf[n] = psycho_conf(XD[n], exp(beta1 - exp(meta_un_cor1)), (inv_logit(alpha1)-0.5)*2);
+    theta_conf[n] = psycho_conf(XD[n], exp(beta1 - exp(meta_un_cor1)+  meta_un_beta * interval[n]), (inv_logit(alpha1)-0.5)*2);
   }else if(ACC[n] == 0){
     theta_conf[n] = psycho_conf(XD[n], meta_un_inc1, (inv_logit(alpha1)-0.5)*2);
   }
@@ -121,11 +126,15 @@ transformed parameters{
 }
 model {
   gm[1] ~ normal(0,0.5); //global mean of threshold
-  gm[2] ~ normal(0,1); //global mean of slope
-  gm[3] ~ normal(3,2); //global mean of confidence precision
-  gm[4] ~ normal(0,1); //global mean of meta uncertainty for correct trials 
+  gm[2] ~ normal(2,1); //global mean of slope
+  gm[3] ~ normal(-4,2); //global mean of confidence precision
+  gm[4] ~ normal(2,2); //global mean of meta uncertainty for correct trials 
   gm[5] ~ normal(0,1); //global mean of meta uncertainty for incorrect trials 
   gm[6] ~ normal(0,0.5); //global mean of meta uncertainty for incorrect trials 
+  gm[7] ~ normal(0,1); //global mean of metabias
+  gm[8] ~ normal(0,0.5); 
+  gm[9] ~ normal(0,0.5); 
+
 
 
 
@@ -134,7 +143,7 @@ model {
     
     target += binomial_lpmf(a[n] | 1, theta[n]);   // likelihood for the outcomes
 
-    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias, exp(conf_prec1), c0, c11);   // likelihood for confidence on correct trials 
+    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias+  meta_bias_beta * interval[n], exp(conf_prec1), c0, c11);   // likelihood for confidence on correct trials 
 
   }
 
@@ -160,7 +169,7 @@ generated quantities {
   for(n in 1:N){
     log_lik_bin[n] = binomial_lpmf(a[n] | 1, theta[n]);
     
-    log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(conf_prec1), c0, c11);
+    log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias+  meta_bias_beta * interval[n], exp(conf_prec1), c0, c11);
     log_lik[n] = log_lik_conf[n] + log_lik_bin[n];
   }
 

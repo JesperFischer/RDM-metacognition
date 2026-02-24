@@ -75,7 +75,8 @@ $$
 
 For metacognition, the agent accesses this evidence for information about the correctness of the action.
 
-Models differ in whether the rater has independent information above the evidence used to make the action.
+Models differ in whether the rater has independent information above the evidence used to make the action. Independent information is usually assumed iorder for the agent to do error-monitoring.
+
 Fleming and Daw formalized a second order rater where evidence for the action and evidence for the confidence judgement is draw from a multivariate normal with correlation $\rho$ governing information sharing. I.e. if $\rho$ = 1, the confidence judgement is based on the same information as the action, however if $\rho$ = 0 the confidence judgement is based on completely independent information.
 
 Note we here write this model as orginally proposed by Fleming and Daw without the evidence bias
@@ -88,7 +89,7 @@ The rater uses this information to compute $P(D = a | r_i)$, the subjective prob
 
 One of the main arguments for the development of this and other models with independent information for the confidence judgement was to explain error-monitoring.
 
-Below we formalize the idea that such independent information is not necessary if instead it is assumeed that agents have varability in their choice given the evidence. I.e. instead of a deterministic decision policy agents have a noisy decision process that can produce errors even though the evidence is in favor of a different choice.
+Below we formalize the idea that such independent information is not necessary, if instead it is assumeed that agents have varability in their choices, given the evidence. I.e. instead of a deterministic decision policy agents have a noisy decision process that can produce errors even though the evidence is in favor of a different choice.
 
 ## Choice Variability
 
@@ -100,11 +101,11 @@ $$
 
 But now the criterion varies trial-by-trial: $c_i \sim \mathcal{N}(0,\sigma_c)$. This yields:
 
-
 $$
 a_i = \begin{cases}+1 & \text{if } e_i > c_i \\ -1 & \text{if } e_i \le c_i\end{cases}
 $$
 
+Due to the fact that both $e_i$ and $c_i$ are normally distributed one can marginalize their difference which gives the probability of the action:
 
 $$
 P(a = 1 \mid D_i, X_i) = \Phi\left(\frac{D_i \cdot X_i- \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
@@ -115,7 +116,7 @@ $$
 P(a = 1 \mid e_i) = \Phi\left(\frac{e_i}{\sigma_c}\right)
 $$
 
-From choices alone, only $\sigma_e^2 + \sigma_c^2$ is identifiable, both noise sources equivalently flatten the psychometric curve. However, by including confidence ratings these can be disentangled .
+From choices alone, only $\sigma_e^2 + \sigma_c^2$ is identifiable, both noise sources equivalently flatten the psychometric curve. However, by including confidence ratings these can be disentangled.
 
 For confidence, we define:
 
@@ -123,7 +124,9 @@ $$
 \text{confidence} = P(\text{correct} \mid r, a) = P(D = a \mid r)
 $$
 
-The rater accesses noisy evidence: $r_i \sim \mathcal{N}(e_i, \sigma_m^2)$, where $\sigma_m^2$ is metacognitive noise. This can be shown to yield:
+The rater accesses noisy evidence: $r_i \sim \mathcal{N}(e_i, \sigma_m^2)$, where $\sigma_m^2$ is metacognitive noise. 
+
+This can be shown to yield:
 
 $$
 P(D=1 \mid r_i, \mu_i) = g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right)
@@ -135,7 +138,9 @@ $$
 P(\text{correct} \mid r_i, a, \mu_i) = \begin{cases}g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases}
 $$
 
-From confidence alone, only $\sigma_e^2 + \sigma_m^2$ is identifiable. However, combining choices and confidence allows estimating all three parameters: $\sigma_e$, $\sigma_c$, and $\sigma_m$. This requires Bayesian data augmentation to estimate latent trial-by-trial evidence. As the normative probability of being correct i.e. $P(correct | r_i,a)$ is a logit-normally distributed variable it cannot be marginalized as the choice probability can.
+From confidence alone, only $\sigma_e^2 + \sigma_m^2$ is identifiable. However, combining choices and confidence allows estimating all three parameters: $\sigma_e$, $\sigma_c$, and $\sigma_m$. 
+
+One problem with the above formulation is that in-order to estimate the parameters one has to estimate the trial-by-trial evidence $r_i$ which can be possible with Bayesian data augmentation. As the normative probability of being correct i.e. $P(correct | r_i,a)$ is a logit-normally distributed variable it cannot be marginalized as the choice probability can. Below we show simulations from this model in order to provide an intuition for the meaning of the parameters and their interactions.
 
 
 ## Simulations
@@ -345,292 +350,297 @@ This means, that from the models perspective, double increase and Folded-X patte
 
 ## Fitting
 
-We fit this model using full Bayesian inference with Stan's NUTS sampler, treating latent trial-by-trial evidence as parameters estimated jointly with the noise parameters. This model however given our pilot data is not particularly informed by the data, meaning that the sampler diagnostics aren't particularly great for all pilot data-sets and especially not when during hierarchical bayesian estimation, i.e. estimating group level parameters which subjects level parameters are drawn from. We therefore build a heurestic model that approximates the above model, without the need for the trial-by-trial evidence. This is done such that hierarchical bayesian inference can be done reliably for the Sequential sampling approach used for sample size determined in the current study (see Sequential sampling section).
+We fit this model using full Bayesian inference with Stan's NUTS sampler, treating latent trial-by-trial evidence as parameters estimated jointly with the noise parameters. Generally, from investigating our pilot data we saw that on a single-subject basis this model is possible to fit with sufficiently good sampler diagnoistics, however trying to fit this model in a hierarchical framework i.e. estimating group level parameters which subjects level parameters are drawn from we ran into sampling issues. 
+
+We therefore build a heurestic model that approximates the above model, without the need for the trial-by-trial evidence. This is done such that hierarchical bayesian inference can be done reliably for the Sequential sampling approach used for sample size determined in the current study (see Sequential sampling section).
 
 ## A heuristic model
 
-While the mechanistic model is powerful, its computational complexicirty (especially in hierarchical settings) motivate a simpler heuristic approximation. The key challenge is that confidence requires trial-specific evidence $r_i$, which cannot be marginalized analytically.
-
-**Heuristic approach**: Instead of computing confidence from trial-specific evidence, we compute it from the psychometric function:
+While the mechanistic model is powerful, its computational complexity (especially in hierarchical settings) motivate a simpler heuristic approximation. The key challenge is that confidence requires trial-specific evidence $r_i$, which cannot be marginalized analytically, because the random variable is inside the inverse logit function. Now The inverse logit function and the cummulative normal distribution are basically in practice indistinguishable up to a constant i.e. $g(.) \sim \Phi(\frac{1}{1.7})$ using this approximation it is possible to marginalize out the trial-by-trial evidence and get a computationally easier model to fit (and an equation for the expectation of confidence) with the same parameters. Thus utilizing the above approximation we go from
 
 $$
-P(a = D) = \Phi\left(\frac{|D_i \cdot X_i - \beta|}{\sigma_e + \sigma_\gamma}\right)
+P(\text{correct} \mid r_i, a, \mu_i) = \begin{cases}g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - g\left(\frac{2 \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases}
+$$
+to
+
+$$
+P(\text{correct} \mid r_i, a, \mu_i) = \begin{cases}\Phi\left(\frac{C \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - \Phi\left(\frac{C \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases}
+$$
+
+with $C = \frac{2}{1.7}$. Now looking at the condition where the choice was one.
+
+$$
+\Phi\left(\frac{C \cdot r_i \cdot \mu_i}{\sigma_e^2 + \sigma_m^2}\right)
+$$
+
+We want to marginalize over $r_i$ i.e. calculating the expectation of above equation across $r_i$. This is can be done using the general formula for the expectation of a random continous variable
+
+$$
+\mathbb{E(X)} = \int_{-\infty}^\infty x \ p(x) dx
+$$
+
+substituting the variables with the following definition $b = \frac{CX_i}{\sigma_e^2 + \sigma_m^2}$
+
+$$
+\int_{-\infty}^\infty \Phi(b \cdot r_i) \ p(r_i) dr_i
+$$
+
+This integral can be shown to have the solution:
+
+$$
+\Phi \left(\frac{\mu \cdot b}{\sqrt{1+\sigma^2 \cdot b^2}}\right)
+$$
+
+
+with $r_i \sim \mathcal{N}(\mu,\sigma)$
+
+given that with  $r_i \sim \mathcal{N}(X_iD_i - \beta, \sqrt{\sigma_m^2+\sigma_e^2})$ we get: 
+
+$$
+\Phi \left(\frac{\mathop{\mathbb{E}}(r_i) \cdot b}{\sqrt{1+(\sigma_e^2+\sigma_m^2) \cdot b^2}}\right)
+$$
+
+Here we instead of the mean of the $r_i$ distribution ($X_iD_i - \beta$) we write the expectation of $r_i$ as this will be conditional on the choice later. However, before calculating this conditional expectation we simplify the above:
+
+$$
+\Phi \left( \frac{\mathop{\mathbb{E}}(r_i) \cdot \frac{CX_i}{\sigma_e^2 + \sigma_m^2}}{\sqrt{1+(\sigma_e^2+\sigma_m^2) \cdot (\frac{CX_i}{\sigma_e^2 + \sigma_m^2})^2}}\right)
 $$
 
 $$
-P(a \neq D) = \Phi\left(\frac{|D_i \cdot X_i - \beta|}{\sigma_\eta}\right)
+\Phi \left( \frac{\mathop{\mathbb{E}}(r_i) \cdot \frac{CX_i}{\sigma_e^2 + \sigma_m^2}}{\sqrt{1+(\sigma_e^2+\sigma_m^2) \cdot (\frac{C^2X_i^2}{(\sigma_e^2+\sigma_m^2)^2})}}\right)
 $$
 
-with $\sigma_\eta \in c(-\inf,\inf)$ and $\sigma_\gamma \in c(0,\inf)$. These simplifying assumptions make it such that the confidence curve can only be as steep as the psychometric curve i.e. when $\sigma_\gamma = 0$ and never decreasing with stimulus intensity (i.e. being flat with increasing stimulus intensity when $\sigma_\gamma = \inf$). For incorrect trials we assume that there can be an increase or decrease with stimulus intensity depending on the sign of  $\sigma_\eta \in c(-\inf,\inf)$ with negative values being a folded X pattern and positive values being a double increase pattern.
-Below we will show that this Heurestic model is computationally much less complex and can be fit without issues. Furthermore, we will show that it provides a useful heurestic to the parameter of interest $\sigma_m$ which is the above $\sigma_\gamma$. Lastly, as this model does not estimate the choice varability and thus will assume a steeper psychometric slope we allow for the asympotes of the psychometric function to not converge to 0 and 1 but to a particular lapse rate. This is a common assumption when analyzing purely binary data, as not accounting for flipped responses at high stimulus intensities can greatly comprimise the estimation of the psychometric slope (i.e. $\sigma_e$)
-
-**Critical distinction**: The mechanistic model computes $\mathbb{E}_{r_i}[g(r_i)]$ (average confidence over evidence), while the heuristic computes $g(\mathbb{E}_{r_i}[r_i])$ (confidence from average evidence). 
-
-The mechanistic model marginalizes after computing confidence (via MCMC), while the heuristic marginalizes before. By Jensen's inequality, these differ. The heuristic requires separate slopes for correct/error trials due to different conditional evidence distributions.
+$$
+\Phi \left( \frac{\mathop{\mathbb{E}}(r_i) \cdot \frac{CX_i}{\sigma_e^2 + \sigma_m^2}}{\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
+$$
 
 
 
-**Asymmetry**: The mean difference between these two models arise in the incorrect trials. If the above formulations did not have a separate parameter for the denominator for incorrect trials the argued for confidence patterns couldn't emerge.
+$$
+\Phi\left(\frac{\mathop{\mathbb{E}}(r_i) \cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
+$$
+
+This equation thus gives us the probability of being correct, when the choice is 1. Thus the expectation of meta cognitive evidence $r_i$ also has to be conditional on the fact that the choice was 1. Looking back we had:
+
+$$
+P(\text{correct} \mid r_i, a, X_i) \sim \begin{cases}\Phi\left( \frac{Cr_iX_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - \Phi\left( \frac{Cr_iX_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases}
+$$
+which now becomes:
+
+$$
+P(\text{correct} \mid a, X_i) 
+
+\sim 
+
+\begin{cases}\Phi\left(\frac{\mathop{\mathbb{E}}(r_i \mid a = 1) \cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
+
+& 
+
+\text{if } a = 1 \\ 
+
+1 - \Phi\left(\frac{\mathop{\mathbb{E}}(r_i \mid a = -1) \cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
+
+& 
+
+\text{if } a = -1\end{cases}
+$$
+
+Thus, now all that there is left to calculate is the two expectations of $r_i$ given the choice i.e.
+$\mathop{\mathbb{E}}(r_i \mid a = 1)$ & $\mathop{\mathbb{E}}(r_i \mid a = -1)$
+
+### Calculating conditional expectations
+
+To calculate these expectations, we need to account for the fact that the choice $a$ depends on the relationship between the evidence $e_i$ and the criterion $c_i$. We have:
+
+- Evidence: $e_i \sim \mathcal{N}(X_iD_i - \beta, \sigma_e^2)$
+- Criterion: $c_i \sim \mathcal{N}(0, \sigma_c^2)$
+- Metacognitive evidence: $r_i = e_i + \epsilon_m$ where $\epsilon_m \sim \mathcal{N}(0, \sigma_m^2)$
+- Choice: $a = 1$ if $e_i > c_i$, otherwise $a = -1$
 
 
-## simulations Heuristic model
+we now treat the difference distribution $e_i - c_i$ as a joint bivariate normal distribution with $r_i$  and calculate the expectation of $r_i$ given that the $e_i - c_i$ random variable is above 0 (i.e. the choice was 1).
 
-```{r}
-set.seed(199742)
+As used before we have that the difference $e_i - c_i$ follows another Gaussian distribution, as both random variables are Gaussians.
 
-n_trials <- 5000
+$$
+e_i - c_i \sim \mathcal{N}(X_iD_i - \beta, \sigma_e^2 + \sigma_c^2)
+$$
 
-simulate_interaction <- function(sigma_mc, sigma_mi,sigma_e) {
-  X <- sample(c(0.01,1,2,5), n_trials, replace = TRUE)
-  D <- sample(c(-1, 1), n_trials, replace = TRUE)
-  
-  
-  p_gauss <- pnorm(D*X / sigma_e)
-  a <- rbinom(n_trials, 1, p_gauss)
-  ACC = ifelse(a == 0 & D == -1,1,ifelse(a == 1 & D == 1,1,0))
+The joint bivariate normal distribution thus becomes:
+$$
+\begin{bmatrix}
+e_i - c_i \\
+r_i
+\end{bmatrix}
+\sim \mathcal{N}\left(
+\begin{bmatrix}
+X_iD_i - \beta \\
+X_iD_i - \beta
+\end{bmatrix},
+\begin{bmatrix}
+\sigma_e^2 + \sigma_c^2 & \sigma_e^2 \\
+\sigma_e^2 & \sigma_e^2 + \sigma_m^2
+\end{bmatrix}
+\right)
+$$
 
-  C_mu <- ifelse(ACC == 1, 
-                 pnorm(abs(D*X)/ (sigma_e + sigma_mc)),
-                 pnorm(sigma_mi * abs(D*X)))
-  
-  
-  
+The key insight here is that the **covariance** between $e_i-c_i$ and $r_i$ is $\sigma_e^2$, not zero. This is because $r_i$ is constructed as $e_i$ plus independent noise, so $\text{Cov}(e_i-c_i, r_i) = \text{Cov}(e_i-c_i, r_i + \epsilon_m) = \text{Var}(e) = \sigma_e^2$. This shared variance structure means that $e_i-c_i$ and $r_i$ are correlated with correlation coefficient:
 
-  data.frame(C_mu = C_mu,
-             a = a,
-             X = X,
-             D=D,
-             p_gauss = p_gauss,
-             # sigma_e = sigma_e,
-             # sigma_mi = sigma_mi,
-             # sigma_mc = sigma_mc,
-             ACC = ACC)
-             
+## Truncated normal distributions
 
-   }
+To proceed, we need a general result from probability theory. Suppose we have two jointly normal random variables:
 
-df_interaction <- expand.grid(
-  sigma_mc = c(0.1, 1 ,3),
-  sigma_mi = c(-0.2, 0 ,0.2),
-  sigma_e = c(0.1, 0.5 ,1)
-  
-) %>%
-  rowwise() %>%
-  mutate(data = list(simulate_interaction(sigma_mc, sigma_mi,sigma_e))) %>% 
-  unnest(data)
+$$
+\begin{pmatrix} Z \\ Y \end{pmatrix} \sim \mathcal{N}\left(\begin{pmatrix} \mu_Z \\ \mu_Y \end{pmatrix}, \begin{pmatrix} \sigma_Z^2 & \rho\sigma_Y\sigma_Z \\ \rho\sigma_Y\sigma_Z & \sigma_Y^2 \end{pmatrix}\right)
+$$
+
+where $\rho$ is the **correlation coefficient**, defined as:
+
+$$
+\rho = \frac{\text{Cov}(Z, Y)}{\sigma_Z \sigma_Y}
+$$
 
 
+We want to find $\mathbb{E}(Y \mid Z > 0)$, the expected value of $Y$ conditional on $Z$ being positive (i.e. the choice was 1).
 
-```
+From standard bivariate normal theory, the conditional distribution of $Y$ given $Z = z$ is:
 
+$$
+Y \mid Z = z \sim \mathcal{N}\left(\mu_Y + \frac{\rho\sigma_Y}{\sigma_Z}(z - \mu_Z), \sigma_Y^2(1-\rho^2)\right)
+$$
 
+So the expectation is:
 
-First we can look to fix $\sigma_k = 1$ and then we look at how $\sigma_e$ & $\sigma_m$ change confidence ratings as a function of the Stimulus:
+$$
+\mathbb{E}(Y \mid Z = z) = \mu_Y + \frac{\rho\sigma_Y}{\sigma_Z}(z - \mu_Z)
+$$
 
-```{r, fig.height=6, fig.width=10, message=F, warning=F}
-df_interaction %>%
-  filter(sigma_e == 1) %>% 
-  mutate(SS = D*X) %>%
-  group_by(SS,ACC, sigma_mi,sigma_mc) %>% 
-  summarize(mean = mean(C_mu),
-            q5 = mean - 2 * sd(C_mu) / sqrt(n()),
-            q95 = mean + 2 * sd(C_mu) / sqrt(n())) %>% 
-  mutate(Accuracy = as.factor(ACC)) %>% 
-  ggplot(aes(x = SS, y = mean, ymin = q5, ymax = q95, col = Accuracy)) +
-    geom_pointrange(position = position_dodge(width =0.4))+
-  facet_grid( sigma_mi~ sigma_mc, labeller = label_both) +
-    geom_hline(yintercept = c(0,0.5,1), linetype = 2)+
-  labs(x = "Signed Stimulus", y = "Confidence") +
-  theme_minimal()+
-  ylim(c(0,1))+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-```
+Now we want the expectation of Y when Z > 0 (i.e. the expectation of $r_i$ when the choice was 1) i.e. $\mathbb{E}(Y \mid Z > 0)$ we would have to do the integral which gives:
 
+**Derivation using the Law of Total Expectation:**
 
-```{r, fig.height=6, fig.width=10, message=F, warning=F}
-df_interaction <- expand.grid(
-  sigma_mc = c(0, 1 ,3),
-  sigma_mi = c(-0.2, 0 ,0.2),
-  sigma_e = c(0.5 ,1, 2)
-  
-) %>%
-  rowwise() %>%
-  mutate(data = list(simulate_interaction(sigma_mc, sigma_mi,sigma_e))) %>% 
-  unnest(data)
+Since we want the expected value of $Y$ conditional on $Z > 0$, we need to average over all possible values of $Z$ that satisfy $Z > 0$, weighted by their probability densities. The law of total expectation for conditioning on a subset states:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \frac{\int_{0}^{\infty} \mathbb{E}(Y \mid Z = z) \cdot f_Z(z) \, dz}{\int_{0}^{\infty} f_Z(z) \, dz}
+$$
+
+The denominator is simply $P(Z > 0) = \Phi\left(\frac{\mu_Z}{\sigma_Z}\right)$, so:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \frac{1}{P(Z > 0)} \int_{0}^{\infty} \mathbb{E}(Y \mid Z = z) \cdot f_Z(z) \, dz
+$$
 
 
-df_interaction %>%
-  mutate(SS = D*X) %>%
-  group_by(SS,ACC, sigma_mi,sigma_mc,sigma_e) %>% 
-  summarize(mean_conf = mean(C_mu),
-            mean_a = mean(p_gauss)) %>% 
-  mutate(Accuracy = as.factor(ACC)) %>% 
-  ggplot(aes(x = SS, y = mean_a))+
-  geom_point(aes(x = SS, y = mean_conf, col = Accuracy))+
-  geom_point()+
-  theme_classic()+
-  facet_wrap(sigma_mc~sigma_e, labeller = label_both)
-```
+From earlier, we know that $\mathbb{E}(Y \mid Z = z) = \mu_Y + \frac{\rho\sigma_Y}{\sigma_Z}(z - \mu_Z)$, and the marginal density is $f_Z(z) = \frac{1}{\sigma_Z}\phi\left(\frac{z-\mu_Z}{\sigma_Z}\right)$:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \frac{1}{\Phi\left(\frac{\mu_Z}{\sigma_Z}\right)} \int_{0}^{\infty} \left[\mu_Y + \frac{\rho\sigma_Y}{\sigma_Z}(z - \mu_Z)\right] \cdot \frac{1}{\sigma_Z}\phi\left(\frac{z-\mu_Z}{\sigma_Z}\right) \, dz
+$$
+
+**Step 2:** Separate the integral into two parts:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y \cdot \frac{\int_{0}^{\infty} \frac{1}{\sigma_Z}\phi\left(\frac{z-\mu_Z}{\sigma_Z}\right) dz}{\Phi\left(\frac{\mu_Z}{\sigma_Z}\right)} + \frac{\rho\sigma_Y}{\sigma_Z} \cdot \frac{\int_{0}^{\infty} (z - \mu_Z) \cdot \frac{1}{\sigma_Z}\phi\left(\frac{z-\mu_Z}{\sigma_Z}\right) dz}{\Phi\left(\frac{\mu_Z}{\sigma_Z}\right)}
+$$
+
+The first integral equals $P(Z > 0) = \Phi\left(\frac{\mu_Z}{\sigma_Z}\right)$, so the first term simplifies to $\mu_Y$.
+
+**Step 3:** Standardize the remaining integral using substitution $u = \frac{z-\mu_Z}{\sigma_Z}$:
+
+When $z = 0$, we have $u = \frac{-\mu_Z}{\sigma_Z}$, and when $z \to \infty$, $u \to \infty$. Also, $z - \mu_Z = \sigma_Z u$ and $dz = \sigma_Z du$:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\sigma_Y \cdot \frac{\int_{\frac{-\mu_Z}{\sigma_Z}}^{\infty} u \cdot \phi(u) \, du}{\Phi\left(\frac{\mu_Z}{\sigma_Z}\right)}
+$$
+
+**Step 4:** Recognize the inverse Mills ratio:
+
+The integral $\frac{\int_{-a}^{\infty} u \cdot \phi(u) \, du}{\Phi(a)} = \lambda(a)$ is the inverse Mills ratio, where $\lambda(a) = \frac{\phi(a)}{\Phi(a)}$.
+
+Therefore, substituting $a = \frac{\mu_Z}{\sigma_Z}$:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\sigma_Y \cdot \lambda\left(\frac{\mu_Z}{\sigma_Z}\right)
+$$
+
+Equivalently, using $\rho\sigma_Y = \frac{\text{Cov}(Y,Z)}{\sigma_Z}$:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y + \frac{\text{Cov}(Y,Z)}{\sigma_Z} \cdot \lambda\left(\frac{\mu_Z}{\sigma_Z}\right)
+$$
+
+For the case where we condition on $Z \leq 0$, a similar derivation gives:
+
+$$
+\mathbb{E}(Y \mid Z \leq 0) = \mu_Y - \rho\sigma_Y \cdot \lambda\left(-\frac{\mu_Z}{\sigma_Z}\right)
+$$
+
+#### Applying truncated normal theory to our problem
+
+Now we apply this general result to our specific case. We need to identify:
+
+- $Y = r_i$ with $\mu_Y = X_iD_i - \beta$ and $\sigma_Y^2 = \sigma_e^2 + \sigma_m^2$
+- $Z = e_i - c_i$ with $\mu_Z = X_iD_i - \beta$ and $\sigma_Z^2 = \sigma_e^2 + \sigma_c^2$
+- **Covariance**: $\text{Cov}(r_i, e_i - c_i) = \sigma_e^2$.
+- Correlation coefficient: $\rho = \frac{\text{Cov}(r_i, e_i - c_i)}{\sigma_Y \sigma_Z} = \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_m^2)(\sigma_e^2 + \sigma_c^2)}}$
+
+Note that we use the covariance $\sigma_e^2$ that we calculated earlier to determine $\rho$.
+
+The product $\rho\sigma_Y$ becomes
+
+$$
+\rho\sigma_Y = \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_m^2)(\sigma_e^2 + \sigma_c^2)}} \cdot \sqrt{\sigma_e^2 + \sigma_m^2} = \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}}
+$$
+
+Applying the formula with $a = 1$ corresponding to $Z > 0$:
+
+For $a = 1$ (when $e_i - c_i > 0$):
+$$
+\mathop{\mathbb{E}}(r_i \mid a = 1) = (X_iD_i - \beta) + \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}} \cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
+$$
+
+For $a = -1$ (when $e_i - c_i \leq 0$):
+
+$$
+\mathop{\mathbb{E}}(r_i \mid a = -1) = (X_iD_i - \beta) - \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}} \cdot \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
+$$
+
+where $\lambda(x) = \frac{\phi(x)}{\Phi(x)}$ is the **inverse Mills ratio**, with $\phi(\cdot)$ being the standard normal PDF and $\Phi(\cdot)$ being the standard normal CDF.
+
+Note that $\lambda(-x) = \frac{\phi(x)}{1-\Phi(x)}$ by properties of the normal distribution.
+
+### Final confidence model
+
+Substituting these conditional expectations back into our marginalized confidence equation from earlier:
+
+$$
+P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) + \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}} 
+
+\cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)\right]
 
 
-```{r, fig.height=6, fig.width=10, message=F, warning=F}
-# Step 1: Create basic psychometric curves for two sigma_e values
-df_psychometric <- expand.grid(
-  sigma_mc = 0,  # No metacognitive noise for pure psychometric
-  sigma_mi = c(-0.1, 0, 0.1),  # Different bias levels (not 0 anymore)
-  sigma_e = c(1, 2)  # Two evidence noise levels
-) %>%
-  rowwise() %>%
-  mutate(data = list(simulate_interaction(sigma_mc, sigma_mi, sigma_e))) %>% 
-  unnest(data) %>%
-  mutate(SS = D*X) %>%
-  group_by(SS, sigma_e, sigma_mi, ACC) %>% 
-  summarize(mean_a = mean(p_gauss), 
-            mean_conf = mean(C_mu), .groups = 'drop')
+\cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
+$$
 
- df_psychometric %>%
-  ggplot(aes(x = SS, y = mean_a)) +
-  geom_line(aes(linetype = factor(sigma_e)), 
-            color = "black", 
-            size = 1, 
-            alpha = 0.7) +
-  # Confidence curves for incorrect trials (colored)
-  geom_line(data = filter(df_combined, ACC == 0),
-            aes(y = mean_conf, color = sigma_mi_label),
-            size = 1.2) +
-  scale_linetype_manual(
-    values = c("1" = "dotted", "3" = "dashed"),
-    labels = c("1" = "σ_e = 1", "3" = "σ_e = 3"),
-    name = "Evidence Noise"
-  ) +
-   scale_color_manual(values = c("red4","red","orange"))
-  labs(x = "Stimulus Strength", 
-       y = "P(a)") +
-  theme_classic() +
-    theme(legend.position = "none")
-  # theme(legend.position = c(0.4,0.25),
-        # legend.title = element_blank())
+$$
+P(\text{correct} \mid a = -1, X_i, D_i) = 1 - \Phi\left(\frac{\left[(X_iD_i - \beta) - \frac{\sigma_e^2}{\sqrt{\sigma_e^2 + \sigma_c^2}} 
+
+\cdot \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)\right]
 
 
-```
+\cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
+$$
+
+with:
+
+$$
+\lambda(x) = \frac{\phi(x)}{\Phi(x)}
+$$
 
 
+where:
+- $C = \frac{2}{1.7}$ (the scaling constant from the logit-normal approximation)
+- $\lambda(x) = \frac{\phi(x)}{\Phi(x)}$ (inverse Mills ratio)
 
-```{r}
-# Step 1: Create dataframe with both psychometric curves AND confidence curves
-df_combined <- expand.grid(
-  sigma_mc = 0,  # No metacognitive noise for now
-  sigma_mi = c(-0.2, 0, 0.2),  # Different bias levels (not 0 anymore)
-  sigma_e = c(1, 3)  # Two evidence noise levels
-) %>%
-  rowwise() %>%
-  mutate(data = list(simulate_interaction(sigma_mc, sigma_mi, sigma_e))) %>% 
-  unnest(data) %>%
-  mutate(SS = D*X) %>%
-  group_by(SS, sigma_e, sigma_mi, ACC) %>% 
-  summarize(mean_a = mean(p_gauss), 
-            mean_conf = mean(C_mu), .groups = 'drop') %>%
-  mutate(sigma_mi_label = case_when(
-    sigma_mi == -0.2 ~ "σ_mi < 0",
-    sigma_mi == 0 ~ "σ_mi = 0", 
-    sigma_mi == 0.2 ~ "σ_mi > 0"
-  ))
-
-# Plot both psychometric (for sigma_mi = 0 only) and confidence curves
-df_combined %>%
-  ggplot(aes(x = SS)) +
-  # Psychometric curves (black background) - only for unbiased case
-  geom_line(data = filter(df_combined, sigma_mi == 0),
-            aes(y = mean_a, linetype = factor(sigma_e)), 
-            color = "black", 
-            size = 1, 
-            alpha = 0.7) +
-  # Confidence curves for incorrect trials (colored)
-  geom_line(data = filter(df_combined, ACC == 0),
-            aes(y = mean_conf, color = sigma_mi_label),
-            size = 1.2) +
-  geom_point(data = filter(df_combined, ACC == 0),
-             aes(y = mean_conf, color = sigma_mi_label),
-             size = 2) +
-  scale_linetype_manual(
-    values = c("1" = "dotted", "3" = "dashed"),
-    labels = c("1" = "σ_e = 1", "3" = "σ_e = 3"),
-    name = "Evidence Noise"
-  ) +
-  scale_color_viridis_d(name = "Metacognitive Bias\n(Incorrect Trials)", 
-                        option = "plasma") +
-  labs(x = "Stimulus Strength", 
-       y = "P(a) / Confidence",
-       title = "Psychometric Functions + Confidence for Incorrect Trials") +
-  theme_classic() +
-  theme(legend.position = "right")
-```
-
-
-
-
-
-
-```{r, fig.height=6, fig.width=10,warning=F,message=F}
-# Compute approximation errors
-error_summary <- df_interaction %>%
-  group_by(sigma_e, sigma_m, sigma_k, ACC, X) %>%
-  summarize(
-    mean_mechanistic = mean(C_mu),
-    mean_heuristic = mean(C_mu2),
-    abs_error = abs(mean(C_mu) - mean(C_mu2)),
-    n_trials = n(),
-    .groups = "drop"
-  )
-
-error_summary %>%
-  filter(ACC == 1) %>% 
-  group_by(sigma_e, sigma_m, sigma_k, ACC) %>%
-  summarize(
-    mean_abs_error = mean(abs_error),
-    q5_abs_error = quantile(abs_error,0.05),
-    q95_abs_error = quantile(abs_error,0.95),
-    .groups = "drop"
-  ) %>% ggplot(aes(x = sigma_e, y = mean_abs_error, col = as.factor(ACC)))+
-  geom_pointrange(aes(ymin = q5_abs_error,ymax = q95_abs_error))+
-  facet_grid(sigma_k~sigma_m,scales = "free", labeller = label_both)
-
-
-error_summary %>%
-  filter(ACC == 0) %>% 
-  group_by(sigma_e, sigma_m, sigma_k, ACC) %>%
-  summarize(
-    mean_abs_error = mean(abs_error),
-    q5_abs_error = quantile(abs_error,0.05),
-    q95_abs_error = quantile(abs_error,0.95),
-    .groups = "drop"
-  ) %>% ggplot(aes(x = sigma_e, y = mean_abs_error, col = as.factor(ACC)))+
-  geom_pointrange(aes(ymin = q5_abs_error,ymax = q95_abs_error))+
-  facet_grid(sigma_k~sigma_m,scales = "free", labeller = label_both)
-```
-
-
-```{r, fig.height=6, fig.width=10,warning=F,message=F}
-df_interaction %>%
-  filter(ACC == 1) %>% 
-  mutate(dif = C_mu-C_mu2)  %>% 
-  ggplot(aes(x = as.factor(sigma_e), y = dif, col = as.factor(ACC)))+
-  geom_boxplot()+
-  facet_grid(sigma_k~sigma_m,scales = "free", labeller = label_both)
-
-
-
-
-df_interaction %>%
-  filter(ACC == 0) %>% 
-  mutate(dif = C_mu-C_mu2)  %>% 
-  ggplot(aes(x = as.factor(sigma_e), y = dif, col = as.factor(ACC)))+
-  geom_boxplot()+
-  facet_grid(sigma_k~sigma_m,scales = "free", labeller = label_both)
-
-
-```
-
-
-
-
+This gives us a fully marginalized model for confidence ratings that depends only on the parameters $\Theta = (\beta, \sigma_e, \sigma_c, \sigma_m)$ and the observed data (choices $a_i$, stimuli $X_i$, true states $D_i$), without requiring trial-by-trial estimation of latent evidence variables $e_i$ and $r_i$.

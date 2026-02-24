@@ -266,6 +266,11 @@ $$
 - Weak evidence → small posterior variance
 - Creates **heteroscedastic** (non-constant) noise
 
+
+
+
+
+
 ### Noisy Evidence Readout (next section):
 $$
 \hat{e} \sim \mathcal{N}(e, \sigma_m^2) \quad \Rightarrow \quad P(D=1 \mid \hat{e}) = g\Big(\frac{2 \cdot \hat{e} \cdot \mu}{\sigma_e^2 + \sigma_m^2}\Big)

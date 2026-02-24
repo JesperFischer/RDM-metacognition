@@ -34,23 +34,33 @@ sim_trials = function(df){
   # -----------------------------
   # Coherence level (stimulus intensity)
   # -----------------------------
-  offsets  = c(-5,-4,-3,-2,-1, 1, 2, 3, 4, 5)
+  offsets  = seq(-0.1,0.1,length.out = 10)
   w = c(1, 2, 3, 2, 1, 1, 2, 3, 2, 1)
   
   
   stim_values_per_block =
     rep((brms::inv_logit_scaled(
-      (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2 +
-        rep(offsets / exp(df$beta1), times = w)
+      (brms::inv_logit_scaled(df$beta) - 0.5) * 2 +
+        rep(offsets / 1/sqrt(exp(df$sigma_e)^2 + exp(df$sigma_k)^2), times = w)
     ) - 0.5) * 2,3)
+  
   
   X = rep(stim_values_per_block,6)
   
+  interval = runif(length(X), 1,5)
   
   # -----------------------------
   # Decision
   # -----------------------------
-  theta = brms::inv_logit_scaled(df$lapse)/2 + (1-2*brms::inv_logit_scaled(df$lapse)/2) * pnorm(exp(df$beta1) * (X - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))
+  
+  
+  
+  sigma1 = exp(df$sigma_e)^2 + exp(df$sigma_k)^2
+
+
+  mu = (X - (brms::inv_logit_scaled(df$beta)-0.5)*2)
+  
+  theta = brms::inv_logit_scaled(df$lapse)/2 + (1-2*brms::inv_logit_scaled(df$lapse)/2) * pnorm( mu / sqrt(sigma1))
   
   resp = rbinom(length(X), 1, theta)        # Simulated response
   
@@ -61,17 +71,31 @@ sim_trials = function(df){
   # -----------------------------
   # Simulated confidence
   # -----------------------------
-  interval = runif(length(X), 1,5)
-  
+
   conf_mu = numeric(length(X))
   
-  for(i in 1:length(X)){
-    if(ACC[i] == 1){
-      conf_mu[i] <- pnorm(exp(df$beta1 - exp(df$meta_un_cor1)+ df$meta_un_beta * interval[i]) * abs(X[i] - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))       # Confidence for correct trials
-    } else {
-      conf_mu[i] <- pnorm((df$meta_un_inc1) * abs(X[i] - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))    # Confidence for incorrect trials
-    }
-  }
+  sigma_total = sqrt(exp(df$sigma_k)^2 + exp(df$sigma_e)^2)
+  
+  z = mu / sigma_total
+  
+  # Correction factor
+  correction_factor = exp(df$sigma_e)^2 / sigma_total
+  
+  # Conditional expectation (different Mills ratios for each choice)
+  e_cond = ifelse(resp == 1,
+                  mu + correction_factor * dnorm(z) / pnorm(z),
+                  mu - correction_factor * dnorm(z) / pnorm(-z))  # Note: pnorm(-z) here!
+  
+  # Now use e_cond in the confidence formula
+  Cc = 2/1.7
+  
+  sigma2 = exp(df$sigma_e)^2 + exp(df$sigma_m)^2 +  df$sigmam_beta * interval
+  
+  conf_mu = ifelse(resp == 1,
+                pnorm((1/(sqrt(1 + (Cc^2*abs(X)^2) / sigma2))) * (e_cond * abs(X) * Cc) / sigma2),
+                1-pnorm((1/(sqrt(1 + (Cc^2*abs(X)^2) / sigma2))) * (e_cond * abs(X) * Cc) / sigma2))
+  
+  
   
   conf = numeric(length(conf_mu))
   
@@ -157,14 +181,14 @@ simulate_subjects = function(draw_row, S = 20, P = 9) {
     
     tibble(
       subj_id        = i,
-      alpha1         = param_new[1],
-      beta1          = param_new[2],
-      conf_prec1     = param_new[3],
-      meta_un_cor1   = param_new[4],
-      meta_un_inc1   = param_new[5],
-      meta_bias      = param_new[6],
-      lapse          = param_new[7],
-      meta_un_beta   = param_new[8],
+      beta         = param_new[1],
+      sigma_e          = param_new[2],
+      sigma_k     = param_new[3],
+      sigma_m   = param_new[4],
+      meta_bias   = param_new[5],
+      lapse      = param_new[6],
+      confprec          = param_new[7],
+      sigmam_beta   = param_new[8],
       meta_bias_beta = param_new[9]
     )
   })
@@ -286,7 +310,7 @@ sim_new_subjects = function(max_subjects = 100){
 
   new_subjects =
     post_draws %>% filter(draw %in% draws_id) %>% 
-    mutate(`gm.8.` = 0.05) %>% 
+    mutate(`gm.8.` = 0) %>% 
     rowwise() %>% 
     mutate(sim = list(simulate_subjects(cur_data(), S = max_subjects,P = 9))) %>% 
     unnest(sim) %>% 

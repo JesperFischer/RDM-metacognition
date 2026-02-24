@@ -1,24 +1,24 @@
 
 
 plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
-    subjects = unique(df$subject)
-    IDs = unique(df$ID)
-    # If more than one subject → apply function per subject
-    if(length(subjects) != 1){
-      
-      df_split = split(df, df$subject)
-      
-      out = lapply(df_split, function(d){
-        plot_beh_data(d, n_bins = n_bins, ACC = ACC, r_data  = r_data)
-      })
-      if(is.ggplot(out[[1]])){
-        for(i in 1:length(out)){
-          out[[i]] = out[[i]] + ggtitle(unique(df_split[[i]]$ID))
-        }      
-      }
-      return(out)
+  subjects = unique(df$subject)
+  IDs = unique(df$ID)
+  # If more than one subject → apply function per subject
+  if(length(subjects) != 1){
+    
+    df_split = split(df, df$subject)
+    
+    out = lapply(df_split, function(d){
+      plot_beh_data(d, n_bins = n_bins, ACC = ACC, r_data  = r_data)
+    })
+    if(is.ggplot(out[[1]])){
+      for(i in 1:length(out)){
+        out[[i]] = out[[i]] + ggtitle(unique(df_split[[i]]$ID))
+      }      
     }
-
+    return(out)
+  }
+  
   
   if(r_data == T){
     return(df %>% mutate(trial = 1:n()))
@@ -40,9 +40,9 @@ plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
       mutate(X_bin = cut(X, breaks = bin_breaks, labels = FALSE, include.lowest = TRUE),
              X = bin_centers[X_bin]) %>%
       select(-X_bin)%>% mutate(trial = 1:n())
-
+    
   }
-
+  
   if(ACC){
     bin = df %>% mutate(trial = 1:n())%>%
       mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
@@ -77,7 +77,7 @@ plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
   
   
   
-    
+  
   df1 = bind_rows(
     bin,
     df %>%
@@ -103,7 +103,7 @@ plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
   # Plot 1: Expected means (main plot)
   plot_mean = df1 %>% 
     ggplot() +
-   geom_pointrange(data = df1, aes(x = X, y = mean, ymin = q5, ymax = q95, fill = Correct),
+    geom_pointrange(data = df1, aes(x = X, y = mean, ymin = q5, ymax = q95, fill = Correct),
                     shape = 21, color = "black", alpha = 0.5) +
     (if (!is.null(n_bins)) 
       geom_line(aes(x = X, y = mean, color = Correct), linewidth = 1)
@@ -117,7 +117,7 @@ plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
     theme(legend.position = "top")
   
   
-
+  
   
   return(plot_mean)
   
@@ -199,7 +199,7 @@ plot_beh_data_tog = function(df,n_bins,ACC = F, r_data = F){
         q5 = qbeta(0.025, a_post, b_post),
         q95 = qbeta(0.975, a_post, b_post),
         .groups = "drop"
-        )
+      )
   }
   
   
@@ -238,7 +238,7 @@ plot_beh_data_tog = function(df,n_bins,ACC = F, r_data = F){
     (if (!is.null(n_bins)) 
       geom_line(data = df1 %>% filter(name == "Confidence"), aes(x = X, y = mean, color = Correct),
                 size = 0.8) 
-    else NULL) +
+     else NULL) +
     (if (!is.null(n_bins)) 
       geom_line(data = df1 %>% filter(name == "Type-1"), aes(x = X, y = mean), size = 0.8)
      else NULL) +
@@ -273,7 +273,7 @@ plot_beh_data_tog = function(df,n_bins,ACC = F, r_data = F){
                 .groups = "drop")
   ) 
   
-
+  
   plot_mean_dec = data.frame() %>% 
     ggplot() +
     geom_pointrange(data = df1 %>% filter(name == "Confidence"), aes(x = X, y = mean, ymin = q5, ymax = q95, fill = Y),
@@ -334,9 +334,9 @@ get_marginal_estimates = function(fit){
     
   }
   
-    df = df %>% pivot_longer(everything())
-    
-    plot = df %>% ggplot(aes(x = value))+
+  df = df %>% pivot_longer(everything())
+  
+  plot = df %>% ggplot(aes(x = value))+
     geom_histogram(col = "black")+
     facet_wrap(~name, scales = "free")+
     scale_y_continuous(breaks = scales::pretty_breaks(n = 3))+
@@ -344,7 +344,7 @@ get_marginal_estimates = function(fit){
     theme_classic(base_size = 14) 
   
   return(list(df,plot))
-    
+  
   
 }
 
@@ -375,7 +375,7 @@ Plot_group_predictive_psycho = function(predictions, df, ACC = F, n_bins = NULL)
       select(-X_bin)
   }
   
-
+  
   if(ACC){
     bin = df %>%
       mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
@@ -447,27 +447,27 @@ Plot_group_predictive_psycho = function(predictions, df, ACC = F, n_bins = NULL)
     
   }
   
-    dataq = bind_rows(
-      bin,
-      df %>%
-        mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
-        group_by(X) %>%
-        summarize(name = "RT",
-                  mean = mean(RT),
-                  q5 = mean(RT) - 2 * (sd(RT) / sqrt(n())),
-                  q95 = mean(RT) + 2 * (sd(RT) / sqrt(n())),
-                  .groups = "drop"),
-      
-      df %>%
-        mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
-        group_by(X, Correct) %>%
-        summarize(name = "Confidence",
-                  mean = mean(Confidence),
-                  q5 = mean(Confidence) - 2 * (sd(Confidence) / sqrt(n())),
-                  q95 = mean(Confidence) + 2 * (sd(Confidence) / sqrt(n())),
-                  .groups = "drop")
-    ) %>%
-      filter(abs(X) < cutoff)
+  dataq = bind_rows(
+    bin,
+    df %>%
+      mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
+      group_by(X) %>%
+      summarize(name = "RT",
+                mean = mean(RT),
+                q5 = mean(RT) - 2 * (sd(RT) / sqrt(n())),
+                q95 = mean(RT) + 2 * (sd(RT) / sqrt(n())),
+                .groups = "drop"),
+    
+    df %>%
+      mutate(Correct = ifelse(Correct == 1, "Correct", "Incorrect")) %>%
+      group_by(X, Correct) %>%
+      summarize(name = "Confidence",
+                mean = mean(Confidence),
+                q5 = mean(Confidence) - 2 * (sd(Confidence) / sqrt(n())),
+                q95 = mean(Confidence) + 2 * (sd(Confidence) / sqrt(n())),
+                .groups = "drop")
+  ) %>%
+    filter(abs(X) < cutoff)
   
   # Prepare predicted data (using expected means)
   predictionsq_mean = bind_rows(
@@ -654,8 +654,8 @@ prelim_ss_plot = function(df,name){
   
   
   marginals = rbind(get_marginal_estimates(fit1)[[1]] %>% mutate(model = "1"),
-        get_marginal_estimates(fit2)[[1]]%>% mutate(model = "2"),
-        get_marginal_estimates(fit3)[[1]]%>% mutate(model = "3")
+                    get_marginal_estimates(fit2)[[1]]%>% mutate(model = "2"),
+                    get_marginal_estimates(fit3)[[1]]%>% mutate(model = "3")
   ) %>%  
     filter(name %in% c("meta_un_int","meta_un_beta","meta_bias_int","meta_bias_beta","rho_p_conf")) %>% 
     ggplot(aes(x = value, fill = as.factor(model)))+
