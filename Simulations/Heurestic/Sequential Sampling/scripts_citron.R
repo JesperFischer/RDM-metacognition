@@ -34,33 +34,23 @@ sim_trials = function(df){
   # -----------------------------
   # Coherence level (stimulus intensity)
   # -----------------------------
-  offsets  = seq(-0.2,0.2,length.out = 10)
+  offsets  = c(-5,-4,-3,-2,-1, 1, 2, 3, 4, 5)
   w = c(1, 2, 3, 2, 1, 1, 2, 3, 2, 1)
   
   
   stim_values_per_block =
     rep((brms::inv_logit_scaled(
-      (brms::inv_logit_scaled(df$beta) - 0.5) * 2 +
-        rep(offsets / 1/sqrt(exp(df$sigma_e)^2 + exp(df$sigma_k)^2), times = w)
+      (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2 +
+        rep(offsets / exp(df$beta1), times = w)
     ) - 0.5) * 2,3)
-  
   
   X = rep(stim_values_per_block,6)
   
-  interval = runif(length(X), 1,5)
   
   # -----------------------------
   # Decision
   # -----------------------------
-  
-  
-  
-  sigma1 = exp(df$sigma_e)^2 + exp(df$sigma_k)^2
-
-
-  mu = (X - (brms::inv_logit_scaled(df$beta)-0.5)*2)
-  
-  theta = brms::inv_logit_scaled(df$lapse)/2 + (1-2*brms::inv_logit_scaled(df$lapse)/2) * pnorm( mu / sqrt(sigma1))
+  theta = brms::inv_logit_scaled(df$lapse)/2 + (1-2*brms::inv_logit_scaled(df$lapse)/2) * pnorm(exp(df$beta1) * (X - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))
   
   resp = rbinom(length(X), 1, theta)        # Simulated response
   
@@ -71,40 +61,22 @@ sim_trials = function(df){
   # -----------------------------
   # Simulated confidence
   # -----------------------------
-
+  interval = runif(length(X), 1,5)
+  
   conf_mu = numeric(length(X))
   
-  sigma_total = sqrt(exp(df$sigma_k)^2 + exp(df$sigma_e)^2)
-  
-  z = mu / sigma_total
-  
-  # Correction factor
-  correction_factor = exp(df$sigma_e)^2 / sigma_total
-  
-  # Conditional expectation (different Mills ratios for each choice)
-  mills_pos  = exp(dnorm(z, log=TRUE) - pnorm(z, log.p=TRUE))
-  mills_neg  = exp(dnorm(z, log=TRUE) - pnorm(-z, log.p=TRUE))
-  
-  e_cond = ifelse(resp == 1,
-                  mu + correction_factor * mills_pos,
-                  mu - correction_factor * mills_neg)
-  
-  
-  # Now use e_cond in the confidence formula
-  Cc = 2/1.7
-  
-  sigma2 = exp(df$sigma_e)^2 + exp(df$sigma_m +  df$sigmam_beta * interval)^2
-  
-  conf_mu = ifelse(resp == 1,
-                pnorm((1/(sqrt(1 + (Cc^2*abs(X)^2) / sigma2))) * (e_cond * abs(X) * Cc) / sigma2),
-                1-pnorm((1/(sqrt(1 + (Cc^2*abs(X)^2) / sigma2))) * (e_cond * abs(X) * Cc) / sigma2))
-  
-  conf_mu = ifelse(conf_mu > 0.999, 0.999, ifelse(conf_mu < 0.001,0.001,conf_mu))
+  for(i in 1:length(X)){
+    if(ACC[i] == 1){
+      conf_mu[i] <- pnorm(exp(df$beta1 - exp(df$meta_un_cor1)+ df$meta_un_beta * interval[i]) * abs(X[i] - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))       # Confidence for correct trials
+    } else {
+      conf_mu[i] <- pnorm((df$meta_un_inc1) * abs(X[i] - (brms::inv_logit_scaled(df$alpha1) - 0.5) * 2))    # Confidence for incorrect trials
+    }
+  }
   
   conf = numeric(length(conf_mu))
   
   for(i in 1:length(X)){
-    conf[i] = rordbeta(n = 1, mu = brms::inv_logit_scaled(brms::logit_scaled(conf_mu[i]) + df$meta_bias + df$meta_bias_beta * interval[i]), phi = exp(df$confprec), cutpoints = c(c0, c1))  # Simulated confidence values
+    conf[i] = rordbeta(n = 1, mu = brms::inv_logit_scaled(brms::logit_scaled(conf_mu[i]) + df$meta_bias + df$meta_bias_beta * interval[i]), phi = exp(df$conf_prec1), cutpoints = c(c0, c1))  # Simulated confidence values
   }
   
   
@@ -114,14 +86,13 @@ sim_trials = function(df){
   df = data.frame(
     c0 = c0,
     c1 = c1,
-    beta = df$beta,
-    sigma_e = df$sigma_e,
-    sigma_k = df$sigma_k, 
-    sigma_m = df$sigma_m,
-    meta_bias = df$meta_bias,
-    confprec = df$confprec,
+    beta = df$beta1,
     lapse = df$lapse,
-    sigmam_beta = df$sigmam_beta,
+    alpha = df$alpha1, 
+    meta_un_cor = df$meta_un_cor1,
+    meta_un_inc1 = df$meta_un_inc1,
+    conf_prec1 = df$conf_prec1,
+    meta_un_beta = df$meta_un_beta,
     meta_bias_beta = df$meta_bias_beta,
     X = X,
     interval = interval,
@@ -152,7 +123,7 @@ sim_trials = function(df){
               se = sd(c_mu) / sqrt(n())) %>% 
     ggplot()+
     geom_pointrange(aes(x = X, y = mean, ymin = mean-2*se, ymax = mean+2*se, col = (cut_interval)))+
-    geom_text(aes(x = 0, y = 0.8, label = paste0("bias = ",round(unique(df$meta_bias_beta),2), " \n meta_un = ",round(unique(df$sigmam_beta),2))))+
+    geom_text(aes(x = 0, y = 0.8, label = paste0("bias = ",round(unique(df$meta_bias_beta),2), " \n meta_un = ",round(unique(df$meta_un_beta),2))))+
     geom_smooth(aes(x = X, y = mean, col = (cut_interval)),se = F)+
     theme(legend.position = "top")
   
@@ -186,14 +157,14 @@ simulate_subjects = function(draw_row, S = 20, P = 9) {
     
     tibble(
       subj_id        = i,
-      beta         = param_new[1],
-      sigma_e          = param_new[2],
-      sigma_k     = param_new[3],
-      sigma_m   = param_new[4],
-      meta_bias   = param_new[5],
-      lapse      = param_new[6],
-      confprec          = param_new[7],
-      sigmam_beta   = param_new[8],
+      alpha1         = param_new[1],
+      beta1          = param_new[2],
+      conf_prec1     = param_new[3],
+      meta_un_cor1   = param_new[4],
+      meta_un_inc1   = param_new[5],
+      meta_bias      = param_new[6],
+      lapse          = param_new[7],
+      meta_un_beta   = param_new[8],
       meta_bias_beta = param_new[9]
     )
   })
@@ -207,7 +178,7 @@ fitter = function(new_subjects,subs){
   dd = new_subjects %>% select(sim_d,subj_id) %>% unnest() %>% filter(subj_id %in% 1:subs)
   
   model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models",
-                                             "Emperical dataanalysis","hierarchical","Full_Heurestic.stan"))
+                                             "Emperical dataanalysis","hierarchical","lapse","full_model3_lapse_optimized.stan"))
   
   
   dd =  dd %>%
@@ -236,9 +207,6 @@ fitter = function(new_subjects,subs){
                   ACC = dd$ACC)
   
   
-  pf = model$pathfinder(data = datastan)
-  
-
   fit <-model$sample(
     data = datastan,
     refresh = 10,
@@ -246,8 +214,7 @@ fitter = function(new_subjects,subs){
     iter_warmup = 500,
     adapt_delta = 0.95,
     max_treedepth = 12,
-    # init  = pf,
-    init = 0,
+    # init  = 0,
     parallel_chains = 4)
   
   prior_sd = 0.5
@@ -262,15 +229,15 @@ fitter = function(new_subjects,subs){
   BF = data.frame(bf8 = bf8, bf9 = bf9, n_subs = subs,sim_id = sim_id,
                   div = divs$mean_div, tree = divs$mean_tree, energi = divs$mean_energi, draw_id = unique(new_subjects$draw),prior_sd = prior_sd)
   
-  
-  sim_subj = dd %>% select(c0,c1,beta,sigma_e,sigma_k,sigma_m,meta_bias,confprec,lapse,sigmam_beta,meta_bias_beta,subj_id) %>% distinct() %>% 
+  sim_subj = dd %>% select(c0,c1,beta,lapse,alpha,meta_un_cor,meta_un_inc1,conf_prec1,meta_un_beta,meta_bias_beta,subj_id) %>% distinct() %>% 
     pivot_longer(-subj_id, names_to = "variable",values_to = "simulated")
   
-  esti_subj = fit$summary(c("c0","c1","beta","sigma_e","sigma_k","sigma_m","meta_bias","confprec","lapse","sigmam_beta","meta_bias_beta")) %>% 
+  esti_subj = fit$summary(c("c0","c1","beta1","lapse","alpha1","meta_un_cor1","meta_un_inc1","conf_prec1","meta_un_beta","meta_bias_beta")) %>% 
     mutate(
       subj_id = str_extract(variable, "(?<=\\[)\\d+(?=\\])") %>% as.integer(),
       variable   = str_remove(variable, "\\[\\d+\\]")
-    ) 
+    ) %>% 
+    mutate(variable = ifelse(variable == "alpha1","alpha",ifelse(variable == "meta_un_cor1","meta_un_cor",ifelse(variable == "beta1","beta",variable))))
   
   subj_param = inner_join(sim_subj, esti_subj)%>% mutate(n_subs = subs, sim_id = sim_id, div = divs$mean_div,
                                                          tree = divs$mean_tree, energi = divs$mean_energi, draw_id = unique(new_subjects$draw),prior_sd = prior_sd)
@@ -293,25 +260,25 @@ fitter = function(new_subjects,subs){
 
 sim_new_subjects = function(max_subjects = 100){
   
-  # make_draws = function(){
-  #   groupmean = fit_hier$draws(c("gm")) %>% as_draws_df() %>% select(-contains("."))
-  #   between_subj = fit_hier$draws(c("tau_u")) %>% as_draws_df()%>% select(-contains("."))
-  #   Lu = fit_hier$draws(c("L_u")) %>% as_draws_df()%>% select(-contains("."))
-  # 
-  #   post_draws =
-  #     groupmean %>%
-  #     mutate(draw = row_number()) %>%
-  #     left_join(
-  #       between_subj %>% mutate(draw = row_number()),
-  #       by = "draw"
-  #     ) %>%
-  #     left_join(
-  #       Lu %>% mutate(draw = row_number()),
-  #       by = "draw"
-  #     )
-  # 
-  #   write.csv(post_draws,here::here("Simulations","Heurestic","Sequential Sampling","post_draws.csv"))
-  # }
+  make_draws = function(){
+    # groupmean = fit_hier$draws(c("gm")) %>% as_draws_df() %>% select(-contains("."))
+    # between_subj = fit_hier$draws(c("tau_u")) %>% as_draws_df()%>% select(-contains("."))
+    # Lu = fit_hier$draws(c("L_u")) %>% as_draws_df()%>% select(-contains("."))
+    # 
+    # post_draws =
+    #   groupmean %>%
+    #   mutate(draw = row_number()) %>%
+    #   left_join(
+    #     between_subj %>% mutate(draw = row_number()),
+    #     by = "draw"
+    #   ) %>%
+    #   left_join(
+    #     Lu %>% mutate(draw = row_number()),
+    #     by = "draw"
+    #   )
+    # 
+    # write.csv(post_draws,here::here("Simulations","Heurestic","Sequential Sampling","post_draws.csv"))
+  }
 
   post_draws = read.csv(here::here("Simulations","Heurestic","Sequential Sampling","post_draws.csv"))
   
@@ -319,8 +286,7 @@ sim_new_subjects = function(max_subjects = 100){
 
   new_subjects =
     post_draws %>% filter(draw %in% draws_id) %>% 
-    mutate(`gm.8.` = 0,
-           `gm.9.` = 0) %>%
+    mutate(`gm.8.` = 0.05) %>% 
     rowwise() %>% 
     mutate(sim = list(simulate_subjects(cur_data(), S = max_subjects,P = 9))) %>% 
     unnest(sim) %>% 
@@ -344,17 +310,18 @@ sim_new_subjects = function(max_subjects = 100){
   #   facet_wrap(~subj_id)+
   #   geom_point()
   
-  fits = fitter(new_subjects,5)
+  fits = fitter(new_subjects,10)
   
   
   
   
-  plan(multisession, workers = 4)  # Windows-friendly
+  plan(multisession, workers = 5)  # Windows-friendly
   
-  n_subj <- c(5,7,9, 12,15,20,25)
+  n_subj <- c(5,6,7,8,9, 10,12, 14,20,25,30,40,50)
   library(furrr)
   
-  for(i in 10:15){
+  
+  for(i in 103:110){
     
     draws_id = sample(nrow(post_draws), 1)
     
@@ -362,8 +329,7 @@ sim_new_subjects = function(max_subjects = 100){
     
     new_subjects =
       post_draws %>% filter(draw %in% draws_id) %>%
-      mutate(`gm.8.` = 0,
-             `gm.9.` = 0) %>%
+      mutate(`gm.8.` = 0.05) %>%
       rowwise() %>% 
       mutate(sim = list(simulate_subjects(cur_data(), S = max_subjects,P = 9))) %>% 
       unnest(sim) %>% 
@@ -383,7 +349,7 @@ sim_new_subjects = function(max_subjects = 100){
       .options = furrr_options(seed = TRUE)
     )
     
-    saveRDS(results_list,here::here(paste0("test_effect_0_both_priors_0.5_nopathfinder",i,".RData")))
+    saveRDS(results_list,here::here(paste0("test_effect_0.05_both_ss",i,".RData")))
     
     
   }
