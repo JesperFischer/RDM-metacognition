@@ -26,7 +26,13 @@ df = load_data()
 
 ## plotting the behavioral data:
 ```{r, fig.height=6,fig.width=8, message=F,warning=F}
-plot_beh_data(df %>% filter(Trialtype == "Main"),7,F)
+plot_beh_data(df %>%   
+                filter(Trialtype == "Main", scale == "conf") %>% 
+                mutate(subject = as.numeric(as.factor(ID))) %>% drop_na(),
+              5,
+              F)
+
+
 plot_beh_data(df %>% filter(ID == "Rasmus_2026_04_02" & Trialtype == "Main"),NULL,F)
 
 ```
@@ -34,6 +40,7 @@ plot_beh_data(df %>% filter(ID == "Rasmus_2026_04_02" & Trialtype == "Main"),NUL
 ## fit the standard model with meta-uncertainty and meta-bias
 ```{r}
 model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","Single Subject","Heurestic.stan"))
+model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","Single Subject","Heurestic_v2.stan"))
 
 dd = df %>% 
   mutate(subject = as.numeric(as.factor(subject))) %>% 

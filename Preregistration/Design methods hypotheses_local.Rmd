@@ -1,0 +1,117 @@
+---
+title: "Design Methods and Hypotheses"
+author: Jesper Fischer Ehmsen^1^,
+        Siebe Everaets^xx^,
+        Micah G. Allen^1,2,\*^,
+        Francesca Fardo^1,3,\*^
+output:
+  html_document: default
+  word_document:
+    # reference_docx: Knitting files/docx_template.docx
+  pdf_document:
+    latex_engine: xelatex
+# bibliography: 
+  # - "Knitting files/References.bib"
+link-citations: yes
+linkcolor: blue
+# csl: Knitting files/science-advances.csl
+always_allow_html: yes
+---
+
+::: {custom-style="Title text"}
+^1^Center of Functionally Integrative Neuroscience (CFIN), Department of Clinical Medicine, Aarhus University
+
+^2^Cambridge Psychiatry, University of Cambridge, United Kingdom
+
+^3^Danish Pain Research Center, Department of Clinical Medicine, Aarhus University
+
+^\*^Equal contributions
+
+Corresponding author: Jesper Fischer Ehmsen (jesperfischer@cfin.au.dk)
+
+:::
+
+```{r load packages, warning = F, message = F, echo = F, include=FALSE}
+knitr::opts_chunk$set(dpi=300)
+
+# seed
+set.seed(123)
+
+# packages
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load("here", "knitr","yaml")
+
+knitr::opts_chunk$set(echo = TRUE)
+
+#renv::restore(project=here::here())
+
+required_packages = c("cowplot", "magick", "tidyverse", "flextable")
+lapply(required_packages, library, character.only = TRUE)
+```
+
+
+
+
+
+
+## Experimental study
+
+The current study examines motion discrimination and metacognition in a Random Dot Motion (RDM) task. Specifically, we are interested in the question of whether post-decisional timing influences meta-cognitive uncertainty, i.e. does confidence ratings follow the probability of being correct more closely when subjects are forced to wait longer before giving their confidence ratings compared to when they can respond directly. Dynamic models of metacognition assume that evidence is accumulated until a response boundary is reached and a binary decision is initialized. After the binary choice is given, additional evidence is accumulated (i.e. post-decisional) in order to give a confidence rating to the binary choice. If this post-decisional evidence accumulation is informative about the correctness of the choice, one would expect that increasing waiting time should increase the quality of the confidence ratings (i.e. closer to the objective probability that the choice was correct or equivalently in our model decrease meta-cognitive uncertainty). However, if evidence used for the confidence rating is already computed around the time of the decision (i.e. pre-decisional) one would expect there to be no-difference or a reverse effect in confidence ratings with increased waiting time. The reverse effect would indiciate a situation where there exists some leakage of the information (perhaps due to memory constraints). We here manipulate how the post decisional time window effects on the quality of the confidence ratings.
+
+
+Previous studies have generally found insignificant effects, both when stimulus is viewed in the post-decisional windown and when removed (REF). We therefore set out to test this in a Bayesian framework using sequential sampling. This not only lets us provide evidence for the NULL-hypothesis (post-decisional time does not change the quality of the confidence ratings), but also allows us to collect as many participants as strictly needed to provide what we deem sufficient evidence.
+
+Our hypotheses are as follows:
+
+1. Increasing the Post-decisional time-window will lead to no improvement in the relationship between confidence ratings and the probability of being correct on the given choice.
+* This Hypothesis will be tested by letting the $\sigma_m$ parameter vary by the trial-by-trial post-decisional time-window. The primary test is whether this parameter-value (on a group level) is different from 0. Specifically we test this using a sequential sampling approach in a bayesian framework with the bounds for terminating being a Bayesfator of either 30 or 1/30. As our sequential sampling approach uses bayesfactors for the termination of data collection, the prior distribution of this parameter is highly influential. To maximize transparency we visualize the curves that we allow given the prior below.
+
+2. Increasing the Post-decisional time-window will lead to no difference in confidence bias.
+* This Hypothesis will be tested by letting the $\mu_\beta$ parameter vary by the Post-decisional time-window. The primary test is whether this parameter-value (on a group level) is different from 0 (i.e. does the 95% HDI include 0) together with a bayesfactor to determine the strength of the evidence compared to the NULL (i.e. there is no difference). This test will be conducted when the data collection has been terminated.
+
+
+## Participants 
+
+Eligible participants will be 18–40 years old, have normal or corrected‑to‑normal vision, and be proficient in English. Individuals with neurological or psychiatric diagnoses or those taking medication that may affect cognitive performance are also not eligible to participate. Subjects will be recruited through COBE Lab its participant pool to insure fast and effective recruitment and will be rewarded with 110DKK.
+
+To limit the number of subjects needed to get sufficient evidence for our inference we will conduct a sequential sampling paradigm. Here we choose to terminate recruitment when the above explained Bayesfactor reaches either 30 or 1/30, or we have collected 50 subjects. We will start examining the Bayesfactors in increments of 5 subjects when we have reached 20 total subjects. This is mainly due to stability of the model estimation, as well as expecting to test around 5 subjects per day. Below we show some simulated trajectories of Bayesfactors across subjects (simulated from the same model, but fit to pilot data). The black traces show the Bayesfactor for the unmodified joint posterior distribution as subjects increase, whereas the red traces show the same but with an increase in the effect of interest at a group level of 0.05.
+
+
+## Design
+
+This study consists of a single lab visit where participants perform a computer experiment on a COMPUTERSPEC(XXX) run using Psychopy (REF) <!-- Remember to add -->. The experiment uses a random dot motion (RDM) decision‑making task. On each trial, participants view a random dot kinematogram in which a majority of dots move either upward or downward. While the dots are displayed, participants indicate whether the overall motion is ‘up’ or ‘down’ by pressing a corresponding key. They have 2 seconds to respond, trials without a response within this window are classified as no‑response trials. After indicating their response, participants view a post‑decisional fixation cross. The duration of this interval is the main experimental manipulation and is randomly drawn from a uniform distribution ranging from the maximum response time of 2 seconds to 5 seconds ($PostD_i \sim \text{U}(2, 5)$). After the interval, participants provide a metacognitive evaluation of their decision. They are asked, ‘How confident were you in your decision?’ and respond using a scale ranging from ‘certainly wrong’ to ‘certainly right.’ Participants navigate the scale using the arrow keys and confirm their response with a key press. If no response is made within 3 seconds, the trial is classified as a no‑response trial. Before the start of each new trial, an inter‑trial interval is presented consisting of a fixation cross. The duration of this interval is drawn from a log‑normal distribution with a mean of 5 seconds and a standard deviation of 0.1 ($ITI_i \sim \text{Lognormal}(1,0.1)$).  <!-- It says Inter-trial_interval is mean of 5 but the distribution thingy says 1 -->
+
+
+```{r, echo=FALSE} 
+n_trials = 36
+n_blocks = 8
+n_total = n_trials * n_blocks
+```
+
+In total, participants will complete `r n_total` trials, spread over `r n_blocks` blocks of `r n_trials` trials. Before the main experiment begins, participants receive instructions on how to perform the decision task. They then complete six easy, non‑speeded practice trials without confidence ratings, followed by 120 more difficult practice trials. Afterward, participants receive additional instructions about the confidence scale and complete 10 easy, non‑speeded practice trials that include confidence ratings, after which the main experiment begins. The key variables of interest are response choice, accuracy, response times, confidence ratings, and the response times associated with those confidence ratings.
+
+To ensure that task difficulty is calibrated at the individual level, the 120 harder practice trials are used as part of a staircase procedure. In a random dot kinematogram, task difficulty is determined by several stimulus properties, which can be broadly grouped into two categories: stimulus parameters and stimulus noisiness. To ensure that difficulty is optimally calibrated for each participant, we use the first 40 of the harder practice trials to staircase the dotlife parameter in the Dotstimclass in [psychopy](https://www.psychopy.org/api/visual/dotstim.html). This is a stimulus parameter that determines how many frames a dot lives before disappearing. Once an appropriate dot‑life value is identified, we then start to staircase coherence. <!-- Perhaps we might add how this staircase works or just a reference to the experimental script? -->
+
+Coherence reflects the noisiness of the stimulus and is the most commonly manipulated difficulty parameter in the literature.  <!-- Isn't it the procentage of dots moving in the desired direction? -->
+
+The remaining 80 trials are used to estimate the slope and threshold of the participant’s psychometric function on coherence. Both staircases are implemented using the QUEST+ Bayesian adaptive procedure. Using the estimated psychometric function, we determine the coherence levels for the main experiment based on a set of predefined target accuracies  ($ACC = [0.51, 0.6, 0.7, 0.8, 0.99]$). The corresponding coherence values are then sampled in a quasi‑normal fashion: the extreme accuracy levels (0.51 and 0.99) appear once per direction, the intermediate levels appear twice, and the 0.70 level appears three times. In each block of the main experiment, trials are presented in a pseudo‑randomized sequence of upward and downward motion such that no more than three consecutive trials share the same direction. This reduces the risk of implicit directional bias. All of this ensures that participants use the full confidence scale and that difficulty is balanced across upward and downward motion directions.
+
+## Exclusion criteria
+
+```{r, echo=FALSE} 
+ACC_cut = 60
+no_resp_cut = 30
+```
+
+Because the task is a two‑alternative forced‑choice decision, chance performance is 50%. For each participant, we compute overall accuracy across all main‑task trials and will exclude all participants with an accuracy lower than `r ACC_cut`%. For our trial count, accuracy below this threshold is not reliably above chance under a binomial model of guessing. Furthermore, given the stimulus calibration procedure, an optimal observer is expected to achieve approximately 81% accuracy.  <!-- Is this value true? Seems to be 71% for me -->
+
+Taken together, an accuracy below `r ACC_cut`% is inconsistent with meaningful participation in the task. We will also exclude participants who have a no‑response rate greater than `r no_resp_cut`% (combining decision and confidence responses), as a high proportion of missed responses also indicates insufficient engagement with the task.
+
+
+<!-- Maybe we add something on the eyetracker, ECG and therefore also something about recalibration and breaks between blocks -->
+
+
+
+## Prior Justification
+
+

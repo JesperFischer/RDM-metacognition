@@ -17,12 +17,12 @@ fit_model_ss = function(df, model,samples){
   
   fit <-model$sample(
     data = datastan,
-    refresh = 500,
+    refresh = 100,
     iter_sampling = samples,
     iter_warmup = samples,
-    adapt_delta = 0.99,
+    adapt_delta = 0.95,
     max_treedepth = 12,
-    init  = 0,
+    # init  = 0,
     parallel_chains = 4)
   
   if(grepl("MCMC",model$stan_file())){

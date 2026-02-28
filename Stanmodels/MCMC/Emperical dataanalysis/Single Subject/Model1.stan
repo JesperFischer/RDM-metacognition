@@ -1,5 +1,13 @@
 functions{
   
+  real lambda(real z){
+  if (z > -5.0) {
+    return exp(std_normal_lpdf(z)) / Phi(z);
+  } else {
+    // Asymptotic expansion for z << 0
+    return -1.0 / z;
+  }
+}
   
   // ordered beta function
   real ord_beta_reg_lpdf(real y, real mu, real phi, real cutzero, real cutone) {
@@ -76,7 +84,7 @@ parameters {
   real prec_conf_log;              // decision bias
   real sigma_e_log;              // decision bias
   real mean_choice;
-  // real meta_bias;
+  real omega;
   real c11;
   real c0;
 }
@@ -89,15 +97,18 @@ transformed parameters{
   vector[N] mu_conf;
   
   for(i in 1:N){
-    evidence[i] = mean_choice - X[i] * D[i] + exp(sigma_e_log) * evidence_std[i];
+    evidence[i] =  X[i] * D[i] - mean_choice + exp(sigma_e_log) * evidence_std[i];
     ehat[i] = evidence[i] + exp(sigma_m_log) * evidence_ind[i];
+    
+    real expected_evidence =evidence[i] + exp(omega) * exp(sigma_e_log)^2/exp(sigma_choice_log) * lambda(evidence[i]/exp(sigma_choice_log));
+
     
     p_action[i] = Phi((evidence[i])/exp(sigma_choice_log));
     
     if(a[i] == 1){
-      mu_conf[i] = inv_logit(2*ehat[i]*X[i] / (exp(sigma_e_log)^2 + exp(sigma_m_log)^2));
+      mu_conf[i] = inv_logit(2*expected_evidence*X[i] / (exp(sigma_e_log)^2 + exp(sigma_m_log)^2));
     }else if(a[i] == 0){
-      mu_conf[i] = 1- inv_logit(2*ehat[i]*X[i] / (exp(sigma_e_log)^2 + exp(sigma_m_log)^2));
+      mu_conf[i] = 1- inv_logit(2*expected_evidence*X[i] / (exp(sigma_e_log)^2 + exp(sigma_m_log)^2));
     }
   }
 }
@@ -109,7 +120,7 @@ model {
   sigma_m_log ~  normal(-1, 1);
   prec_conf_log ~ normal(3, 3);
   mean_choice ~ normal(0, 0.3);
-  // meta_bias ~ normal(0,0.5);
+  omega ~ normal(0,0.5);
   evidence_std ~ std_normal();
   evidence_ind ~ std_normal();
   

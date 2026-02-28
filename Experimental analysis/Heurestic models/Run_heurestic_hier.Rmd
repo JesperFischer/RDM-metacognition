@@ -44,6 +44,7 @@ plot_beh_data_tog(df %>% mutate(subject = as.numeric(as.factor(subject))) %>%
 ## fit the standard model with meta-uncertainty and meta-bias
 ```{r}
 model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","hierarchical","Full_Heurestic.stan"))
+model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","hierarchical","Full_Heurestic_omega.stan"))
 
 # model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","hierarchical","vectorized.stan"))
 
@@ -65,18 +66,18 @@ datastan = list(N = nrow(dd),
 pf = model$pathfinder(data = datastan, num_threads = 4, psis_resample = F, calculate_lp = F)
 
 
-# fit <-model$sample(
-#   data = datastan,
-#   refresh = 10,
-#   iter_sampling = 500,
-#   iter_warmup = 500,
-#   adapt_delta = 0.95,
-#   max_treedepth = 12,
-#   init  = pf,
-#   parallel_chains = 4)
-# 
-# 
-# fit$save_object(here::here("Experimental analysis","Heurestic models","saved models","saved models hier",paste0("fit_finalheu_lapse.rds")))
+fit <-model$sample(
+  data = datastan,
+  refresh = 10,
+  iter_sampling = 500,
+  iter_warmup = 500,
+  adapt_delta = 0.95,
+  max_treedepth = 12,
+  init  = pf,
+  parallel_chains = 4)
+ 
+
+fit$save_object(here::here("Experimental analysis","Heurestic models","saved models","saved models hier",paste0("fit_finalheu_lapse_omega.rds")))
 
 ```
 
