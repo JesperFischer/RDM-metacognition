@@ -42,8 +42,6 @@ pacman::p_load("here", "knitr","yaml")
 
 knitr::opts_chunk$set(echo = TRUE)
 
-source("~/RDM-metacognition/Preregistration/scripts/Simulation.R")
-
 required_packages = c("cowplot", "magick", "tidyverse", "flextable","truncnorm")
 lapply(required_packages, library, character.only = TRUE)
 ```
@@ -136,12 +134,15 @@ $$
 P(\text{correct} \mid r_i, a, X_i) = \begin{cases}g\left(\frac{2 \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - g\left(\frac{2 \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases} \tag{2}
 $$
 
-Here the function $g(.)$ is the inverse logit function i.e. $g(x)= \frac{1}{1+exp(-x)}$
+Here the function $g(.)$ is the inverse logit function i.e. $g(x)= \frac{1}{1+exp(-x)}$.
 
 From confidence alone, only $\sigma_e^2 + \sigma_m^2$ is identifiable. However, combining choices and confidence allows estimating all three parameters: $\sigma_e$, $\sigma_c$, and $\sigma_m$. 
 
-Before demonstrating simulations from this model to provide an intuition for the meaning of the parameters and their interactions we demonstrate how this kind of model can be argued for, consider the below plate notation. 
+As can be seen from equation (2), to compute the probability of being correct the agent (rater) needs access to the stimulus intensity ($X_i$), eventhough assumed in some models (REF), we believe that this assumption cannot hold for several reasons. We will get back to these reasons and a final formulation without this term later.
 
+
+
+Before demonstrating simulations from this model to provide an intuition for the meaning of the parameters and their interactions we demonstrate how this kind of model can be argued for, consider the below plate notation. 
 
 
 ```{r,fig.height=8, fig.width=12, message=F,error=F,warning=F}
@@ -154,7 +155,6 @@ img1 <- image_read_pdf(here::here("Preregistration", "Figure scripts","Platenota
 
 print(img1)
 ```
-
 
 
 An agent is presented with a stimulus that has a direction D (the true state of the world) and an intensity (X). This creates an internal evidence representation $e_i$. The brain then makes a copy of this evidence (an efference copy) (red split path). The internal evidence representation is then sent to the premotor and later motor cortex where an efferent signal is produced to generate an action, crucially this additional processing introduces noise 
@@ -631,40 +631,97 @@ P(\text{correct} \mid a = -1, X_i, D_i) =
 \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right) \tag{6b}
 $$
 
-with:
 
+This gives us a fully marginalized model for confidence ratings that depends only on the parameters $\Theta_1 = (\beta, \sigma_e, \sigma_c, \sigma_m)$ and the observed data (choices $a_i$, stimuli $X_i$, true states $D_i$), without requiring trial-by-trial estimation of latent evidence variables $e_i$ and $r_i$.
+
+Before interpreting on the parts of the terms we need to revert back to one of the key assumptions of this model as was outline just after introducing equation (2). When the subject calculates the subjective probability of being correct it is assumed that the subject has access to the stimulus intensity. Below we have highlighted which of the stimulus intensities this is related to:
+
+$$
+P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} 
+
+\cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)\right]
+
+\cdot C {\color{red}{X_i}}}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2{\color{red}{X^2_i}}}{\sigma_e^2+\sigma_m^2}}}\right) 
+$$
+
+Interestingly these two stimulus intensities, especially the first one (which is not from the marginalization) serves to make sure that at intensity 0 i.e. $X_i = 0$ the predicted confidence will always be 0.5. 
+
+Not only is this a strong assumption that we will challenge regardless, due to empirical findings of confidence bias (i.e. some subjects reporting higher confidence than others on average), but the main problem with this formulation is that with this anchor at (0,0.5) the confidence curves cannot produce one of the main empirical patterns of confidence ratings, which we highlighted in the [Models and Data Markdown](Models and Data in Perceptual Decision-Making with Confidence.Rmd). Here we formalized that confidence ratings reflect a noisy, subjective probability of being correct, incorporating response biases rather than purely objective performance. With the above formulation this is not possible as there is an objective anchor at $X_i = 0$. 
+
+Due to these consideration, supported by some empirical validation on our pilot data below, we believe that this particular stimulus intensity, coming from an unjustified assumption of the agent having access to the stimulus intensity, needs to be accessed. One particular interesting idea of how to deal with this is to assume that the agent has a noisy readout of the stimulus strength, $\hat{X} \sim p(\hat{x}|\theta,c)$. The problem with such formulation is that the defining the probability distribution of the internal stimulus intensity is not trivial as its positively bound and therefore would not easily be marginalized as above. Another approach would be to replace this stimulus intensity value with a constant across subject parameter that would serve as a placeholder for idosyncratic differences in how subjects might use the stimulus intensity above and beyond what they should have access to. Instead of opting for these options we chose to assume that the agents do not have access to this stimulus intensity and therefore fix it to 1. This approach in its simplicity circumvents some of the troublesome computational aspects as well as obeying to what the agents is assumed to have access to, but just as importantly this makes it possible for the model to accommodate the emperical observation that the confidence curve follows the psychometric function of the binary choices.
+
+This means that the final equations become
+
+$$
+P(\text{correct} \mid a = 1, X_i, D_i) = 
+
+\Phi\left(
+\left[
+
+\frac{(CX_iD_i - C\beta)}{\sigma_e^2 + \sigma_m^2} +
+
+\rho \cdot \frac{ \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)C}{\sqrt{\sigma_e^2 + \sigma_m^2} } 
+
+\right]
+
+\cdot\frac{1} {\sqrt{1 + \frac{C^2}{\sigma_e^2+\sigma_m^2}}}\right) \tag{7a}
+$$
+
+
+which for the other choice becomes:
+
+
+$$
+P(\text{correct} \mid a = -1, X_i, D_i) = 
+
+\Phi\left(
+\left[
+\frac{(CX_iD_i - C\beta)}{\sigma_e^2 + \sigma_m^2} -
+
+\rho \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)C}{\sqrt{\sigma_e^2 + \sigma_m^2} } 
+
+\right]
+
+\cdot\frac{1} {\sqrt{1 + \frac{C^2}{\sigma_e^2+\sigma_m^2}}}\right) \tag{7b}
+$$
+
+with:
 $$
 \lambda(x) = \frac{\phi(x)}{\Phi(x)}
 \\
 C = \frac{2}{1.7}
 $$
 
-This gives us a fully marginalized model for confidence ratings that depends only on the parameters $\Theta_1 = (\beta, \sigma_e, \sigma_c, \sigma_m)$ and the observed data (choices $a_i$, stimuli $X_i$, true states $D_i$), without requiring trial-by-trial estimation of latent evidence variables $e_i$ and $r_i$.
+Of note in the above formula is that the terms inside the cummulative normal distribution function have clear interpretations. 
 
-Of note in the above formula is that the terms inside the cummulative normal distribution function have clear interpretations. Firstly the common factor is a correction factor for marginalization. thus we define: 
+Firstly the common factor is a correction factor for marginalization. thus we define: 
+
 $$
-K = \frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}
+K_i = \frac{1} {\sqrt{1 + \frac{C^2}{\sigma_e^2+\sigma_m^2}}}
 $$ 
 whereas the two other terms can be thought to have a cognitive interpretation.
 
-looking back at equation 3 we had.
+looking back at equation 3 we had (now with $X_i = 1$)
 
 $$
-P(\text{correct} \mid r_i, a, X_i) = \begin{cases}\Phi\left(\frac{C \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - \Phi\left(\frac{C \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases} \tag{3}
+P(\text{correct} \mid r_i, a, X_i) = \begin{cases}\Phi\left(\frac{C \cdot r_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - \Phi\left(\frac{C \cdot r_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases} \tag{3}
 $$
 
-we observe that the first term from equation 6 is just the expectation of the argument to the cumulative normal distribution function. This argument from the derivation is the log-likelihood ratio, which might also be seen as the average strength of evidence in favor of the true state. We might call this is I;
+we observe that the first term from equation 7 is just the expectation of the argument to the cumulative normal distribution function. This argument from the derivation is the log-likelihood ratio, which might also be seen as the average strength of evidence in favor of the true state. We might call this is I;
 
 $$
-I = \mathop{\mathbb{E}}\left(\frac{C \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) = \frac{(CX_i^2D_i - C\beta X_i)}{\sigma_e^2 + \sigma_m^2}
+I = \mathop{\mathbb{E}}\left(\frac{C \cdot r_i}{\sigma_e^2 + \sigma_m^2}\right) = \frac{(CX_iD_i - C\beta)}{\sigma_e^2 + \sigma_m^2}
 $$
 
-The latter term adjusts this expectation, because of the action selected before the confidence rating thus we name this the S. 
+The latter term in equation 7 adjusts this expectation, because of the action selected before the confidence rating thus we name this the S. 
+
 $$
-S = -\rho \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)CX_i}{\sqrt{\sigma_e^2 + \sigma_m^2} }
+S = -\rho \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)C}{\sqrt{\sigma_e^2 + \sigma_m^2} }
 $$
 
 This term serves the purpose of changing the mean expectation to incorporate the information of the action to guide confidence. The addition of actions into the confidence computation have been proposed in the second order rater model (REF), from Fleming and Daw where they also re-analyzed data to show this pattern empirically. 
+
+
 
 To summarize; Confidence computation can be thought of as a weighting of the expected normalized evidence with a correction factor for having commited to a choice. 
 
@@ -694,6 +751,7 @@ $$
 \\
 (c_{1_s} , c_{0_s}) \sim \delta([1,10,1])
 $$
+
 Note in the above formulation that $\mathcal{N}$ is a multivariate normal distribution with mean and covariance. Further all contraints on the parameters as written were acomplised by transformation. All positively constrainted parameters were exponentiated, parameters with an upper and lower bound were transformed with the inverse logit function and multiplied appropriately. The constraint of the cutputs were applied by the prior of a dirchlet distribution. 
 
 and the equations for model becomes:
@@ -714,47 +772,161 @@ $$
 with
 
 $$
-I_i = \frac{(CX_i^2D_i - C\beta X_i)}{\sigma_{e_s}^2 + \sigma_{m_s}^2},
-S_i = -\rho_s \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta_s}{\sqrt{\sigma_{e_s}^2 + \sigma_{c_s}^2}}\right)CX_i}{\sqrt{\sigma_{e_s}^2 + \sigma_{m_s}^2} },
-K_i = \frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_{e_s}^2+\sigma_{m_s}^2}}}
+I_i = \frac{(CX_iD_i - C\beta)}{\sigma_{e_s}^2 + \sigma_{m_s}^2},
+S_i = -\rho_s \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta_s}{\sqrt{\sigma_{e_s}^2 + \sigma_{c_s}^2}}\right)C}{\sqrt{\sigma_{e_s}^2 + \sigma_{m_s}^2} },
+K_i = \frac{1} {\sqrt{1 + \frac{C^2}{\sigma_{e_s}^2+\sigma_{m_s}^2}}}
 
 $$
 
 
 
 
-Below we showcase the above hierarchical heuristic model fit to data simulated from equation (2) to show that the two are approximately close. 
+Below we showcase the above heuristic model fit to data simulated from equation (2) (with $X_i = 1$) to show that the two are approximately close. 
+
+```{r, error=F,message=F,warning=F, fig.height=10,fig.width=10}
+source("~/RDM-metacognition/Preregistration/scripts/Simulation.R")
+
+library(tidyverse)
+
+# Define high/low values
+sigma_e_vals <- c(-2, -1.5)   # example low/high
+sigma_k_vals <- c(-3, -2)
+sigma_m_vals <- c(-1, 0)
 
 
-```{r}
+param_grid <- expand.grid(
+  sigma_e = sigma_e_vals,
+  sigma_k = sigma_k_vals,
+  sigma_m = sigma_m_vals,
+  bias    = 0  # start with bias = 0 for all
+)
 
-sigma_e = -1
-sigma_k = -3
-sigma_m = -1
-bias = 0
+# Add an extra row for the one case where bias != 0 (if desired)
+param_grid <- param_grid%>% 
+  mutate(id = row_number())
+
+param_grid <- param_grid %>%
+  mutate(facet_label = paste0("S_e=", sigma_e, 
+                              ", S_k=", sigma_k, 
+                              ", S_m=", sigma_m, 
+                              ", B=", bias))
 
 breaks <- seq(-1, 1, by = 0.05)
 midpoints <- breaks[-length(breaks)] + 0.1
 
-df_mech = simulate_data_p(500000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1) %>% 
+df_mech = param_grid %>% 
+    rowwise() %>%
+    mutate(sims = list(simulate_data_p_bias(100000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1))) %>% 
+    ungroup() %>% 
+    unnest() %>% 
     mutate(XD = X * D,
     bin = cut(XD, breaks = breaks, include.lowest = TRUE, labels = FALSE),
-    XD = (breaks[bin] + breaks[bin + 1]) / 2)
+    XD = (breaks[bin] + breaks[bin + 1]) / 2) %>% 
+  mutate(Action = as.factor(a_gauss),
+         Accuracy = as.factor(ACC))  
+
+df_heu = param_grid %>% 
+    rowwise() %>%
+    mutate(sims = list(simulate_data_margin_bias(5000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1))) %>% 
+    ungroup() %>% 
+    unnest() %>% 
+    mutate(XD = X*D) %>% 
+  mutate(bin = NA)%>% 
+  mutate(Action = as.factor(a_gauss),
+         Accuracy = as.factor(ACC))
+    
   
 
-df_heu = simulate_data_margin(5000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1) %>% mutate(XD = X*D)
-
-
-data.frame() %>% ggplot()+
+rbind(df_mech,df_heu) %>% ggplot()+
   geom_pointrange(data = df_mech %>% 
-                    mutate(ACC = as.factor(ACC))%>% 
-                    group_by(XD, ACC) %>% 
+                    group_by(XD, Accuracy,facet_label) %>% 
                     summarize(mean = mean(c_mu), 
                               se = sd(c_mu)/sqrt(n())),
-                  aes(x = XD,y = mean,ymin = mean-2*se, ymax = mean+2*se, fill = ACC), shape = 21, col = "black")+
+                  aes(x = XD,y = mean,ymin = mean-2*se, ymax = mean+2*se, fill = Accuracy), shape = 21, col = "black")+
   geom_pointrange(data = df_mech %>% 
-                    group_by(XD, ) %>% 
-                    summarize(k = sum(a_gauss),
+                    group_by(XD, facet_label) %>% 
+                    summarize(k = sum(as.numeric(as.character(Action))),
+                              n = n(),
+                              prop = k / n,
+                              a_post = k + 1,
+                              b_post = (n - k) + 1,
+                              lower = qbeta(0.025, a_post, b_post),
+                              upper = qbeta(0.975, a_post, b_post)),
+                  aes(x = XD,y = prop,ymin = lower, ymax = upper), col = "black", shape = 21,fill = "black")+
+  geom_line(data = df_heu, aes(x = XD,y = c_mu, col = Accuracy), linewidth = 2, alpha = 0.75)+
+  geom_line(data = df_heu, aes(x = XD,y = p_gauss), linewidth = 2, alpha = 0.75, col = "black")+
+  theme_classic()+
+  facet_wrap(~facet_label, scales = "free") +
+  labs(x = "Stimulus Intensity")+
+  geom_vline(xintercept = 0, linetype = 2)+
+  geom_hline(yintercept = 0, linetype = 2)+
+  geom_hline(yintercept = 1, linetype = 2)+
+  theme(legend.position = "top")
+  
+  
+```
+
+
+```{r, error=F,message=F,warning=F, fig.height=10,fig.width=10}
+
+# Define high/low values
+sigma_e_vals <- c(-1.5)   # example low/high
+sigma_k_vals <- c(-2)
+sigma_m_vals <- c(-1.2)
+
+
+param_grid <- expand.grid(
+  sigma_e = sigma_e_vals,
+  sigma_k = sigma_k_vals,
+  sigma_m = sigma_m_vals,
+  bias    = seq(-0.7,0.7,length.out = 9)
+)
+
+# Add an extra row for the one case where bias != 0 (if desired)
+param_grid <- param_grid%>% 
+  mutate(id = row_number())
+
+param_grid <- param_grid %>%
+  mutate(facet_label = paste0("S_e=", sigma_e, 
+                              ", S_k=", sigma_k, 
+                              ", S_m=", sigma_m, 
+                              ", B=", bias))
+
+breaks <- seq(-1, 1, by = 0.05)
+midpoints <- breaks[-length(breaks)] + 0.1
+
+df_mech = param_grid %>% 
+    rowwise() %>%
+    mutate(sims = list(simulate_data_p_bias(100000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1))) %>% 
+    ungroup() %>% 
+    unnest() %>% 
+    mutate(XD = X * D,
+    bin = cut(XD, breaks = breaks, include.lowest = TRUE, labels = FALSE),
+    XD = (breaks[bin] + breaks[bin + 1]) / 2) %>% 
+  mutate(Action = as.factor(a_gauss),
+         Accuracy = as.factor(ACC))  
+
+df_heu = param_grid %>% 
+    rowwise() %>%
+    mutate(sims = list(simulate_data_margin_bias(5000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1))) %>% 
+    ungroup() %>% 
+    unnest() %>% 
+    mutate(XD = X*D) %>% 
+  mutate(bin = NA)%>% 
+  mutate(Action = as.factor(a_gauss),
+         Accuracy = as.factor(ACC))
+    
+  
+
+rbind(df_mech) %>% ggplot()+
+  geom_pointrange(data = df_mech %>% 
+                    group_by(XD, Action,facet_label) %>% 
+                    summarize(mean = mean(c_mu), 
+                              se = sd(c_mu)/sqrt(n())),
+                  aes(x = XD,y = mean,ymin = mean-2*se, ymax = mean+2*se, fill = Action), shape = 21, col = "black")+
+  geom_pointrange(data = df_mech %>% 
+                    group_by(XD, facet_label) %>% 
+                    summarize(k = sum(as.numeric(as.character(Action))),
                               n = n(),
                               prop = k / n,
                               a_post = k + 1,
@@ -762,27 +934,101 @@ data.frame() %>% ggplot()+
                               lower = qbeta(0.025, a_post, b_post),
                               upper = qbeta(0.975, a_post, b_post)),
                   aes(x = XD,y = prop,ymin = lower, ymax = upper), shape = 21, col = "black",fill = "black")+
-  geom_line(data = df_heu %>% mutate(ACC = as.factor(ACC)), aes(x = XD,y = c_mu, col = ACC), linewidth = 2, alpha = 0.5)+
-  geom_line(data = df_heu, aes(x = XD,y = p_gauss), linewidth = 2, alpha = 0.5, col = "black")+
+  geom_line(data = df_heu, aes(x = XD,y = c_mu, col = Action), linewidth = 2, alpha = 0.75)+
+  geom_line(data = df_heu, aes(x = XD,y = p_gauss), linewidth = 2, alpha = 0.75, col = "black")+
   theme_classic()+
+  facet_wrap(~facet_label, scales = "free") +
+  geom_vline(xintercept = 0, linetype = 2)+
+  geom_hline(yintercept = 0, linetype = 2)+
+  geom_hline(yintercept = 1, linetype = 2)+
   labs(x = "Stimulus Intensity")+
   theme(legend.position = "top")
   
 
+  
+```
 
+Note that each facet contains the parameters that were used for simulating the data for both models. Datapoints with error bars are derived from averaging 100000 points across the -1 ; 1 stimulus range in increments of 0.05 (error bars contain approximate 95% converage) from equation (2). Lines are the expected values derived from equation (7) from 5000 points. As can be seen the approximation for the expectation of the trial-by-trial model is excellent.
+
+
+
+Next, we demonstrate parameter recovery simulating from equation (2) (with $X_i = 1$) and fitting with the heuristic model derived above. 
+
+
+```{r}
+ 
 ```
 
 
-
-Next, we demonstrate parameter recovery simulating from equation (2) and fitting with the heuristic model derived above. 
-
-
 Lastly, we fit this model to our pilot data hierarchically and compare to the single subject estimated from equation (2). 
+
+## Model comparison
+
+```{r, echo = T}
+model_with_x <- readRDS("~/RDM-metacognition/Experimental analysis/Heurestic models/saved models/saved models hier/fit_finalheu_lapse_cypertron.rds")
+model_with_x1 <- readRDS("~/RDM-metacognition/Experimental analysis/Heurestic models/saved models/saved models hier/fit_finalheu_lapse_x1.rds")
+
+loocomparison = loo::loo_compare(list(with_x = model_with_x$loo(), with_x1 = model_with_x1$loo()))
+```
+
+As a sanity check on the assumption of $X_i = 1$, we fitted both hierarchical models to our pilot data and computed approximate leave one out cross-validation, to test if the assumption could be justified. This comparison showed that the two models were essentially indistinguishable with the difference in expected log probability density being `r round(loocomparison[2,1],2)` $\pm$ `r round(loocomparison[2,2],2)`, where generally it is thought that a difference below -4 and or more than two standard errors can be considered as evidence for one model over the other (REF), thus atleast for our pilot data for predictive performance there seems to be no difference. Digging further into the distinction between these two models we below plot all pairwise parameters together with the identity line.
+
+```{r,fig.height=6, fig.width=8, message=F,error=F,warning=F}
+parameters = c("beta","sigma_e","sigma_k","sigma_m","confprec","lapse","meta_bias","confprec","meta_bias_beta","sigmam_beta")
+
+
+rbind(
+    model_with_x$summary(parameters) %>% 
+      mutate(
+        subject  = as.numeric(str_extract(variable, "(?<=\\[)\\d+(?=\\])")),
+        variable = str_remove(variable, "\\[\\d+\\]"),
+        model    = "X"
+      ),
+    
+    model_with_x1$summary(parameters) %>% 
+        mutate(
+        subject  = as.numeric(str_extract(variable, "(?<=\\[)\\d+(?=\\])")),
+        variable = str_remove(variable, "\\[\\d+\\]"),
+        model    = "Xone"
+      )
+    )%>% select(variable,model,mean,q5,q95) %>% 
+      pivot_wider(names_from = "model",values_from = c("mean","q5","q95")) %>% unnest() %>% 
+  ggplot(aes(x = mean_X, y = mean_Xone))+
+  geom_pointrange(aes(ymin = q5_Xone, ymax = q95_Xone))+
+  geom_pointrange(aes(xmin = q5_X, xmax = q95_X))+
+  facet_wrap(~variable, scales = "free")+
+  labs(y = "Model with X = 1", x = "Model with X")+
+  geom_abline()+
+  theme_classic()
+
+```
+
+Generally the two models align well in their subject level parameter estimates, further justifing this simplification that makes theoretical sense.
+
+
+
+
+```{r,fig.height=12, fig.width=18, message=F,error=F,warning=F}
+magick::image_read(here::here("Preregistration","Figures","Pilot_predictive_checks.PNG"))
+```
+
 
 ## pilot data fit from Hierarchical Heurestic model
 
 ```{r,fig.height=12, fig.width=18, message=F,error=F,warning=F}
 magick::image_read(here::here("Preregistration","Figures","Pilot_predictive_checks.PNG"))
 ```
+
+
+
+## Hierarchical parameter recovery
+
+Using the data from the simulations of the sequential sampling we also have access to parameter recovery, where the simulated datasets were extracted from the draws of the above posterior distribution, below we showcase that the model can to an adequte degree recover its parameters on a subject and group level:
+
+```{r,fig.height=7, fig.width=14, message=F,error=F,warning=F}
+magick::image_read(here::here("Preregistration","Figures","parameterrecovery_hier.PNG"))
+```
+
+
 
 

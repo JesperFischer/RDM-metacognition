@@ -44,7 +44,11 @@ plot_beh_data_tog(df %>% mutate(subject = as.numeric(as.factor(subject))) %>%
 ## fit the standard model with meta-uncertainty and meta-bias
 ```{r}
 model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","hierarchical","Full_Heurestic.stan"))
+
+
 model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","hierarchical","Full_Heurestic_omega.stan"))
+model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","hierarchical","Full_heurestic_x1.stan"),
+                                cpp_options = list(stan_threads = TRUE))
 
 # model = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","hierarchical","vectorized.stan"))
 
@@ -77,7 +81,7 @@ fit <-model$sample(
   parallel_chains = 4)
  
 
-fit$save_object(here::here("Experimental analysis","Heurestic models","saved models","saved models hier",paste0("fit_finalheu_lapse_omega.rds")))
+fit$save_object(here::here("Experimental analysis","Heurestic models","saved models","saved models hier",paste0("fit_finalheu_lapse_cypertron.rds")))
 
 ```
 

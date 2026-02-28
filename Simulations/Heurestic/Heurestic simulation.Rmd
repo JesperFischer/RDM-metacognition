@@ -23,190 +23,14 @@ output:
 ---
 
 ```{r}
-pacman::p_load(tidyverse,posterior,bayesplot,cmdstanr,patchwork,ordbetareg,shiny,statConfR,truncnorm)
-```
-
-
-
-```{r, fig.height=7,fig.width=8}
-df = simulate_data_p(1000, sigma_e = -1.5, sigma_k = -2, sigma_m = -1, bias = 0, seed = 1997)
-
-df[1,]
-df %>% ggplot(aes(x = X*D, y = a_gauss))+geom_point()+geom_smooth(method = glm, method.args= list(family="binomial"))
-
-df %>% ggplot(aes(x = X*D, y = C, col = as.factor(ACC)))+geom_point()+geom_smooth()
-df %>% ggplot(aes(x = X*D, y = C, col = as.factor(a_gauss)))+geom_point()+geom_smooth()
-
-
-psy = df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,10)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss))
-conf = df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,10)) %>% group_by(XD,a_gauss) %>% summarize(mean = mean(c_mu))
-
-data.frame() %>% ggplot()+
-  geom_point(data = psy, aes(x = XD, y = mean), col = "black")+
-  geom_point(data = conf, aes(XD, y = mean, col = as.factor(a_gauss)))
-
-
-psy = df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,10)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss))
-conf = df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,10)) %>% group_by(XD,ACC) %>% summarize(mean = mean(c_mu))
-
-data.frame() %>% ggplot()+
-  geom_point(data = psy, aes(x = XD, y = mean), col = "black")+
-  geom_point(data = conf, aes(XD, y = mean, col = as.factor(ACC)))
-```
-
-
-```{r, fig.height=7,fig.width=8}
-df = simulate_data_p(1000, sigma_e = -1.5, sigma_k = -2, sigma_m = -0.5, bias = 0, seed = 1997)
-
-df[1,]
-df %>% ggplot(aes(x = X*D, y = a_gauss))+geom_point()+geom_smooth(method = glm, method.args= list(family="binomial"))
-
-df %>% ggplot(aes(x = X*D, y = C, col = as.factor(ACC)))+geom_point()+geom_smooth()
-df %>% ggplot(aes(x = X*D, y = C, col = as.factor(a_gauss)))+geom_point()+geom_smooth()
-
-
-psy = df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,10)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss))
-conf = df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,10)) %>% group_by(XD,a_gauss) %>% summarize(mean = mean(c_mu))
-
-data.frame() %>% ggplot()+
-  geom_point(data = psy, aes(x = XD, y = mean), col = "black")+
-  geom_point(data = conf, aes(XD, y = mean, col = as.factor(a_gauss)))
-
-
-psy = df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,10)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss))
-conf = df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,10)) %>% group_by(XD,ACC) %>% summarize(mean = mean(c_mu))
-
-data.frame() %>% ggplot()+
-  geom_point(data = psy, aes(x = XD, y = mean), col = "black")+
-  geom_point(data = conf, aes(XD, y = mean, col = as.factor(ACC)))
-```
-
-
-```{r}
-
-sigma_e = -1
-sigma_k = -3
-sigma_m = -1
-bias = 0
-
-breaks <- seq(-1, 1, by = 0.05)
-midpoints <- breaks[-length(breaks)] + 0.1
-
-df_mech = simulate_data_p(500000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1) %>% 
-    mutate(XD = X * D,
-    bin = cut(XD, breaks = breaks, include.lowest = TRUE, labels = FALSE),
-    XD = (breaks[bin] + breaks[bin + 1]) / 2)
-  
-
-df_heu = simulate_data_margin(5000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1) %>% mutate(XD = X*D)
-
-data.frame() %>% ggplot()+
-  geom_pointrange(data = df_mech %>% 
-                    mutate(ACC = as.factor(ACC))%>% 
-                    group_by(XD, ACC) %>% 
-                    summarize(mean = mean(c_mu), 
-                              se = sd(c_mu)/sqrt(n())),
-                  aes(x = XD,y = mean,ymin = mean-2*se, ymax = mean+2*se, fill = ACC), shape = 21, col = "black")+
-  geom_pointrange(data = df_mech %>% 
-                    group_by(XD, ) %>% 
-                    summarize(k = sum(a_gauss),
-                              n = n(),
-                              prop = k / n,
-                              a_post = k + 1,
-                              b_post = (n - k) + 1,
-                              lower = qbeta(0.025, a_post, b_post),
-                              upper = qbeta(0.975, a_post, b_post)),
-                  aes(x = XD,y = prop,ymin = lower, ymax = upper), shape = 21, col = "black",fill = "black")+
-  geom_line(data = df_heu %>% mutate(ACC = as.factor(ACC)), aes(x = XD,y = c_mu, col = ACC), linewidth = 2, alpha = 0.5)+
-  geom_line(data = df_heu, aes(x = XD,y = p_gauss), linewidth = 2, alpha = 0.5, col = "black")+
-  theme_classic()+
-  labs(x = "Stimulus Intensity")+
-  theme(legend.position = "top")
-  
-
-
-```
-
-```{r}
-breaks <- seq(-1, 1, by = 0.05)
-midpoints <- breaks[-length(breaks)] + 0.1
-
-
-df_mech = simulate_data_p(500000, sigma_e = -1.5, sigma_k = -5, sigma_m = -2, bias = 0, seed = 1) %>% 
-    mutate(XD = X * D,
-    bin = cut(XD, breaks = breaks, include.lowest = TRUE, labels = FALSE),
-    XD = (breaks[bin] + breaks[bin + 1]) / 2) %>% 
-  group_by(XD, ACC) %>%
-  summarize(mean = mean(c_mu), se = sd(c_mu)/sqrt(n())) 
-
-df_mech%>% ggplot(aes(x = XD, y = mean, col = as.factor(ACC)))+geom_point()
-
-df_heu = simulate_data_margin(1000, sigma_e = -1.5, sigma_k = -5, sigma_m = -2, bias = 0, seed = 1) %>% mutate(XD = X*D)
-
-df_heu %>% ggplot(aes(x = XD, y = c_mu, col = as.factor(ACC)))+geom_point()
-
-data.frame() %>% ggplot()+
-  geom_pointrange(data = df_mech, aes(x = XD,y = mean,ymin = mean-2*se, ymax = mean+2*se, fill = as.factor(ACC)), shape = 21, col = "black")+
-  geom_line(data = df_heu, aes(x = XD,y = c_mu, col = as.factor(ACC)), linewidth = 2)
-
-
-```
-
-
-```{r}
-breaks <- seq(-1, 1, by = 0.05)
-midpoints <- breaks[-length(breaks)] + 0.1
-
-
-df_mech = simulate_data_p(500000, sigma_e = -1, sigma_k = -1, sigma_m = -2, bias = 0.5, seed = 1) %>% 
-    mutate(XD = X * D,
-    bin = cut(XD, breaks = breaks, include.lowest = TRUE, labels = FALSE),
-    XD = (breaks[bin] + breaks[bin + 1]) / 2) %>% 
-  group_by(XD, a_gauss) %>%
-  summarize(mean = mean(c_mu), se = sd(c_mu)/sqrt(n())) 
-
-df_mech%>% ggplot(aes(x = XD, y = mean, col = as.factor(a_gauss)))+geom_point()
-
-df_heu = simulate_data_margin(1000, sigma_e = -1, sigma_k = -1, sigma_m = -2, bias = 0.5, seed = 1) %>% mutate(XD = X*D)
-
-df_heu %>% ggplot(aes(x = XD, y = c_mu, col = as.factor(a_gauss)))+geom_point()
-
-data.frame() %>% ggplot()+
-  geom_pointrange(data = df_mech, aes(x = XD,y = mean,ymin = mean-2*se, ymax = mean+2*se, fill = as.factor(a_gauss)), shape = 21, col = "black")+
-  geom_point(data = df_heu, aes(x = XD,y = c_mu, col = as.factor(a_gauss)), alpha = 0.25)
-
+pacman::p_load(tidyverse,posterior,bayesplot,cmdstanr,patchwork,ordbetareg,shiny,statConfR,truncnorm,furrr,purrr)
+source("~/RDM-metacognition/Simulations/Heurestic/scripts/Simulate_mcmc.R")
 
 ```
 
 
 
-
-```{r, fig.height=7,fig.width=8}
-df = simulate_data_margin(1000, sigma_e = -1.5, sigma_k = -2, sigma_m = -1, bias = 0, seed = 19997)
-
-df[1,]
-df %>% ggplot(aes(x = X*D, y = a_gauss))+geom_point()+geom_smooth(method = glm, method.args= list(family="binomial"))
-
-df %>% ggplot(aes(x = X*D, y = c_mu, col = as.factor(ACC)))+geom_point()+geom_smooth()
-df %>% ggplot(aes(x = X*D, y = c_mu, col = as.factor(a_gauss)))+geom_point()+geom_smooth()
-
-
-psy = df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,10)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss))
-conf = df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,10)) %>% group_by(XD,a_gauss) %>% summarize(mean = mean(c_mu))
-
-data.frame() %>% ggplot()+
-  geom_point(data = psy, aes(x = XD, y = mean), col = "black")+
-  geom_point(data = conf, aes(XD, y = mean, col = as.factor(a_gauss)))
-
-
-psy = df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,10)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss))
-conf = df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,10)) %>% group_by(XD,ACC) %>% summarize(mean = mean(c_mu))
-
-data.frame() %>% ggplot()+
-  geom_point(data = psy, aes(x = XD, y = mean), col = "black")+
-  geom_point(data = conf, aes(XD, y = mean, col = as.factor(ACC)))
-
-```
+## With X = 1
 
 
 ```{r, fig.height=12,fig.width=8}
@@ -215,37 +39,37 @@ fit = function(){
   
   qq = rnorm(1,1,1)
   
-  df = simulate_data(n = 300)
-
-  mod = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Simulations","old.stan"))
+  df = simulate_data_mcmc_x1(n = 300)
+# 
+#   mod = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Simulations","old.stan"))
+#   
+#   datastan = list(a = df$a_gauss,
+#                   ACC = df$ACC,
+#                   C = df$C,
+#                   # rts = df$rts,
+#                   N = nrow(df),
+#                   XD = df$X * df$D,
+#                   X = df$X)
+#   
+#   
+#   fit = mod$sample(data = datastan,
+#                    iter_warmup = 500,
+#                    refresh = 0,
+#                    iter_sampling = 500,
+#              parallel_chains = 4)
+#   
+#   div = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq,
+#                                                         time = fit$time()$total)
+#   
+#   estimated = fit$summary("gm") %>% mutate(variable = c("alpha","beta","confprec","metauncor","metauninc","metabias"
+#                                             )) %>% mutate(div = max(div$num_divergent))
+#   
+#   loo = fit$loo()
+#   
+#   pareto_o7 = sum(loo$diagnostics$pareto_k > 0.7)
   
-  datastan = list(a = df$a_gauss,
-                  ACC = df$ACC,
-                  C = df$C,
-                  # rts = df$rts,
-                  N = nrow(df),
-                  XD = df$X * df$D,
-                  X = df$X)
   
-  
-  fit = mod$sample(data = datastan,
-                   iter_warmup = 500,
-                   refresh = 0,
-                   iter_sampling = 500,
-             parallel_chains = 4)
-  
-  div = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq,
-                                                        time = fit$time()$total)
-  
-  estimated = fit$summary("gm") %>% mutate(variable = c("alpha","beta","confprec","metauncor","metauninc","metabias"
-                                            )) %>% mutate(div = max(div$num_divergent))
-  
-  loo = fit$loo()
-  
-  pareto_o7 = sum(loo$diagnostics$pareto_k > 0.7)
-  
-  
-  modnew = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Simulations","final_heu.stan"))
+  modnew = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Simulations","Heurestic_X1.stan"))
 
   datastan = list(a = df$a_gauss,
                 ACC = df$ACC,
@@ -263,22 +87,22 @@ fit = function(){
              parallel_chains = 4)
   
   diva = data.frame(fita$diagnostic_summary())%>% mutate(sim = qq,
-                                                        time = fit$time()$total)
+                                                        time = fita$time()$total)
   
   estimateda = fita$summary("gm") %>% mutate(variable = c("beta","sigma_e","sigma_k","sigma_m","confprec"
                                             )) %>% mutate(div = max(diva$num_divergent))
   
-  looa = fita$loo()
-  
-  pareto_o7a = sum(looa$diagnostics$pareto_k > 0.7)
-  
-  loo_comparison = data.frame(loo::loo_compare(list(old = loo, action = looa))) %>% 
-    rownames_to_column("model") %>% 
-    arrange(model) %>% 
-    mutate(pareto_k = c(pareto_o7a,pareto_o7))
-  
-  additional = fita$summary(c("sigma1","sigma2"))%>% 
-    mutate(div = max(diva$num_divergent))
+  # looa = fita$loo()
+  # 
+  # pareto_o7a = sum(looa$diagnostics$pareto_k > 0.7)
+  # 
+  # loo_comparison = data.frame(loo::loo_compare(list(old = loo, action = looa))) %>% 
+  #   rownames_to_column("model") %>% 
+  #   arrange(model) %>% 
+  #   mutate(pareto_k = c(pareto_o7a,pareto_o7))
+  # 
+  # additional = fita$summary(c("sigma1","sigma2"))%>% 
+  #   mutate(div = max(diva$num_divergent))
   
   
   simulated = data.frame(c0 = unique(df$c0),
@@ -301,12 +125,8 @@ fit = function(){
   
     
   result = list(simulated = simulated %>% mutate(sim_n = qq),
-                estimated = estimated%>% mutate(sim_n = qq, model = "old"),
                 estimateda = estimateda%>% mutate(sim_n = qq, model = "action"),
-                additional = additional%>% mutate(sim_n = qq),
-                loo = loo_comparison %>% mutate(sim_n = qq),
                 data = df%>% mutate(sim_n = qq),
-                div = div,
                 diva = diva,
                 mratio = mratio %>% mutate(sim_n = qq))
   
@@ -314,13 +134,302 @@ fit = function(){
 }
 
 qq = fit()
-2+2
 
-library(furrr)
-library(purrr)
-library(tidyverse)
+plan(multisession, workers = 10)
 
-plan(multisession, workers = 10)  # Windows-friendly
+safe_function <- possibly(fit, otherwise = "Error")
+
+# Run 20 times in parallel
+results_list <- future_map(1:1000, ~ safe_function(), .progress = T)
+
+saveRDS(results_list,here::here("Simulations","Heurestic","Saved models","1000sim_300trials_finalHeu_X1.RData"))
+
+results_list = results_list[-which(results_list == "Error")]
+```
+
+
+## Plotting
+
+```{r}
+results_list = readRDS("~/RDM-metacognition/Simulations/Heurestic/Saved models/1000sim_300trials_finalHeu_X1.RData")
+
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,2) %>% 
+    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
+    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
+    mutate(sim_n = esti_sim_n)
+) %>% 
+    # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
+  ggplot(aes(x = esti_sigma_e, y = sigma_e))+geom_point(alpha = 0.1)+geom_abline()+
+  ggtitle("action model")
+
+# inner_join(
+#   map_dfr(results_list,1), 
+#   map_dfr(results_list,2) %>% 
+#     filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+#     select(mean,variable,sim_n,div) %>% 
+#     pivot_wider(names_from = "variable",values_from = "mean") %>% 
+#     unnest()
+# ) %>% 
+#     # filter(div == 0 &  1/sqrt(sigma_k^2+sigma_e^2) < 20 & exp(beta) < 50) %>% 
+#   ggplot(aes(x = exp(beta), y = 1/sqrt(exp(sigma_k)^2+exp(sigma_e)^2)))+geom_point()+geom_abline()+
+#   ggtitle("old model")
+```
+
+```{r}
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,2) %>% 
+    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
+    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
+    mutate(sim_n = esti_sim_n)
+) %>% 
+    # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
+  ggplot(aes(x = esti_sigma_k, y = sigma_k))+geom_point(alpha = 0.1)+geom_abline()+
+  ggtitle("action model")
+
+```
+
+
+
+```{r}
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,2) %>% 
+    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
+    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
+    mutate(sim_n = esti_sim_n)
+) %>% 
+    # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
+  ggplot(aes(x = esti_sigma_m, y = sigma_m))+geom_point(alpha = 0.1)+geom_abline()+
+  ggtitle("action model")
+
+```
+
+
+
+
+
+```{r}
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,2) %>% 
+    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
+    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
+    mutate(sim_n = esti_sim_n)
+) %>% 
+    # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
+  ggplot(aes(x = (brms::inv_logit_scaled(esti_beta)-0.5)* 2, y = bias))+geom_point(alpha = 0.1)+geom_abline()+
+  ggtitle("action model")
+
+```
+
+
+```{r}
+
+inner_join(
+  map_dfr(results_list,1), 
+  map_dfr(results_list,2) %>% 
+    select(mean,variable,sim_n,div) %>% 
+    pivot_wider(names_from = "variable",values_from = "mean") %>% 
+    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
+    mutate(sim_n = esti_sim_n)
+) %>% 
+  # filter(div == 0) %>% 
+  ggplot(aes(x = exp(esti_confprec), y = conf_prec))+geom_point(alpha = 0.1)+geom_abline()+
+    ggtitle("action model")
+
+
+
+# inner_join(
+#   map_dfr(results_list,1), 
+#   map_dfr(results_list,2) %>% 
+#     select(mean,variable,sim_n,div) %>% 
+#     pivot_wider(names_from = "variable",values_from = "mean") %>% 
+#     unnest() 
+# ) %>% 
+#   filter(div == 0) %>% 
+#   ggplot(aes(x = exp(confprec), y = conf_prec))+geom_point()+geom_abline()+
+#     ggtitle("old model")
+
+```
+
+
+
+```{r}
+
+
+inner_join(
+  map_dfr(results_list,1),
+  map_dfr(results_list,5) 
+) %>% 
+  ggplot(aes(x = 1/sqrt(exp(sigma_e) ^2 +exp(sigma_k)^2), y = dprime))+
+  geom_point()+
+  geom_abline()
+
+inner_join(
+  map_dfr(results_list,1),
+  map_dfr(results_list,5) 
+) %>% 
+  ggplot(aes(x = 1/sqrt(exp(sigma_m)^2+exp(sigma_e)^2 + exp(sigma_k)^2), y = metaD))+
+  geom_point()+
+  geom_abline()
+
+
+inner_join(
+  map_dfr(results_list,1),
+  map_dfr(results_list,5) 
+) %>% 
+  filter(Ratio < 3 & Ratio > 0.1) %>%
+  filter((sigma_e & sigma_k & sigma_m > -5) & sigma_e & sigma_k & sigma_m < 0) %>%
+  mutate(xs = cut((1/sqrt(exp(sigma_m)^2+exp(sigma_e)^2 + exp(sigma_k)^2)) / (1/sqrt(exp(sigma_e) ^2 +exp(sigma_k)^2)),10)) %>% 
+  group_by(xs) %>% 
+  summarize(mean = mean(Ratio),
+            lower = HDInterval::hdi(Ratio,0.95)[1],
+            upper = HDInterval::hdi(Ratio,0.95)[2]) %>% 
+  mutate(xs = as.numeric(xs)/10) %>% 
+  ggplot(aes(x = xs, y = mean))+
+  geom_pointrange(aes(ymin = lower,ymax = upper))+
+  geom_abline()
+
+
+vv = inner_join(
+  map_dfr(results_list,1),
+  map_dfr(results_list,5) 
+) 
+
+cor.test(1/sqrt(exp(vv$sigma_m)^2+exp(vv$sigma_e)^2), vv$metaD)
+
+
+cor.test(1/sqrt(exp(vv$sigma_e)), vv$dprime)
+
+cor.test(1/sqrt(exp(vv$sigma_m)^2+exp(vv$sigma_e)^2 + exp(vv$sigma_k)^2) / (1/sqrt(exp(vv$sigma_e)^2 +exp(vv$sigma_k)^2)), vv$Ratio)
+
+
+```
+
+
+
+## with X
+
+
+
+```{r, fig.height=12,fig.width=8}
+
+fit = function(){
+  
+  qq = rnorm(1,1,1)
+  
+  df = simulate_data_mcmc(n = 300)
+# 
+#   mod = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Simulations","old.stan"))
+#   
+#   datastan = list(a = df$a_gauss,
+#                   ACC = df$ACC,
+#                   C = df$C,
+#                   # rts = df$rts,
+#                   N = nrow(df),
+#                   XD = df$X * df$D,
+#                   X = df$X)
+#   
+#   
+#   fit = mod$sample(data = datastan,
+#                    iter_warmup = 500,
+#                    refresh = 0,
+#                    iter_sampling = 500,
+#              parallel_chains = 4)
+#   
+#   div = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq,
+#                                                         time = fit$time()$total)
+#   
+#   estimated = fit$summary("gm") %>% mutate(variable = c("alpha","beta","confprec","metauncor","metauninc","metabias"
+#                                             )) %>% mutate(div = max(div$num_divergent))
+#   
+#   loo = fit$loo()
+#   
+#   pareto_o7 = sum(loo$diagnostics$pareto_k > 0.7)
+  
+  
+  modnew = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Simulations","Heurestic.stan"))
+
+  datastan = list(a = df$a_gauss,
+                ACC = df$ACC,
+                C = df$C,
+                N = nrow(df),
+                XD = df$X * df$D,
+                X = df$X)
+
+    
+
+  fita = modnew$sample(data = datastan,
+                   iter_warmup = 500,
+                   refresh = 0,
+                   iter_sampling = 500,
+             parallel_chains = 4)
+  
+  diva = data.frame(fita$diagnostic_summary())%>% mutate(sim = qq,
+                                                        time = fita$time()$total)
+  
+  estimateda = fita$summary("gm") %>% mutate(variable = c("beta","sigma_e","sigma_k","sigma_m","confprec"
+                                            )) %>% mutate(div = max(diva$num_divergent))
+  
+  # looa = fita$loo()
+  # 
+  # pareto_o7a = sum(looa$diagnostics$pareto_k > 0.7)
+  # 
+  # loo_comparison = data.frame(loo::loo_compare(list(old = loo, action = looa))) %>% 
+  #   rownames_to_column("model") %>% 
+  #   arrange(model) %>% 
+  #   mutate(pareto_k = c(pareto_o7a,pareto_o7))
+  # 
+  # additional = fita$summary(c("sigma1","sigma2"))%>% 
+  #   mutate(div = max(diva$num_divergent))
+  
+  
+  simulated = data.frame(c0 = unique(df$c0),
+                         c1 = unique(df$c1),
+                         sigma_k = unique(df$sigma_k),
+                         sigma_e =unique(df$sigma_e),
+                         sigma_m =unique(df$sigma_m),
+                         bias = unique(df$bias),
+                         conf_prec =unique(df$conf_prec)) %>% mutate(sim_n = qq)
+  
+  data = df %>% mutate(conf_bin = cut(C,4),
+                      stimulus  = as.factor(D),
+                      participant = 1,
+                      rating = as.numeric(as.factor(conf_bin)),
+                      correct = ACC) %>% drop_na()
+
+
+  
+  mratio = fitMetaDprime(data)
+  
+    
+  result = list(simulated = simulated %>% mutate(sim_n = qq),
+                # estimated = estimated%>% mutate(sim_n = qq, model = "old"),
+                estimateda = estimateda%>% mutate(sim_n = qq, model = "action"),
+                # additional = additional%>% mutate(sim_n = qq),
+                # loo = loo_comparison %>% mutate(sim_n = qq),
+                data = df%>% mutate(sim_n = qq),
+                # div = div,
+                diva = diva,
+                mratio = mratio %>% mutate(sim_n = qq))
+  
+  return(result)
+}
+
+qq = fit()
+
+plan(multisession, workers = 10)
 
 safe_function <- possibly(fit, otherwise = "Error")
 
@@ -332,7 +441,12 @@ saveRDS(results_list,here::here("Simulations","Heurestic","Saved models","10000s
 results_list = results_list[-which(results_list == "Error")]
 ```
 
+
+## Plotting
+
 ```{r}
+results_list = readRDS("~/RDM-metacognition/Simulations/Heurestic/Saved models/10000sim_300trials_finalHeu.RData")
+
 inner_join(
   map_dfr(results_list,1), 
   map_dfr(results_list,3) %>% 
@@ -346,17 +460,17 @@ inner_join(
   ggplot(aes(x = esti_sigma_e, y = sigma_e))+geom_point(alpha = 0.1)+geom_abline()+
   ggtitle("action model")
 
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,2) %>% 
-    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
-    select(mean,variable,sim_n,div) %>% 
-    pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest()
-) %>% 
-    # filter(div == 0 &  1/sqrt(sigma_k^2+sigma_e^2) < 20 & exp(beta) < 50) %>% 
-  ggplot(aes(x = exp(beta), y = 1/sqrt(exp(sigma_k)^2+exp(sigma_e)^2)))+geom_point()+geom_abline()+
-  ggtitle("old model")
+# inner_join(
+#   map_dfr(results_list,1), 
+#   map_dfr(results_list,2) %>% 
+#     filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
+#     select(mean,variable,sim_n,div) %>% 
+#     pivot_wider(names_from = "variable",values_from = "mean") %>% 
+#     unnest()
+# ) %>% 
+#     # filter(div == 0 &  1/sqrt(sigma_k^2+sigma_e^2) < 20 & exp(beta) < 50) %>% 
+#   ggplot(aes(x = exp(beta), y = 1/sqrt(exp(sigma_k)^2+exp(sigma_e)^2)))+geom_point()+geom_abline()+
+#   ggtitle("old model")
 ```
 
 ```{r}
@@ -392,6 +506,8 @@ inner_join(
   ggtitle("action model")
 
 ```
+
+
 ```{r}
 inner_join(
   map_dfr(results_list,1), 
@@ -437,25 +553,23 @@ inner_join(
     mutate(sim_n = esti_sim_n)
 ) %>% 
     # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
-  ggplot(aes(x = (brms::inv_logit_scaled(esti_beta)-0.5)* 2, y = bias))+geom_point()+geom_abline()+
+  ggplot(aes(x = (brms::inv_logit_scaled(esti_beta)-0.5)* 2, y = bias))+geom_point(alpha = 0.1)+geom_abline()+
   ggtitle("action model")
 
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,2) %>% 
-    select(mean,variable,sim_n,div) %>% 
-    pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest()
-) %>% 
-    # filter(div == 0 &  1/sqrt(sigma_k^2+sigma_e^2) < 20 & exp(beta) < 50) %>% 
-  ggplot(aes(x = (brms::inv_logit_scaled(alpha)-0.5) * 2, y = bias))+geom_point()+geom_abline()+
-  ggtitle("old model")
+# inner_join(
+#   map_dfr(results_list,1), 
+#   map_dfr(results_list,2) %>% 
+#     select(mean,variable,sim_n,div) %>% 
+#     pivot_wider(names_from = "variable",values_from = "mean") %>% 
+#     unnest()
+# ) %>% 
+#     # filter(div == 0 &  1/sqrt(sigma_k^2+sigma_e^2) < 20 & exp(beta) < 50) %>% 
+#   ggplot(aes(x = (brms::inv_logit_scaled(alpha)-0.5) * 2, y = bias))+geom_point()+geom_abline()+
+#   ggtitle("old model")
 ```
 
 
 ```{r}
-
-
 
 inner_join(
   map_dfr(results_list,1), 
@@ -466,21 +580,21 @@ inner_join(
     mutate(sim_n = esti_sim_n)
 ) %>% 
   # filter(div == 0) %>% 
-  ggplot(aes(x = exp(esti_confprec), y = conf_prec))+geom_point()+geom_abline()+
+  ggplot(aes(x = exp(esti_confprec), y = conf_prec))+geom_point(alpha = 0.1)+geom_abline()+
     ggtitle("action model")
 
 
 
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,2) %>% 
-    select(mean,variable,sim_n,div) %>% 
-    pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest() 
-) %>% 
-  filter(div == 0) %>% 
-  ggplot(aes(x = exp(confprec), y = conf_prec))+geom_point()+geom_abline()+
-    ggtitle("old model")
+# inner_join(
+#   map_dfr(results_list,1), 
+#   map_dfr(results_list,2) %>% 
+#     select(mean,variable,sim_n,div) %>% 
+#     pivot_wider(names_from = "variable",values_from = "mean") %>% 
+#     unnest() 
+# ) %>% 
+#   filter(div == 0) %>% 
+#   ggplot(aes(x = exp(confprec), y = conf_prec))+geom_point()+geom_abline()+
+#     ggtitle("old model")
 
 ```
 
@@ -493,7 +607,7 @@ inner_join(
   map_dfr(results_list,1),
   map_dfr(results_list,9) 
 ) %>% 
-  ggplot(aes(x = 1/sqrt(exp(sigma_e)), y = dprime))+
+  ggplot(aes(x = 1/sqrt(exp(sigma_e) ^2 +exp(sigma_k)^2), y = dprime))+
   geom_point()+
   geom_abline()
 
@@ -501,7 +615,7 @@ inner_join(
   map_dfr(results_list,1),
   map_dfr(results_list,9) 
 ) %>% 
-  ggplot(aes(x = 1/sqrt(exp(sigma_m)^2+exp(sigma_e)^2), y = metaD))+
+  ggplot(aes(x = 1/sqrt(exp(sigma_m)^2+exp(sigma_e)^2 + exp(sigma_k)^2), y = metaD))+
   geom_point()+
   geom_abline()
 
@@ -510,8 +624,16 @@ inner_join(
   map_dfr(results_list,1),
   map_dfr(results_list,9) 
 ) %>% 
-  ggplot(aes(x = exp(sigma_e)/sqrt(exp(sigma_m)^2+exp(sigma_e)^2), y = Ratio))+
-  geom_point()+
+  filter(Ratio < 3 & Ratio > 0.1) %>%
+  filter((sigma_e & sigma_k & sigma_m > -5) & sigma_e & sigma_k & sigma_m < 0) %>%
+  mutate(xs = cut((1/sqrt(exp(sigma_m)^2+exp(sigma_e)^2 + exp(sigma_k)^2)) / (1/sqrt(exp(sigma_e) ^2 +exp(sigma_k)^2)),10)) %>% 
+  group_by(xs) %>% 
+  summarize(mean = mean(Ratio),
+            lower = HDInterval::hdi(Ratio,0.95)[1],
+            upper = HDInterval::hdi(Ratio,0.95)[2]) %>% 
+  mutate(xs = as.numeric(xs)/10) %>% 
+  ggplot(aes(x = xs, y = mean))+
+  geom_pointrange(aes(ymin = lower,ymax = upper))+
   geom_abline()
 
 
@@ -525,7 +647,7 @@ cor.test(1/sqrt(exp(vv$sigma_m)^2+exp(vv$sigma_e)^2), vv$metaD)
 
 cor.test(1/sqrt(exp(vv$sigma_e)), vv$dprime)
 
-cor.test(exp(vv$sigma_e)/sqrt(exp(vv$sigma_m)^2+exp(vv$sigma_e)^2), vv$Ratio)
+cor.test(1/sqrt(exp(vv$sigma_m)^2+exp(vv$sigma_e)^2 + exp(vv$sigma_k)^2) / (1/sqrt(exp(vv$sigma_e)^2 +exp(vv$sigma_k)^2)), vv$Ratio)
 
 inner_join(map_dfr(results_list,5) %>% 
              filter(elpd_diff != 0),map_dfr(results_list,1)) %>% 
@@ -538,44 +660,3 @@ inner_join(map_dfr(results_list,5) %>%
 
 
 
-```{r}
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,8)
-) %>% 
-  ggplot(aes(x = 1/sqrt(sigma_k^2+sigma_e^2), y = dprime))+geom_point()+geom_abline()
-
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,8)
-) %>% 
-  ggplot(aes(x = sigma_m, y = metaD, col = sigma_k))+geom_point()
-
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,8)
-) %>% 
-  ggplot(aes(x = sigma_e, y = metaD))+geom_point()
-
-
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,8)
-) %>% 
-  ggplot(aes(x = 1/sqrt(sigma_m^2+sigma_e^2), y = metaD))+geom_point()+geom_abline()
-
-
-
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,8)
-) %>% mutate(sigma_k_bin = cut(sigma_k,10)) %>% 
-  filter((1/sqrt(sigma_m^2+sigma_e^2-sigma_k^2)) < 3) %>% 
-  ggplot(aes(x = log((1/sqrt(sigma_m^2+sigma_e^2+sigma_k^2))), y = metaD-2, col = sigma_k_bin))+
-  geom_point()+
-  # facet_wrap(~sigma_k_bin)+
-  geom_abline()
-
-
-
-```

@@ -41,6 +41,7 @@ plot_beh_data(df %>% filter(ID == "Rasmus_2026_04_02" & Trialtype == "Main"),NUL
 ```{r}
 model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","Single Subject","Heurestic.stan"))
 model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","Single Subject","Heurestic_v2.stan"))
+model1 = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Emperical dataanalysis","Single Subject","heu_xx.stan"))
 
 dd = df %>% 
   mutate(subject = as.numeric(as.factor(subject))) %>% 
@@ -55,13 +56,33 @@ fits <- lapply(dd_by_subj, function(d) {
 
 
 ```{r}
-models = list.files(here::here("Experimental analysis","Heurestic models","saved models","single subject"), full.names = T)
+models = list.files(here::here("Experimental analysis","Heurestic models","saved models","single subject","x1"), full.names = T)
 
 fits = list()
 for(model in models[1:9]){
   fit = readRDS(model)
   fits[[str_remove(str_remove(str_split(model, "/")[[1]][10],".rds"),"fit_")]] = fit  
 }
+
+models = list.files(here::here("Experimental analysis","Heurestic models","saved models","single subject","x"), full.names = T)
+
+fits2 = list()
+for(model in models[1:9]){
+  fit = readRDS(model)
+  fits2[[str_remove(str_remove(str_split(model, "/")[[1]][10],".rds"),"fit_")]] = fit  
+}
+
+
+q = q+1
+name = names(fits)[q]
+name
+
+loo::loo_compare(
+  list(
+    oldx = fits2[[name]]$loo(),
+    newx = fits[[name]]$loo()
+  )
+)
 
 ```
 

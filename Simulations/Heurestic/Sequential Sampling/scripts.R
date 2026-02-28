@@ -389,7 +389,7 @@ sim_new_subjects = function(max_subjects = 100){
   }
 
   
-  files = list.files((here::here("Simulations","Heurestic","Sequential Sampling","results")), full.names = T)
+  files = list.files((here::here("Simulations","Heurestic","Sequential Sampling","results","new")), full.names = T)
   files = files[3:5]
   results_list = list()
   q = 0

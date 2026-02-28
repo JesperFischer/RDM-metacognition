@@ -32,7 +32,7 @@ fit_model_ss = function(df, model,samples){
     fit$save_object(here::here("Experimental analysis","CANSANDRE","saved models",paste0("fit_",unique(df$ID),".rds")))
   }
   if(grepl("Heurestic",model$stan_file())){
-    fit$save_object(here::here("Experimental analysis","Heurestic models","saved models","single subject",paste0("fit_",unique(df$ID),".rds")))
+    fit$save_object(here::here("Experimental analysis","Heurestic models","saved models","single subject","x1",paste0("fit_",unique(df$ID),".rds")))
   }
   
   return(fit)
