@@ -8,7 +8,7 @@ pacman::p_load(cmdstanr, tidyverse,posterior, bayesplot, tidybayes,
 
 
 files = list.files((here::here("Simulations","Heurestic","Sequential Sampling","results","new")), full.names = T)
-files = files[4:length(files)]
+files = files[1:length(files)]
 results_list = list()
 q = 0
 for(i in 1:length(files)){
@@ -42,8 +42,8 @@ renames = c("gm[1]" = "beta",
             "gm[9]" = "beta_meta_bias")
 
 
-
-
+draws05 = c(683,420,1599)
+draws0 = c(932,1728,1077,1084,961)
 
 group_param_recov = purrr::map_dfr(
   results_list[1:length(results_list)],
@@ -124,7 +124,7 @@ main_parameters = purrr::map_dfr(
                "beta_meta_bias" = "darkgreen")
   ) +
   facet_wrap(~draw_id, labeller = label_both)+
-  theme(legend.position = "top")+
+  theme(legend.position = "top", scales = "free")+
   theme_classic()
 
 
@@ -157,7 +157,11 @@ Sequential_sampling = inner_join(purrr::map_dfr(
   theme_classic()+
   theme(legend.position = "top")
 
-sequential_samping_plot = ((main_parameters | Sequential_sampling)) + plot_layout(guides = "collect") &
+
+library(patchwork)
+
+sequential_samping_plot = ((main_parameters | Sequential_sampling)) + 
+  plot_layout(guides = "collect") +
   theme(
     legend.position = "top",
     legend.justification = "center",

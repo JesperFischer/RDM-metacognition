@@ -35,6 +35,8 @@ plot_beh_data(df %>%
 
 plot_beh_data(df %>% filter(ID == "Rasmus_2026_04_02" & Trialtype == "Main"),NULL,F)
 
+plot_beh_data(df %>% filter(ID == "Siebe_2026_28_02" & Trialtype == "Main"),9,F)
+
 ```
 
 ## fit the standard model with meta-uncertainty and meta-bias

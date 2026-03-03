@@ -10,11 +10,11 @@ output:
     # reference_docx: Knitting files/docx_template.docx
   pdf_document:
     latex_engine: xelatex
-# bibliography: 
-  # - "Knitting files/References.bib"
+bibliography:
+- "Knitting files/references.bib"
 link-citations: yes
 linkcolor: blue
-# csl: Knitting files/science-advances.csl
+csl: Knitting files/chicago-author-date.csl
 always_allow_html: yes
 ---
 
@@ -55,11 +55,11 @@ Metacognition, the ability to reflect on one's own cognitive processes, is commo
 
 Three key findings have emerged from this research:
 
-1) Confidence ratings reflect a noisy, subjective probability of being correct, incorporating response biases rather than purely objective performance [@caterina_capsaicin_1997; @; @].
+1) Confidence ratings reflect a noisy, subjective probability of being correct or self-consistency, incorporating response biases rather than purely objective performance [@CAZIOTPerceptualConfidenceJudgmentsReflectSelfconsistency2021; @SANCHEZ-FUENZALIDAConfidenceReportsPerceptualDecisionMakingDissociate2025; @MIHALIIntrospectiveInferenceCounteractsPerceptualDistortion2023a; @NAVAJASIdiosyncraticNatureConfidence2017].
 
-2) Confidence judgments most often underperform relative to first-order accuracy, (i.e. 90% Accuracy might produce 80% confidence) [@].
+2) Confidence judgments typically under perform relative to first-order accuracy, (i.e. 90% Accuracy might produce 80% confidence) [@SHEKHARSourcesMetacognitiveInefficiency2021].
 
-3) Metacognition and error-monitoring are functionally related systems. Being confident about an error is a form of error-monitoring. 
+3) Metacognition and error-monitoring are functionally related systems. Being confident about an error is a form of error-monitoring [@YEUNGMetacognitionHumanDecisionmakingConfidenceErrorMonitoring2012; @FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017; @OZTELMetricErrorMonitoringComponentMetacognitiveProcessing2024]. 
 
 
 ## Models of perceptual decision making and metacognition
@@ -74,30 +74,44 @@ Both of these approaches can be understood as (approximately) optimal solutions 
 
 ### Patterns of metacognition
 
-Metacognitive models regardless of originating from EA or SDT have been proposed to be able capture several empirical patterns observed in the literature.
+Metacognitive models regardless of originating from EA or SDT have been proposed to be able to capture several empirical patterns observed in the literature.
 
 1. **Performance increases with stimulus strength**: Stronger stimuli yield higher accuracy
-2. **Confidence increases with stimulus strength**: Stronger stimuli yield higher Confidence ratings (conditional on accuracy, see below)
-3. **Confidence curves shifts in tandem with binary choice curves**: As the psychometric function governing the choice probability moves from unbiased (threshold at 0) so does the confidence curves such that the lowest confidence ratings for correct trials are at the stimulus value of the threshold.
-4. **Confidence varies with accuracy**: The relationship between confidence and stimulus strength depends on response correctness, with correct trials showing higher confidence than incorrect.
-5. **"Folded-X" pattern**: Confidence increases with stimulus strength for correct responses but decreases (or plateaus) for errors—considered a signature of metacognition
-6. **"Double-increase" pattern**: Confidence increases with stimulus strength for both correct and incorrect responses
 
-Recent work suggests these two latter patterns of confidence arise from different experimental manipulations: 
-* **Folded-X** emerges when manipulating decision-relevant stimulus properties (e.g., coherence in RDM)
-* **Double-increase** occurs when manipulating auxiliary difficulty markers (e.g., stimulus visibility). 
+2. **Confidence increases with stimulus strength**: Stronger stimuli yield higher Confidence ratings (conditional on accuracy, see below) [@HANGYAMathematicalFrameworkStatisticalDecisionConfidence2016; @SANDERSSignaturesStatisticalComputationHumanSenseConfidence2016]
 
-From an error-monitoring perspective, folded-X reflects functioning error-monitoring (confidence decreases for errors), while the  double-increase pattern suggests limited or no error-monitoring.
+3. **Confidence curves shifts in tandem with binary choice curves**: As the psychometric function, governing the choice probability, moves from unbiased (threshold at 0) so does the confidence curves such that the lowest confidence ratings for correct trials are at the stimulus value of the threshold [@CAZIOTPerceptualConfidenceJudgmentsReflectSelfconsistency2021; @SANCHEZ-FUENZALIDAConfidenceReportsPerceptualDecisionMakingDissociate2025; @MIHALIIntrospectiveInferenceCounteractsPerceptualDistortion2023a].
+
+4. **Confidence varies with accuracy**: The relationship between confidence and stimulus strength depends on response correctness, with correct trials showing higher confidence than incorrect. [@HANGYAMathematicalFrameworkStatisticalDecisionConfidence2016; @SANDERSSignaturesStatisticalComputationHumanSenseConfidence2016]
+
+5a. **"Folded-X" pattern**: Confidence increases with stimulus strength for correct responses but decreases (or plateaus) for errors, considered a signature of metacognition [@HANGYAMathematicalFrameworkStatisticalDecisionConfidence2016; @SANDERSSignaturesStatisticalComputationHumanSenseConfidence2016]
+
+5b. **"Double-increase" pattern**: Confidence increases with stimulus strength for both correct and incorrect responses
+
+Recent work suggests these two latter patterns of confidence (5), arise from different experimental manipulations [@XUEStimulusReliabilityNotBoundaryDistanceManipulations2026; @FUNGSimilaritiesDifferencesEffectsDifferentStimulusManipulations2025]: 
+* **Folded-X**: Emerges when manipulating decision-relevant stimulus properties (e.g., coherence in RDM)
+* **Double-increase**: Occurs when manipulating auxiliary difficulty markers (e.g., stimulus visibility). 
+
+These recent studies investigating the two above mentioned patterns of confidence conditional on accuracy show these patterns on a confidence scale that ranges from guessing to certain. This highly limits how much the incorrect side of the confidence curve can express, as we will argue for in the next section. Furthermore, if subjects are not able express that they made an error, one might argue that this cannot be error-monitoring, even if confidence ratings for incorrect trials decrease as a function of stimulus intensity increasing. 
+
+These studies conceptualize these patterns as statistically significant increase and or decrease in confidence ratings and not from a generative model. Thus, these studies help hint at when and were different patterns emerge (and therefore also the mechanisms that might underlie confidence computation), but contain less information on the changes in the underlying generative process. A generative model of confidence cannot assume that confidence ratings are conditional on accuracy as this would imply that the agent knows the correctness of their choice before making the confidence judgement.
+
+
+These patterns of confidence can therefore be viewed from an error-monitoring perspective, but only when a particular confidence scale is used, where subjects are able to express they made a mistake. Furthermore, as expressed below, confidence ratings need to be administered after the binary choice and not simultaneously in order for subjects to make a mistake and then be aware of it. If subjects choose and rate simultaneously a folded X-pattern would mean that the subject deliberately answers incorrectly. 
+
+To summarize, only a full confidence scale ranging from incorrect to correct and a sequential design of choice -> confidence rating give subjects the ability to error-monitoring which would lead to a full folded-X pattern. This full folded-X pattern would have confidence ratings for incorrect trials going below the middle of the scale indicating "guessing". Only in such case could the folded-X reflect functioning error-monitoring (confidence decreases for errors), while the  double-increase pattern suggests limited or no error-monitoring.
+
+These considerations of the observed empirical patterns of confidence and binary choices are important, as they should guide the development of computational models trying to unravel the generative process. However, the experimental design and measurement scales are vital to consider, when looking at these empirical patterns. Some experimental designs allow for error-monitoring while others do not, some experimental designs use continuous measurements while others use binary or discrete. These are all considerations we lay out below.
 
 ## Confidence scales, Stimulus granularity, and measurement considerations
 
-Here we outline several different methodological considerations.
+Here we outline several different methodological considerations, and argue that some of these will inevitably determine the types of empirical data one can observe.
 
 **Confidence measurement**: Confidence is collected either discretely or continuously. Most computational models require discrete data, leading many to the discretization of continuous confidence.
 
 **Stimulus strength**: Similarly these measures are often binary or discretized.
 
-**Scale construction**: The particular anchors of a confidence scale constrain expressivity.
+**Scale construction**: The particular anchors of a confidence scale constrain expressiveness.
 
 * **Half-scale confidence.** A "half-scale" (e.g., "guessing" to "confident") prevents expressing certainty about errors: agents cannot indicate they are sure they made a mistake. This generally produces "half-folded-X" patterns (flatish incorrect branch) rather than a true folded-X.
 
@@ -106,12 +120,63 @@ Here we outline several different methodological considerations.
 * **Simultaneous choice–confidence paradigms.** When choice and confidence are indicated together, binary-confidence paradigms necessarily produce double-increase patterns, as otherwise this would imply agents deliberately choose the wrong answer.
 
 
-These patterns of confidence (i.e. the relationship between stimulus intensity and confidence conditional on Accuracy) mainly revolve around how the incorrect trials are distributed across stimulus strength. A key question is therefore why agents make such errors in the first place and especially how and why these errors are accompanied by a "knowing" of error (error monitoring). 
+These patterns of confidence (i.e. the relationship between stimulus intensity and confidence conditional on Accuracy) mainly revolve around how the incorrect trials are distributed across stimulus strength, as most of the literature agrees that confidence for correct trials increase as a function of stimulus strength. A key question is therefore why agents make such errors in the first place and especially how and why these errors are accompanied by a "knowing" of error (error monitoring). Considering the above points we believe that a task including continous stimulus and confidence ratings is the most parsimonious and statistically powered way to investigate meta cognition using confidence ratings. Furthermore, and more importantly a confidence scale that allows subjects to report that they made an error (i.e. a full scale) is paramount.
 
-We propose that this, at least partly, arises from variability in the choice process itself. Here contrary to most models of perceptual decision making that assume a deterministic choice after the evidence has been acquired, we propose that agents can be aware that they erred if instead of a deterministic process choices are generated through a stochastic process. Said another way we assume that there exists choice variability.
+
+## accounts of Error-monitoring
+
+Different computational models of meta cognition differ in how they try to account for error-monitoring. One of the main obstacles with the development of computational models that can express error-monitoring is to describe the why and how an agent would make a mistake, if they are subsequently aware of such mistake. The main way to deal with this, from a static and dynamic modeling perspective, is to view the information that is accessible to the rater, in comparison to the information accessible to the actor. If these agents have access to the same information (and the agent is rational), then these error-monitoring is impossible [@FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017]. Because of this it is generally thought that the rater has access to independent information i.e. information that is inaccessible to the actor.
+
+
+One particular prominent idea is that from Fleming and Daw [@FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017] that formalized the second order rater where evidence for the action and evidence for the confidence judgement is draw from a multivariate normal with correlation $\rho$ governing information sharing. If $\rho$ = 1, the confidence judgement is based on the same information as the action, however if $\rho$ = 0 the confidence judgement is based on completely independent information.
+
+
+Situating this independent information in the larger literature of metacognition in perceptual decision making, we observe a similar idea to independent information being available to the rater in the dynamic framework is that of post-decisional evidence accumulation. In these models evidence for the inital choice is thought to arise from a noisy accumulation process until an evidence bound is hit and a choice is made. It is the further assumed that evidence keeps accumulating after the choice in order for the subject to give a confidence rating [@PLESKACTwostageDynamicSignalDetectionTheoryChoice2010]. This framework of post-decisional evidence accumulation of confidence ratings is one of the leading theoretical accounts of the generative process underlying both choice and confidence ratings that can explain error-monitoring [@DESENDERUnderstandingNeuralSignalsPostdecisionalPerformanceMonitoring2021]. Below we provide a non-comprehensive review of studies investigating post-decisional evidence accumulation and not only challenge the idea that confidence judgements should get better with increased post-decisional evidence accumulation, but provide an alternative account of how error-monitoring might arise without any additional information avaliable to the rater.
+
+
+## Post Decisional Evidence Accumulation
+
+There has been several approaches at determining whether and how post decisional evidence accumulation (PDEA) works [@DESENDERUnderstandingNeuralSignalsPostdecisionalPerformanceMonitoring2021]. One line of studies examine PDEA using mouse or eye-tracking, in order to continously track the decision making process. Using mouse tracking and intercrainal recordings in patents suffering from epilepsy [@GOUEYTESEvidenceAccumulationPresupplementaryMotorAreaInsula2025] examined which anatomial regions of the brain serve as correlates of evidence accumulation, confidence and changes of mind. Results showed that the pre-supplementary motor area generally were associated with confidence, change of mind and evidence accumulation whereas the insula were more inline with post decisional evidence accumulation.  Most importantly for our discussion it was found that the average post decisional confidence time was $0.3 \pm 0.09s$ indicating a very fast process that unlikely is influenced by much conscious control. 
+
+In a similar study in health individuals [@RESULAJChangesMindDecisionmaking2009] showed similar behavioral results, where aggregated (across change of mind and usual decision making) response times in a similar task were around 0.5s. Interestingly when reexamining Figure 2 in their paper there seems to be a slight interaction effect between the difficultly of the trial (i.e. stimulus intensity) and whether the change of mind was beneficial for accuracy, i.e. for hard trials (very low coherence in the Random Dot Motion task), changes of mind seemed to do nothing or perhaps even be detrimental, whereas for easier trials (high coherence) changes of mind were on averaged observed to be beneficial for accuracy. 
+
+In a seminal paper [@KIANIRepresentationConfidenceAssociatedDecisionNeuronsParietal2009] showed how in Rhesus monkeys how a single anatomical region was both related to the formation of a choice and the confidence in that choice. These studies dynamically investigate the decision making and confidence formation process and generally suggest a PDEA window that might be small enough to be outside much of conscious intervention. Furthermore, the neural recordings generally show that similar areas are associated with evidence accumulation and confidence and or changes of mind, with the insula particularly mentioned for PDEA. Next we turn to experimental studies that investigate PDEA by either letting participants accumulate additional evidence after the initial decision has been made, or by manipulating the time between choice and confidence rating. 
+
+
+Firstly, [@FLEMINGNeuralMediatorsChangesMindPerceptualDecisions2018a] showed over two experiments (one with fMRI) how providing additional viewing time of the stimulus after the binary choice was made can increase the efficiency of the confidence ratings (i.e. how well they can distinguish between correct and incorrect choices). This was done in a experimental paradigm where the stimulus was presented for only 300m then a choice was made and then after 300ms of additional stimuli presentation. In a series of studies [@YUDynamicsPostdecisionalProcessingConfidence2015] investigated how increasing the time between binary choices and confidence ratings influenced confidence ratings in correct and incorrect choices. 
+
+
+Here we also want to highlight a particular assumption and or logical flow that is generally followed in the two ways of describing both choice and confidence formation. Dynamic models of choice generally follow a principle of mechanistic parsimony, positing that decision formation and performance monitoring rely on the same accumulation mechanism, although alternative and or distinct mechanisms remain plausible.
+ 
+Another way to investigate PDEA is to instruct subjects to either be as fast or as accurate as possible. [@BARANSKIProbingLocusConfidenceJudgmentsExperimentsTime1998] showed in a series of well designed experiments how such instructions change the temporal dynamics of binary responses and confidence judgements. Findings from these experiments showed that under speed stress (i.e. reporting as fast as possible, below 500ms), confidence response times increased, whereas under accuracy stress (i.e. reporting as accurately as possible) indicating that PDEA was happening. However, under accuracy stress no such association was found. Furthermore, as was also found in [@RESULAJChangesMindDecisionmaking2009] there seemed to be an interaction between difficulty confidence and correctness in the speed stress condition. This pattern generally showed that for easy trials a response of "guessing" (the lowest confidence anchor) subjects were significantly below 50% accuracy with the easiest trials having accuracies around 10% and then a monotonic increase to 30% at the highest difficulty. As the confidence in the choice increased this relationship was flipped such that for "certain" confidence ratings the proportion of correct responses were around 100% for the easiest trials and monotonically decreasing for increasing difficultly down to around 80%. These findings and the authors suggests that under time-pressure choice evidence accumulation and PDEA can be disentangled as here computational resources are stressed in the sequential way of the task. However, under accuracy stress when the computational resources are not stressed the evidence accumulation for the choice and the confidence judgement seem to coincide. As a side effect of speed stress subjects seemed to have more error-monitoring (although the use of the half-scale). We believe that this finding can be explained by the fact that the speed stress condition introduces more motor-errors which are recognized and thus capitalized on. 
+
+Now lastly the authors highlight an important prediction of the above suggestions, if participants are not instructed or instructed to give as accurate binary responses as possible then the introduction of a confidence rating should in principle increase the response time to the initial decision, compared to a case where only binary choices are collected. This has no later been confirmed by several different studies and groups [@PETRUSICJudgingConfidenceInfluencesDecisionProcessingComparative2003; @BARANSKITestingArchitecturesDecisionconfidenceRelation2001] (REFS).
+
+[@TSETSOSActionPlanningTimescaleEvidenceAccumulation2015] used an interrogation task to probe the time course of evidence accumulation. Such interrogation tasks have a fixed time that the subject can view the stimulus (i.e. 150, 250, 350 .. ms (VT)) and are prompted to give a response as fast as possible after indication that the time interval has passed. Then by simultaneously manipulating the time between the initial binary choice and the confidence judgement (ITI) they investigated PDA. In their first study they showed that increasing ITI slightly decreased confidence ratings, however this was conditional on accuracy with confidence ratings for incorrect trials generally decreasing and for correct trials staying relatively stable, especially for easier trials. No test of the interaction between VT and ITI on confidence ratings were reported. 
+
+In their second study they used a full-confidence scale, a RDM stimulus, 5 stimulus intensities and two conditions. The first condition subjects had access to the stimulus in the ITI whereas in the second they had not. Crucially the subjects had a fixed VT of 800ms. The main finding of experiment one was replicated now with even stronger effects (due to the use of more stimulus intensities and a full confidence scale), where confidence ratings for incorrect trials decreased significantly especially for easy trials, whereas correct trials remained relatively stable or slightly decreasing. Now crucially, whether the subject had access to the stimulus in the ITI did not cause any change in these relationships. 
+
+Now lastly, because most of the above studies made use of the RDM task and suggest a pattern where PDEA is dependent on the time a subject is exposed to the stimulus, investigating the time needed to make as accuracte as possible judgements in this task could be helpful to determine not only when one would expect subject to have accumulated enough evidence for their inital choice, and thus give a hint to the temporal dynamics in this task. [@TSETSOSActionPlanningTimescaleEvidenceAccumulation2015] showed that subjects did not improve in the RDM task when stimulus presentation time was above 300-600ms. Further, they manipulated the stimulus-response mapping from trial to trial (i.e. respond left to indicate "up"), such that in some trials participants new before viewing the stimulus which key was associated with which direction and in other trials they only knew after viewing the stimulus. This manipulation did not significant change the length of the stimulus presentation time on accuracy. These results indicate that in order to make an optimal decision the participants needed to view the stimulus for short period of time and this did not change even when manipulating the stimulus-response mapping.
+
+
+Taken together these above findings suggest a clear pattern for the circumstances in which PDEA might play a role in meta-cognition and error-monitoring. 
+
+Firstly, PDEA unfolds within a very short temporal window. Both intracranial recordings and behavioral change-of-mind paradigms suggest that post-choice dynamics occur within a few hundred milliseconds ( ~300–500 ms). This time course suggest that PDEA is not driven by slow, deliberative, consciously controlled processes, but instead an  extension of the same evidence accumulation dynamics that gave rise to the initial choice.
+
+Secondly, PDEA appears to be conditional on task demands and resource constraints. Under speed stress, choice and confidence can be partially dissociated, such that confidence response times increase, and for easy trials confidence ratings can better dissociate between correct and incorrect choices (particularly easy trials that are incorrect are recognized). In contrast, under accuracy stress, where sufficient time and computational resources are available, choice formation and confidence judgments appear to rely on largely overlapping evidence from the initial choice. This pattern supports the idea that PDEA becomes particularly visible when the primary decision process is pressed for time leaving potential time for PDEA because if not pressed evidence accumulation for both choice and confidence seem very close temporally if not completely overlapping. Importantly, in some paradigms PDEA does not depend on continued access to external sensory evidence, suggesting that internal evidence or residual neural activity may be sufficient to drive post-decisional updating. An alternative explanation 
+
+Thirdly, given a short stimulus presentation (300-600ms) subjects quickly asymptotes in their performance, meaning that with increasing viewing time they do not perform better. This together with the fact that subjects generally respond much slower when they know that they have to give a confidence judgement compared to when they only have to give a binary choice, suggest that maybe subjects do most, if not all, of the processing of confidence pre-decisionally if allowed by the task demands. 
+
+
+In sum, PDEA seems to operate within a narrow temporal window following choice commitment, and if subjects are stressed to produce a fast choice this PDEA can increase the ratings informativeness of choice accuracy. If one follows the argument of mechanistic parsimony, these results are well explained within an evidence accumulation framework of PDEA. However, we believe that there is a more generally parsimonious explanation of these data. 
+
+The short time-window of PDEA seem to suggest that the post-decision computation is a relatively automatic process that at least somewhat coincides in the pre-supplementary motor area. Furthermore, under speed stress subjects produce more errors, we believe that these errors are partly due to a decreased time for coordination between the CNS and the effector. This reduced coordination makes it more likely that the subject produces a motor error, which will quickly be picked up subject and then a low (even below guessing) confidence rating can be elicited. The process of an agent producing a motor error and subsequently becoming aware of it is consistent with motor control theory, particularly comparator models involving efference copy mechanisms. In this framework the evidence for the intial choice could be formed by an evidence accumulation, but then when enough evidence has been accumulated the agent acts, this action produces an efferent signal to the target muscles that produce the action. Meanwhile in the Central nervous system a copy of this signal (the efference copy) is processed by an internal prediction system that uses a forward model to compute / predict the expected consequences and subsequent afferent signals. As the action is executed and the afferent signals gets processed in the central nervous system, the brain compares these afferent signals with the predictions from the forward model in a comparator mechanism that then generates a short of prediction error. In short, the brain generates a signal to the periphery and then asks the question, "did i get the sensory feedback that i expected given the command that i sent". This theory would therefore predict that having generated the efference copy, with or without the efferent signal, a subject would be able judge its confidence, but only conditional on the action being what was expected. Then with the information about the agents own action, it is possible for the agent to change its mind on whether they believe it to be correct or not.
+
+
+We propose that Error-monitoring, at least partly, arises from variability in the choice process itself. Here contrary to most models of perceptual decision making that assume a deterministic choice after the evidence has been acquired, we propose that agents can be aware that they erred if instead of a deterministic process choices are generated through a stochastic process. Said another way we assume that there exists choice variability.
 
 Usually in perceptual decision making models evidence variability and choice variability would be indistinguishable when observing only binary responses. 
 However, by incorporating confidence ratings, we can disentangle these noise sources.
-We demonstrate that our model, which includes choice variability, can produce the full range of patterns (folded-X to double-increase) and represents a specific instantiation of Fleming and Daw's second-order framework without the need for independent information for the generation of confidence ratings to have error monitoring.
+We demonstrate that our model, which includes choice variability, can produce most of the above described patterns of confidence ratings and choices and represents a specific instantiation of Fleming and Daw's second-order framework without the need for independent information for the generation of confidence ratings to have error monitoring.
 
 

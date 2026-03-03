@@ -75,9 +75,10 @@ This criterion is usually thought to be static within an experimental setting fo
 
 #### Meta-cognition
 
-After having made a choice, the agent might be asked to give a confidence judgement in their choice. A particularly prominent way to conceptualize this is to think that the agent computes the probability that the action that they produced was correct.
+After having made a choice, the agent might be asked to give a confidence judgement in their choice. A particularly prominent way to conceptualize this is to think that the agent computes the probability that the action that they produced was correct. Below we write one promient idea of how such confidence ratings might be computed that allows for error-monitoring [@FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017].
 
-In order to do such computation models of metacognition differ in what information is accessible to the rater to make the confidence judgement. Some models assume the same and or a noisy readout of the evidence used to compute the action. Others assume that the rater has access to  independent information i.e. above the evidence used to make the action. Such models have been shown to allow for the agent to be able to error-monitor i.e. be aware of their own errors. One particular prominent idea is that from Fleming and Daw (REF) that formalized the second order rater where evidence for the action and evidence for the confidence judgement is draw from a multivariate normal with correlation $\rho$ governing information sharing. I.e. if $\rho$ = 1, the confidence judgement is based on the same information as the action, however if $\rho$ = 0 the confidence judgement is based on completely independent information. Note we here write this model as originally proposed by Fleming and Daw without the evidence bias
+
+In this formulation confidence judgement are based on draws from a multivariate normal, which contains the evidence used for the action $e_i$ and partically independent information only accesiable to the rater $r_i$, these quantities are assumed to be correlated with $\rho$ governing information sharing. I.e. if $\rho$ = 1, the confidence judgement is based on the same information as the action, however if $\rho$ = 0 the confidence judgement is based on completely independent information. Note we here write this model as originally proposed by Fleming and Daw without the evidence bias
 
 $$
 \begin{bmatrix}e_i \\ r_i\end{bmatrix}\sim \mathcal{N}\left(\begin{bmatrix}X_iD_i \\ X_iD_i\end{bmatrix},\begin{bmatrix}\sigma_e^2 & \rho \cdot \sigma_e \cdot \sigma_m \\ \rho \cdot \sigma_e \cdot \sigma_m & \sigma_m^2\end{bmatrix}\right)
@@ -85,10 +86,7 @@ $$
 
 The rater is then thought to use this information to calculate the subjective probability of being correct, to make a confidence judgement.
 
-One of the main arguments for such model and other models with independent information was to explain error-monitoring i.e. agents ability to know that they produced an error and give low (even below guessing) confidence ratings.
-
-Before outlining our proposed model we here want to situate this independent information in larger literature of metacognition in perceptual decision making. A similar idea to independent information being available to the rater in the static framework is that of post-decisional evidence accumulation in the dynamic framework. In such models evidence for the inital choice is thought to arise from a noisy accumulation process until an evidence bound is hit and a choice is made. To account for Confidence ratings many of such models then assume that evidence keeps accumulating after the choice have been made and can therefore analogously to the independent information framework account for error-monitoring. Although quite some studies have investigated post-decisional evidence accumulation (REF) (blablabla).
-
+One of the main arguments for such model and other models with independent information was to explain error-monitoring i.e. agents' ability to know that they produced an error and give low (even below guessing) confidence ratings, see [Design considerations](Models and Data in Perceptual Decision-Making with Confidence.Rmd), for an in depth consideration of this account and how it relates to dynamic models of meta-cognition and espcially post-decisional evidence accumulation.
 
 
 
@@ -138,7 +136,7 @@ Here the function $g(.)$ is the inverse logit function i.e. $g(x)= \frac{1}{1+ex
 
 From confidence alone, only $\sigma_e^2 + \sigma_m^2$ is identifiable. However, combining choices and confidence allows estimating all three parameters: $\sigma_e$, $\sigma_c$, and $\sigma_m$. 
 
-As can be seen from equation (2), to compute the probability of being correct the agent (rater) needs access to the stimulus intensity ($X_i$), eventhough assumed in some models (REF), we believe that this assumption cannot hold for several reasons. We will get back to these reasons and a final formulation without this term later.
+As can be seen from equation (2), to compute the probability of being correct the agent (rater) needs access to the stimulus intensity ($X_i$), even though assumed in some models [@FLEMINGNeuralMediatorsChangesMindPerceptualDecisions2018a], we believe that the agent cannot have access to the objective stimulus intensity for several reasons. We will get back to these reasons and a final formulation without this term later. Interested readers are refereed to [@RAUSCHFoldedXpatternNotNecessarilyStatisticalSignature2019], were simulations are conducted with differing generative processes for the stimulus intensity.
 
 
 
@@ -648,7 +646,13 @@ Interestingly these two stimulus intensities, especially the first one (which is
 
 Not only is this a strong assumption that we will challenge regardless, due to empirical findings of confidence bias (i.e. some subjects reporting higher confidence than others on average), but the main problem with this formulation is that with this anchor at (0,0.5) the confidence curves cannot produce one of the main empirical patterns of confidence ratings, which we highlighted in the [Models and Data Markdown](Models and Data in Perceptual Decision-Making with Confidence.Rmd). Here we formalized that confidence ratings reflect a noisy, subjective probability of being correct, incorporating response biases rather than purely objective performance. With the above formulation this is not possible as there is an objective anchor at $X_i = 0$. 
 
-Due to these consideration, supported by some empirical validation on our pilot data below, we believe that this particular stimulus intensity, coming from an unjustified assumption of the agent having access to the stimulus intensity, needs to be accessed. One particular interesting idea of how to deal with this is to assume that the agent has a noisy readout of the stimulus strength, $\hat{X} \sim p(\hat{x}|\theta,c)$. The problem with such formulation is that the defining the probability distribution of the internal stimulus intensity is not trivial as its positively bound and therefore would not easily be marginalized as above. Another approach would be to replace this stimulus intensity value with a constant across subject parameter that would serve as a placeholder for idosyncratic differences in how subjects might use the stimulus intensity above and beyond what they should have access to. Instead of opting for these options we chose to assume that the agents do not have access to this stimulus intensity and therefore fix it to 1. This approach in its simplicity circumvents some of the troublesome computational aspects as well as obeying to what the agents is assumed to have access to, but just as importantly this makes it possible for the model to accommodate the emperical observation that the confidence curve follows the psychometric function of the binary choices.
+Due to these consideration, supported by some empirical validation on our pilot data below, we believe that this particular stimulus intensity, coming from an unjustified assumption of the agent having access to the stimulus intensity, needs to be accessed. 
+
+One particular interesting idea of how to deal with this is to assume that the agent has a noisy readout of the stimulus strength, $\hat{X} \sim p(\hat{x}|\theta,c)$. The problem with such formulation is that the defining the probability distribution of the internal stimulus intensity is not trivial as its positively bound and therefore would not easily be marginalized as above. 
+
+Another approach would be to replace this stimulus intensity value with a constant across subject parameter that would serve as a placeholder for idosyncratic differences in how subjects might use the stimulus intensity above and beyond what they should have access to. 
+
+Instead of opting for these options we chose to assume that the agents do not have access to this stimulus intensity and therefore fix it to 1. This approach in its simplicity circumvents some of the troublesome computational aspects as well as obeying to what the agents is assumed to have access to, but just as importantly this makes it possible for the model to accommodate the emperical observation that the confidence curve follows the psychometric function of the binary choices.
 
 This means that the final equations become
 
