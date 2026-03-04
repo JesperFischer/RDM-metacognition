@@ -354,7 +354,7 @@ sim_new_subjects = function(max_subjects = 100){
   n_subj <- c(5,7,9, 12,15,20,25)
   library(furrr)
   
-  for(i in 100:150){
+  for(i in 750:800){
     
     draws_id = sample(nrow(post_draws), 1)
     
@@ -362,8 +362,8 @@ sim_new_subjects = function(max_subjects = 100){
     
     new_subjects =
       post_draws %>% filter(draw %in% draws_id) %>%
-      mutate(`gm.8.` = 0.05,
-             `gm.9.` = 0.05) %>%
+      mutate(`gm.8.` = -0.05,
+             `gm.9.` = -0.05) %>%
       rowwise() %>% 
       mutate(sim = list(simulate_subjects(cur_data(), S = max_subjects,P = 9))) %>% 
       unnest(sim) %>% 
@@ -383,7 +383,7 @@ sim_new_subjects = function(max_subjects = 100){
       .options = furrr_options(seed = TRUE)
     )
     
-    saveRDS(results_list,here::here(paste0("test_effect_0_both_priors_0.5_nopathfinder",i,".RData")))
+    saveRDS(results_list,here::here(paste0("test_effect_0_both_priors_-0.5_nopathfinder",i,".RData")))
     
     
   }
