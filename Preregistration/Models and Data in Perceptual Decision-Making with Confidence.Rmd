@@ -111,7 +111,7 @@ below we describe in more detail how experimental designs and measurement scale 
 
 Here we outline several methodological considerations, and argue that some of these will inevitably determine the types of empirical data one can observe.
 
-**Confidence measurement**: Confidence is collected either discretely or continuously. One of the most models of metacognition (M-ratio) require discrete data, leading many experiments collecting or discretization of continuous confidence [@MANISCALCOSignalDetectionTheoreticApproachEstimatingMetacognitive2012; @HMeta-d: hierarchical Bayesian estimation of metacognitive efficiency from confidence ratings].
+**Confidence measurement**: Confidence is collected either discretely or continuously. One of the most models of metacognition (M-ratio) require discrete data, leading many experiments collecting or discretization of continuous confidence [@MANISCALCOSignalDetectionTheoreticApproachEstimatingMetacognitive2012; @FLEMINGHMetadHierarchicalBayesianEstimationMetacognitiveEfficiency2017: hierarchical Bayesian estimation of metacognitive efficiency from confidence ratings].
 
 **Stimulus strength**: Main stimulus axis that determine the difficultly of a trial. can be discrete or continuous.
 
@@ -181,4 +181,8 @@ From the above formulation we propose that error-monitoring can arise from choic
 
 In the following section we derive one particular model incorporating choice variability, which can produce the empirical patterns of confidence and choices described above. We show that this model can be expressed as a specific instantiation of Fleming and Daw's second-order framework [@FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017], but critically, without requiring independent information but still allowing for error-monitoring. The rater need only access the actor's chosen action, not additional post-decisional evidence.
 
+# References
+
+::: {#refs}
+:::
 

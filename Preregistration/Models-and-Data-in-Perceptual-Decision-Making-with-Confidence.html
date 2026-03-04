@@ -413,8 +413,8 @@ Rahnev 2021</a>)</span>.</p></li>
 <li><p>Metacognition and error-monitoring are functionally related
 systems. Being confident about an error is a form of error-monitoring
 <span class="citation">(<a href="#ref-YEUNGMetacognitionHumanDecisionmakingConfidenceErrorMonitoring2012">Yeung
-and Summerfield 2012</a>; <a href="#ref-FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017">Fleming
-and Daw 2017</a>; <a href="#ref-OZTELMetricErrorMonitoringComponentMetacognitiveProcessing2024">Öztel
+and Summerfield 2012</a>; <a href="#ref-FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017">Stephen
+M. Fleming and Daw 2017</a>; <a href="#ref-OZTELMetricErrorMonitoringComponentMetacognitiveProcessing2024">Öztel
 and Balcı 2024</a>)</span>.</p></li>
 </ol>
 <div id="models-of-perceptual-decision-making-and-metacognition" class="section level2">
@@ -525,10 +525,10 @@ can observe.</p>
 <p><strong>Confidence measurement</strong>: Confidence is collected
 either discretely or continuously. One of the most models of
 metacognition (M-ratio) require discrete data, leading many experiments
-collecting or discretization of continuous confidence <span class="citation">(<a href="#ref-MANISCALCOSignalDetectionTheoreticApproachEstimatingMetacognitive2012"><strong>MANISCALCOSignalDetectionTheoreticApproachEstimatingMetacognitive2012?</strong></a>;
-<a href="#ref-HMeta-d"><strong>HMeta-d?</strong></a> hierarchical
-Bayesian estimation of metacognitive efficiency from confidence
-ratings)</span>.</p>
+collecting or discretization of continuous confidence <span class="citation">(<a href="#ref-MANISCALCOSignalDetectionTheoreticApproachEstimatingMetacognitive2012">Maniscalco
+and Lau 2012</a>; <a href="#ref-FLEMINGHMetadHierarchicalBayesianEstimationMetacognitiveEfficiency2017">Stephen
+M. Fleming 2017</a>: hierarchical Bayesian estimation of metacognitive
+efficiency from confidence ratings)</span>.</p>
 <p><strong>Stimulus strength</strong>: Main stimulus axis that determine
 the difficultly of a trial. can be discrete or continuous.</p>
 <p><strong>Confidence scale construction</strong>: The particular
@@ -572,261 +572,146 @@ of.</p>
 modeling perspectives, is to assume that the information that is
 accessible for the binary choice that is evaluated by the confidence
 rating is not identical, as if this was the case error-monitoring would
-be impossible <span class="citation">(<a href="#ref-FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017">Fleming
-and Daw 2017</a>)</span>.</p>
-<p>Because of this <span class="citation">Fleming and Daw (<a href="#ref-FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017">2017</a>)</span>
-that formalized the second order rater where evidence for the action and
-evidence for the confidence judgement is draw from a multivariate normal
-with correlation <span class="math inline">\(\rho\)</span> governing
-information sharing. If <span class="math inline">\(\rho\)</span> = 1,
-the confidence judgement is based on the same information as the action,
-however if <span class="math inline">\(\rho\)</span> = 0 the confidence
-judgement is based on completely independent information.</p>
-<p>Situating this independent information in the larger literature of
-metacognition in perceptual decision making, we observe a similar idea
-to independent information being available to the rater in the dynamic
-framework is that of post-decisional evidence accumulation. In these
-models evidence for the inital choice is thought to arise from a noisy
+be impossible <span class="citation">(<a href="#ref-FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017">Stephen
+M. Fleming and Daw 2017</a>)</span>.</p>
+<p>Because of this <span class="citation">Stephen M. Fleming and Daw (<a href="#ref-FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017">2017</a>)</span>
+formalized the second order rater. In this framework evidence for the
+action and evidence for the confidence judgement is draw from a
+multivariate normal with correlation <span class="math inline">\(\rho\)</span> governing information sharing. If
+<span class="math inline">\(\rho\)</span> = 1, the confidence judgement
+is based on the same information as the action (and no error-monitoring
+is possible), however if <span class="math inline">\(\rho\)</span> = 0
+the confidence judgement is based on completely independent
+information.</p>
+<p>A similar idea to the independent information accessible to the rater
+has been proposed in the dynamic models of perceptual decision making.
+In these models evidence for the inital choice arise from a noisy
 accumulation process until an evidence bound is hit and a choice is
-made. It is the further assumed that evidence keeps accumulating after
-the choice in order for the subject to give a confidence rating <span class="citation">(<a href="#ref-PLESKACTwostageDynamicSignalDetectionTheoryChoice2010">Pleskac
-and Busemeyer 2010</a>)</span>. This framework of post-decisional
-evidence accumulation of confidence ratings is one of the leading
-theoretical accounts of the generative process underlying both choice
-and confidence ratings that can explain error-monitoring <span class="citation">(<a href="#ref-DESENDERUnderstandingNeuralSignalsPostdecisionalPerformanceMonitoring2021">Desender
+made. It is then further assumed that evidence keeps accumulating after
+the choice, in a post decision evidence accumulation window, which then
+gives rise to a confidence rating <span class="citation">(<a href="#ref-PLESKACTwostageDynamicSignalDetectionTheoryChoice2010">Pleskac
+and Busemeyer 2010</a>)</span>.</p>
+<p>This framework of post-decisional evidence accumulation (PDEA) of
+confidence ratings is one of the leading theoretical accounts of the
+generative process underlying both choice and confidence ratings that
+can explain error-monitoring <span class="citation">(<a href="#ref-DESENDERUnderstandingNeuralSignalsPostdecisionalPerformanceMonitoring2021">Desender
 et al. 2021</a>)</span>. Below we provide a non-comprehensive review of
-studies investigating post-decisional evidence accumulation and not only
-challenge the idea that confidence judgements should get better with
-increased post-decisional evidence accumulation, but provide an
-alternative account of how error-monitoring might arise without any
-additional information avaliable to the rater.</p>
+studies investigating PDEA. Here we challenge the idea that additional
+independent information is used or necessary for the computation of
+confidence to explain the confidence patterns described above and
+error-monitoring. We end by arguing that the rater just needs access to
+the action provided by the actor in order to explain the empirical
+patterns.</p>
 </div>
 <div id="post-decisional-evidence-accumulation" class="section level2">
 <h2>Post Decisional Evidence Accumulation</h2>
-<p>There has been several approaches at determining whether and how post
-decisional evidence accumulation (PDEA) works <span class="citation">(<a href="#ref-DESENDERUnderstandingNeuralSignalsPostdecisionalPerformanceMonitoring2021">Desender
-et al. 2021</a>)</span>. One line of studies examine PDEA using mouse or
-eye-tracking, in order to continously track the decision making process.
-Using mouse tracking and intercrainal recordings in patents suffering
-from epilepsy <span class="citation">(<a href="#ref-GOUEYTESEvidenceAccumulationPresupplementaryMotorAreaInsula2025">Goueytes
-et al. 2025</a>)</span> examined which anatomial regions of the brain
-serve as correlates of evidence accumulation, confidence and changes of
-mind. Results showed that the pre-supplementary motor area generally
-were associated with confidence, change of mind and evidence
-accumulation whereas the insula were more inline with post decisional
-evidence accumulation. Most importantly for our discussion it was found
-that the average post decisional confidence time was <span class="math inline">\(0.3 \pm 0.09s\)</span> indicating a very fast
-process that unlikely is influenced by much conscious control.</p>
-<p>In a similar study in health individuals <span class="citation">(<a href="#ref-RESULAJChangesMindDecisionmaking2009">Resulaj et al.
-2009</a>)</span> showed similar behavioral results, where aggregated
-(across change of mind and usual decision making) response times in a
-similar task were around 0.5s. Interestingly when reexamining Figure 2
-in their paper there seems to be a slight interaction effect between the
-difficultly of the trial (i.e. stimulus intensity) and whether the
-change of mind was beneficial for accuracy, i.e. for hard trials (very
-low coherence in the Random Dot Motion task), changes of mind seemed to
-do nothing or perhaps even be detrimental, whereas for easier trials
-(high coherence) changes of mind were on averaged observed to be
-beneficial for accuracy.</p>
-<p>In a seminal paper <span class="citation">(<a href="#ref-KIANIRepresentationConfidenceAssociatedDecisionNeuronsParietal2009">Kiani
-and Shadlen 2009</a>)</span> showed how in Rhesus monkeys how a single
-anatomical region was both related to the formation of a choice and the
-confidence in that choice. These studies dynamically investigate the
-decision making and confidence formation process and generally suggest a
-PDEA window that might be small enough to be outside much of conscious
-intervention. Furthermore, the neural recordings generally show that
-similar areas are associated with evidence accumulation and confidence
-and or changes of mind, with the insula particularly mentioned for PDEA.
-Next we turn to experimental studies that investigate PDEA by either
-letting participants accumulate additional evidence after the initial
-decision has been made, or by manipulating the time between choice and
-confidence rating.</p>
-<p>Firstly, <span class="citation">(<a href="#ref-FLEMINGNeuralMediatorsChangesMindPerceptualDecisions2018a">Fleming
-et al. 2018</a>)</span> showed over two experiments (one with fMRI) how
-providing additional viewing time of the stimulus after the binary
-choice was made can increase the efficiency of the confidence ratings
-(i.e. how well they can distinguish between correct and incorrect
-choices). This was done in a experimental paradigm where the stimulus
-was presented for only 300m then a choice was made and then after 300ms
-of additional stimuli presentation. In a series of studies <span class="citation">(<a href="#ref-YUDynamicsPostdecisionalProcessingConfidence2015">Yu et al.
-2015</a>)</span> investigated how increasing the time between binary
-choices and confidence ratings influenced confidence ratings in correct
-and incorrect choices.</p>
-<p>Here we also want to highlight a particular assumption and or logical
-flow that is generally followed in the two ways of describing both
-choice and confidence formation. Dynamic models of choice generally
-follow a principle of mechanistic parsimony, positing that decision
-formation and performance monitoring rely on the same accumulation
-mechanism, although alternative and or distinct mechanisms remain
-plausible.</p>
-<p>Another way to investigate PDEA is to instruct subjects to either be
-as fast or as accurate as possible. <span class="citation">(<a href="#ref-BARANSKIProbingLocusConfidenceJudgmentsExperimentsTime1998">Baranski
-and Petrusic 1998</a>)</span> showed in a series of well designed
-experiments how such instructions change the temporal dynamics of binary
-responses and confidence judgements. Findings from these experiments
-showed that under speed stress (i.e. reporting as fast as possible,
-below 500ms), confidence response times increased, whereas under
-accuracy stress (i.e. reporting as accurately as possible) indicating
-that PDEA was happening. However, under accuracy stress no such
-association was found. Furthermore, as was also found in <span class="citation">(<a href="#ref-RESULAJChangesMindDecisionmaking2009">Resulaj et al.
-2009</a>)</span> there seemed to be an interaction between difficulty
-confidence and correctness in the speed stress condition. This pattern
-generally showed that for easy trials a response of “guessing” (the
-lowest confidence anchor) subjects were significantly below 50% accuracy
-with the easiest trials having accuracies around 10% and then a
-monotonic increase to 30% at the highest difficulty. As the confidence
-in the choice increased this relationship was flipped such that for
-“certain” confidence ratings the proportion of correct responses were
-around 100% for the easiest trials and monotonically decreasing for
-increasing difficultly down to around 80%. These findings and the
-authors suggests that under time-pressure choice evidence accumulation
-and PDEA can be disentangled as here computational resources are
-stressed in the sequential way of the task. However, under accuracy
-stress when the computational resources are not stressed the evidence
-accumulation for the choice and the confidence judgement seem to
-coincide. As a side effect of speed stress subjects seemed to have more
-error-monitoring (although the use of the half-scale). We believe that
-this finding can be explained by the fact that the speed stress
-condition introduces more motor-errors which are recognized and thus
-capitalized on.</p>
-<p>Now lastly the authors highlight an important prediction of the above
-suggestions, if participants are not instructed or instructed to give as
-accurate binary responses as possible then the introduction of a
-confidence rating should in principle increase the response time to the
-initial decision, compared to a case where only binary choices are
-collected. This has no later been confirmed by several different studies
-and groups <span class="citation">(<a href="#ref-PETRUSICJudgingConfidenceInfluencesDecisionProcessingComparative2003">Petrusic
+<p>There has been several approaches at determining how post decisional
+evidence accumulation (PDEA) works. Generally it has been shown that
+PDEA increase meta cognitive efficiency and have particular
+electro-phyisological signatures <span class="citation">(<a href="#ref-DESENDERUnderstandingNeuralSignalsPostdecisionalPerformanceMonitoring2021">Desender
+et al. 2021</a>)</span>.</p>
+<p><strong>Temporal dynamics of Post Decisional Evidence
+Accumulation</strong> PDEA unfolds within a remarkably short temporal
+window. Intracranial recordings in epilepsy patients performing
+mouse-tracking tasks reveal that post-decisional confidence processing
+occurs within approximately 300 - 500 ms, with the pre-supplementary
+motor area associated with confidence and changes of mind <span class="citation">(<a href="#ref-GOUEYTESEvidenceAccumulationPresupplementaryMotorAreaInsula2025">Goueytes
+et al. 2025</a>; <a href="#ref-RESULAJChangesMindDecisionmaking2009">Resulaj et al.
+2009</a>)</span>. Neural recordings in rhesus monkeys has further
+demonstrated that anatomical regions implicated in choice formation are
+also the regions associated with confidence generation <span class="citation">(<a href="#ref-KIANIRepresentationConfidenceAssociatedDecisionNeuronsParietal2009">Kiani
+and Shadlen 2009</a>)</span>. This brief time course and overlapping
+neural circuitry suggests that PDEA, rather than reflecting slow
+deliberative processes, operates as a relatively automatic extension of
+the initial decision dynamics.</p>
+<p><strong>Task demands</strong></p>
+<p>PDEA appears to be conditional on task demands and resource
+constraints. Under speed stress instructions (responses below 500 ms),
+confidence response times increase relative to choice times, and
+subjects show enhanced error-monitoring particularly for easy trials
+<span class="citation">(<a href="#ref-BARANSKIProbingLocusConfidenceJudgmentsExperimentsTime1998">Baranski
+and Petrusic 1998</a>)</span>.</p>
+<p>In contrast, under accuracy stress, when subjects have sufficient
+time for choice formation, choices are generally produced much slower
+and confidence judgments are made after a constant time, independent of
+difficulty and choice response time. Consistent with this pattern,
+subjects take significantly longer to respond when they know a
+confidence judgment is required compared to choice-only trials,
+suggesting that when not time-pressed, evidence accumulation for choice
+and confidence may occur pre-decisionally <span class="citation">(<a href="#ref-PETRUSICJudgingConfidenceInfluencesDecisionProcessingComparative2003">Petrusic
 and Baranski 2003</a>; <a href="#ref-BARANSKITestingArchitecturesDecisionconfidenceRelation2001">Baranski
-and Petrusic 2001</a>)</span> (REFS).</p>
-<p><span class="citation">(<a href="#ref-TSETSOSActionPlanningTimescaleEvidenceAccumulation2015">Tsetsos
-et al. 2015</a>)</span> used an interrogation task to probe the time
-course of evidence accumulation. Such interrogation tasks have a fixed
-time that the subject can view the stimulus (i.e. 150, 250, 350 .. ms
-(VT)) and are prompted to give a response as fast as possible after
-indication that the time interval has passed. Then by simultaneously
-manipulating the time between the initial binary choice and the
-confidence judgement (ITI) they investigated PDA. In their first study
-they showed that increasing ITI slightly decreased confidence ratings,
-however this was conditional on accuracy with confidence ratings for
-incorrect trials generally decreasing and for correct trials staying
-relatively stable, especially for easier trials. No test of the
-interaction between VT and ITI on confidence ratings were reported.</p>
-<p>In their second study they used a full-confidence scale, a RDM
-stimulus, 5 stimulus intensities and two conditions. The first condition
-subjects had access to the stimulus in the ITI whereas in the second
-they had not. Crucially the subjects had a fixed VT of 800ms. The main
-finding of experiment one was replicated now with even stronger effects
-(due to the use of more stimulus intensities and a full confidence
-scale), where confidence ratings for incorrect trials decreased
-significantly especially for easy trials, whereas correct trials
-remained relatively stable or slightly decreasing. Now crucially,
-whether the subject had access to the stimulus in the ITI did not cause
-any change in these relationships.</p>
-<p>Now lastly, because most of the above studies made use of the RDM
-task and suggest a pattern where PDEA is dependent on the time a subject
-is exposed to the stimulus, investigating the time needed to make as
-accuracte as possible judgements in this task could be helpful to
-determine not only when one would expect subject to have accumulated
-enough evidence for their inital choice, and thus give a hint to the
-temporal dynamics in this task. <span class="citation">(<a href="#ref-TSETSOSActionPlanningTimescaleEvidenceAccumulation2015">Tsetsos
-et al. 2015</a>)</span> showed that subjects did not improve in the RDM
-task when stimulus presentation time was above 300-600ms. Further, they
-manipulated the stimulus-response mapping from trial to trial
-(i.e. respond left to indicate “up”), such that in some trials
-participants new before viewing the stimulus which key was associated
-with which direction and in other trials they only knew after viewing
-the stimulus. This manipulation did not significant change the length of
-the stimulus presentation time on accuracy. These results indicate that
-in order to make an optimal decision the participants needed to view the
-stimulus for short period of time and this did not change even when
-manipulating the stimulus-response mapping.</p>
-<p>Taken together these above findings suggest a clear pattern for the
-circumstances in which PDEA might play a role in meta-cognition and
-error-monitoring.</p>
-<p>Firstly, PDEA unfolds within a very short temporal window. Both
-intracranial recordings and behavioral change-of-mind paradigms suggest
-that post-choice dynamics occur within a few hundred milliseconds (
-~300–500 ms). This time course suggest that PDEA is not driven by slow,
-deliberative, consciously controlled processes, but instead an extension
-of the same evidence accumulation dynamics that gave rise to the initial
-choice.</p>
-<p>Secondly, PDEA appears to be conditional on task demands and resource
-constraints. Under speed stress, choice and confidence can be partially
-dissociated, such that confidence response times increase, and for easy
-trials confidence ratings can better dissociate between correct and
-incorrect choices (particularly easy trials that are incorrect are
-recognized). In contrast, under accuracy stress, where sufficient time
-and computational resources are available, choice formation and
-confidence judgments appear to rely on largely overlapping evidence from
-the initial choice. This pattern supports the idea that PDEA becomes
-particularly visible when the primary decision process is pressed for
-time leaving potential time for PDEA because if not pressed evidence
-accumulation for both choice and confidence seem very close temporally
-if not completely overlapping. Importantly, in some paradigms PDEA does
-not depend on continued access to external sensory evidence, suggesting
-that internal evidence or residual neural activity may be sufficient to
-drive post-decisional updating. An alternative explanation</p>
-<p>Thirdly, given a short stimulus presentation (300-600ms) subjects
-quickly asymptotes in their performance, meaning that with increasing
-viewing time they do not perform better. This together with the fact
-that subjects generally respond much slower when they know that they
-have to give a confidence judgement compared to when they only have to
-give a binary choice, suggest that maybe subjects do most, if not all,
-of the processing of confidence pre-decisionally if allowed by the task
-demands.</p>
-<p>In sum, PDEA seems to operate within a narrow temporal window
-following choice commitment, and if subjects are stressed to produce a
-fast choice this PDEA can increase the ratings informativeness of choice
-accuracy. If one follows the argument of mechanistic parsimony, these
-results are well explained within an evidence accumulation framework of
-PDEA. However, we believe that there is a more generally parsimonious
-explanation of these data.</p>
-<p>The short time-window of PDEA seem to suggest that the post-decision
-computation is a relatively automatic process that at least somewhat
-coincides in the pre-supplementary motor area. Furthermore, under speed
-stress subjects produce more errors, we believe that these errors are
-partly due to a decreased time for coordination between the CNS and the
-effector. This reduced coordination makes it more likely that the
-subject produces a motor error, which will quickly be picked up subject
-and then a low (even below guessing) confidence rating can be elicited.
-The process of an agent producing a motor error and subsequently
-becoming aware of it is consistent with motor control theory,
-particularly comparator models involving efference copy mechanisms. In
-this framework the evidence for the intial choice could be formed by an
-evidence accumulation, but then when enough evidence has been
-accumulated the agent acts, this action produces an efferent signal to
-the target muscles that produce the action. Meanwhile in the Central
-nervous system a copy of this signal (the efference copy) is processed
-by an internal prediction system that uses a forward model to compute /
-predict the expected consequences and subsequent afferent signals. As
-the action is executed and the afferent signals gets processed in the
-central nervous system, the brain compares these afferent signals with
-the predictions from the forward model in a comparator mechanism that
-then generates a short of prediction error. In short, the brain
-generates a signal to the periphery and then asks the question, “did i
-get the sensory feedback that i expected given the command that i sent”.
-This theory would therefore predict that having generated the efference
-copy, with or without the efferent signal, a subject would be able judge
-its confidence, but only conditional on the action being what was
-expected. Then with the information about the agents own action, it is
-possible for the agent to change its mind on whether they believe it to
-be correct or not.</p>
-<p>We propose that Error-monitoring, at least partly, arises from
-variability in the choice process itself. Here contrary to most models
-of perceptual decision making that assume a deterministic choice after
-the evidence has been acquired, we propose that agents can be aware that
-they erred if instead of a deterministic process choices are generated
-through a stochastic process. Said another way we assume that there
-exists choice variability.</p>
-<p>Usually in perceptual decision making models evidence variability and
-choice variability would be indistinguishable when observing only binary
-responses. However, by incorporating confidence ratings, we can
-disentangle these noise sources. We demonstrate that our model, which
-includes choice variability, can produce most of the above described
-patterns of confidence ratings and choices and represents a specific
-instantiation of Fleming and Daw’s second-order framework without the
-need for independent information for the generation of confidence
-ratings to have error monitoring.</p>
+and Petrusic 2001</a>)</span>.</p>
+<p><strong>Stimulus independence and accumulation dynamics</strong></p>
+<p>Another way to investigate PDEA is to provide additional exposure to
+the stimulus after having comited to a choice, <span class="citation">Stephen M. Fleming et al. (<a href="#ref-FLEMINGNeuralMediatorsChangesMindPerceptualDecisions2018a">2018</a>)</span>
+showed that 300 ms of additional stimulus viewing after choice can
+increase confidence efficiency, with the strongest effect seen for a
+decrease in confidence ratings for incorrect trials.</p>
+<p><span class="citation">Tsetsos et al. (<a href="#ref-TSETSOSActionPlanningTimescaleEvidenceAccumulation2015">2015</a>)</span>
+found that manipulating inter-trial intervals between choice and
+confidence produced changes in confidence ratings, here again
+particularly decreased confidence for errors without additional exposure
+to the stimulus during this interval. This has been interpreted as
+internal evidence may be sufficient for post-decisional updating and
+additional exposure to the stimulus is not necessary. In most of the
+highlighted studies a random dot motion stimulus is used as the
+perceptual decision making task. In such a task it has been shown that
+the performance of subjects asymptote with exposure times of only
+300–600 ms, showing no improvement with longer presentations <span class="citation">(<a href="#ref-TSETSOSActionPlanningTimescaleEvidenceAccumulation2015">Tsetsos
+et al. 2015</a>)</span>. Crucially, this pattern holds even when
+stimulus-response mappings are manipulated, indicating that optimal
+decisions require only brief stimulus exposure.</p>
+<p>Taken together, these findings suggest that when time permits, most
+confidence-relevant processing may occur pre-decisionally, with the most
+convincing evidence for PDEA being when subjects are time constrained in
+the primary decision. In such cases PDEA seem to increase meta cognitive
+efficiency by mainly decreasing confidence ratings for incorrect
+choices.</p>
+<p><strong>An Alternative Account: Motor Control and Choice
+Variability</strong></p>
+<p>While the PDEA framework offers a mechanistically parsimonious
+explanation, using the same accumulation process for both choice and
+confidence, we propose a more general account that does not require
+additional independent information. The short temporal window of PDEA
+(~300-500 ms) coincides with timescales consistent with motor control
+processes, suggesting that what is characterized as PDEA may instead
+reflect motor awareness. This account can be further argued for given
+that Under speed stress conditions subjects produce more errors, and
+these errors partly arise from reduced coordination between the central
+nervous system and effectors due to the time constraints. Motor control
+theory, particularly comparator models involving efference copy
+mechanisms, provides a framework for understanding these errors and how
+agents can quickly correct them. When an agent initiates an action, an
+efference copy is generated and after commitment of the action compared
+against the expected sensory consequences via a forward model. Any
+mismatch between predicted and actual motor output signal an error, and
+the magnitude of this prediction error is an indication of the degree of
+confidence in the choice. Subjects can therefore become aware that their
+executed action differs from their intended choice, enabling confidence
+ratings below guessing, without requiring PDEA about the stimulus
+itself.</p>
+<p>From the above formulation we propose that error-monitoring can arise
+from choice variability, i.e. stochasticity in the mapping from evidence
+to choice. While most perceptual decision-making models assume
+deterministic choices given the acquired evidence, a stochastic choice
+process allows agents to produce errors that they can subsequently be
+aware of. Ordinarily, evidence variability and choice variability would
+be indistinguishable from binary responses alone. However, as will be
+shown below multivariate modeling of choices and confidence ratings
+allows for distinguishing these noise sources.</p>
+<p>In the following section we derive one particular model incorporating
+choice variability, which can produce the empirical patterns of
+confidence and choices described above. We show that this model can be
+expressed as a specific instantiation of Fleming and Daw’s second-order
+framework <span class="citation">(<a href="#ref-FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017">Stephen
+M. Fleming and Daw 2017</a>)</span>, but critically, without requiring
+independent information but still allowing for error-monitoring. The
+rater need only access the actor’s chosen action, not additional
+post-decisional evidence.</p>
+</div>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-BARANSKIProbingLocusConfidenceJudgmentsExperimentsTime1998" class="csl-entry">
 Baranski, J. V., and W. M. Petrusic. 1998. <span>“Probing the Locus of
@@ -850,6 +735,12 @@ Desender, Kobe, K. Richard Ridderinkhof, and Peter R. Murphy. 2021.
 <span>“Understanding Neural Signals of Post-Decisional Performance
 Monitoring: <span>An</span> Integrative Review.”</span> <em>eLife</em>
 10 (August): e67556. <a href="https://doi.org/10.7554/eLife.67556">https://doi.org/10.7554/eLife.67556</a>.
+</div>
+<div id="ref-FLEMINGHMetadHierarchicalBayesianEstimationMetacognitiveEfficiency2017" class="csl-entry">
+Fleming, Stephen M. 2017. <span>“<span class="nocase">HMeta-d</span>:
+Hierarchical <span>Bayesian</span> Estimation of Metacognitive
+Efficiency from Confidence Ratings.”</span> <em>Neuroscience of
+Consciousness</em> 2017 (1): nix007. <a href="https://doi.org/10.1093/nc/nix007">https://doi.org/10.1093/nc/nix007</a>.
 </div>
 <div id="ref-FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017" class="csl-entry">
 Fleming, Stephen M., and Nathaniel D. Daw. 2017.
@@ -886,6 +777,12 @@ Kiani, Roozbeh, and Michael N. Shadlen. 2009. <span>“Representation of
 <span>Confidence Associated</span> with a <span>Decision</span> by
 <span>Neurons</span> in the <span>Parietal Cortex</span>.”</span>
 <em>Science</em> 324 (5928): 759–64. <a href="https://doi.org/10.1126/science.1169405">https://doi.org/10.1126/science.1169405</a>.
+</div>
+<div id="ref-MANISCALCOSignalDetectionTheoreticApproachEstimatingMetacognitive2012" class="csl-entry">
+Maniscalco, Brian, and Hakwan Lau. 2012. <span>“A Signal Detection
+Theoretic Approach for Estimating Metacognitive Sensitivity from
+Confidence Ratings.”</span> <em>Consciousness and Cognition</em>, Beyond
+the <span>Comparator Model</span>, vol. 21 (1): 422–30. <a href="https://doi.org/10.1016/j.concog.2011.09.021">https://doi.org/10.1016/j.concog.2011.09.021</a>.
 </div>
 <div id="ref-MIHALIIntrospectiveInferenceCounteractsPerceptualDistortion2023a" class="csl-entry">
 Mihali, Andra, Marianne Broeker, Florian D. M. Ragalmuto, and Guillermo
@@ -952,13 +849,6 @@ Yeung, Nick, and Christopher Summerfield. 2012. <span>“Metacognition in
 Human Decision-Making: Confidence and Error Monitoring.”</span>
 <em>Philosophical Transactions of the Royal Society B: Biological
 Sciences</em> 367 (1594): 1310–21. <a href="https://doi.org/10.1098/rstb.2011.0416">https://doi.org/10.1098/rstb.2011.0416</a>.
-</div>
-<div id="ref-YUDynamicsPostdecisionalProcessingConfidence2015" class="csl-entry">
-Yu, Shuli, Timothy J. Pleskac, and Matthew D. Zeigenfuse. 2015.
-<span>“Dynamics of Postdecisional Processing of Confidence.”</span>
-<em>Journal of Experimental Psychology. General</em> 144 (2): 489–510.
-<a href="https://doi.org/10.1037/xge0000062">https://doi.org/10.1037/xge0000062</a>.
-</div>
 </div>
 </div>
 </div>
