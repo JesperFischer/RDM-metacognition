@@ -969,8 +969,12 @@ Lastly, we fit this model to our pilot data hierarchically and compare to the si
 ## Model comparison
 
 ```{r, echo = T}
-model_with_x <- readRDS("~/RDM-metacognition/Experimental analysis/Heurestic models/saved models/saved models hier/fit_finalheu_lapse_cypertron.rds")
-model_with_x1 <- readRDS("~/RDM-metacognition/Experimental analysis/Heurestic models/saved models/saved models hier/fit_finalheu_lapse_x1.rds")
+model_with_x <- readRDS(here::here("Experimental analysis","Heurestic models",
+                                   "saved models","saved models hier","fit_finalheu_lapse_cypertron.rds"))
+
+
+model_with_x1 <- readRDS(here::here("Experimental analysis","Heurestic models",
+                                    "saved models","saved models hier","fit_finalheu_lapse_x1.rds"))
 
 loocomparison = loo::loo_compare(list(with_x = model_with_x$loo(), with_x1 = model_with_x1$loo()))
 ```
