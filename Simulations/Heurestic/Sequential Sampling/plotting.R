@@ -91,8 +91,9 @@ group_param = purrr::map_dfr(
 
 
 
-draws05 = c(683,420,1599,314)
+draws05 = c(683,420,1599,931,1228)
 draws0 = c(932,1728,1077,1084,961)
+drawsm05 = c(1664,642,1351,1105,1207)
 
 
 
@@ -105,8 +106,10 @@ main_parameters = purrr::map_dfr(
   mutate(variable = recode(variable, !!!renames, .default = variable)) %>% 
   mutate(Diagnostics = as.factor(ifelse((div == 0 |  ess_bulk < 400 | ess_tail < 400 | rhat > 1.03),"Good","Bad"))) %>% 
   mutate(prior_sd = as.factor(prior_sd)) %>% 
-  filter(draw_id %in% c(draws05,draws0)) %>% 
-  mutate(effect = ifelse(draw_id %in% draws0, paste0("effect = 0","\n id = ", draw_id),ifelse(draw_id %in% draws05, paste0("effect = 0.05","\n id = ", draw_id),NA))) %>% 
+  filter(draw_id %in% c(draws05,draws0,drawsm05)) %>%
+  mutate(effect = ifelse(draw_id %in% draws0, paste0("effect = 0","\n id = ", draw_id),
+  ifelse(draw_id %in% draws05, paste0("effect = 0.05","\n id = ", draw_id),
+  ifelse(draw_id %in% drawsm05, paste0("effect = -0.05","\n id = ", draw_id),NA)))) %>%
   ggplot(aes(x = n_subs, y = mean,ymin = q5,ymax = q95, shape = Diagnostics, col = variable))+
   geom_pointrange(position = position_dodge(width = 1), show.legend = F)+
   geom_hline(aes(yintercept = simulated), col = "black",linetype = 2)+
@@ -121,7 +124,9 @@ main_parameters = purrr::map_dfr(
     values = c("beta_sigma_m" = "orange",
                "beta_meta_bias" = "darkgreen")
   ) +
-  facet_wrap(~effect, nrow = 2)+
+  scale_x_continuous(limits = c(0,30), breaks = seq(0,30,by = 10), labels = seq(0,30,by = 10))+
+  facet_wrap(~effect, nrow = 3)+
+  # facet_wrap(~draw_id, nrow = 4)+
   theme(legend.position = "top", scales = "free")+
   theme_classic()
 
@@ -136,8 +141,11 @@ Sequential_sampling = inner_join(purrr::map_dfr(
                           "beta_meta_bias" = "bf9") %>% 
   mutate(variable = recode(variable, !!!renames, .default = variable)) %>% 
   pivot_longer(cols = c("beta_sigma_m","beta_meta_bias")) %>% 
-  filter(draw_id %in% c(draws05,draws0)) %>% 
-  mutate(effect = ifelse(draw_id %in% draws0, paste0("effect = 0","\n id = ", draw_id),ifelse(draw_id %in% draws05, paste0("effect = 0.05","\n id = ", draw_id),NA))) %>% 
+  # filter(draw_id != "1530") %>% 
+  filter(draw_id %in% c(draws05,draws0,drawsm05)) %>%
+  mutate(effect = ifelse(draw_id %in% draws0, paste0("effect = 0","\n id = ", draw_id),
+  ifelse(draw_id %in% draws05, paste0("effect = 0.05","\n id = ", draw_id),
+  ifelse(draw_id %in% drawsm05, paste0("effect = -0.05","\n id = ", draw_id),NA)))) %>%
   ggplot()+
   geom_line(aes(x = n_subs, y =log(value), group = name, col = name))+
   geom_point(aes(x = n_subs, y = log(value), group = name, shape = Diagnostics))+
@@ -152,29 +160,39 @@ Sequential_sampling = inner_join(purrr::map_dfr(
                "Good" = 1)   # triangle (bad)
   ) +
   labs(y = "Log(BF)", x = "N_subjects")+
-  facet_wrap(~effect, nrow = 2)+
+  facet_wrap(~effect, nrow = 3)+
+  # facet_wrap(~draw_id, nrow = 4)+
   geom_hline(yintercept = c(log(1/30),log(30)), linetype = 2)+
+  scale_y_continuous(breaks = c(round(log(1/30),2),0,round(log(30),2)))+
+  scale_x_continuous(limits = c(0,30), breaks = seq(0,30,by = 10), labels = seq(0,30,by = 10))+
   theme_classic()+
   theme(legend.position = "top")
 
 
 library(patchwork)
 
-sequential_samping_plot = ((main_parameters | Sequential_sampling)) + 
-  plot_layout(guides = "collect") +
-  theme(
-    legend.position = "top",
-    legend.justification = "center",
-    axis.title = element_text(size = 14),
-    axis.text = element_text(size = 12, color = "black"),
-    axis.ticks.length = unit(0.2, "cm")
-  )
+sequential_samping_plot = (main_parameters + 
+                             theme(
+                               legend.position = "top",
+                               legend.justification = "center",
+                               axis.title = element_text(size = 14),
+                               axis.text = element_text(size = 12, color = "black"),
+                               axis.ticks.length = unit(0.2, "cm")
+                             ) | 
+                             Sequential_sampling+ 
+                             theme(
+                               legend.position = "top",
+                               legend.justification = "center",
+                               axis.title = element_text(size = 14),
+                               axis.text = element_text(size = 12, color = "black"),
+                               axis.ticks.length = unit(0.2, "cm")
+                             )) 
 
 
 ggsave(here::here("Preregistration","Figures","sequential_samping_plot.PNG"),sequential_samping_plot,dpi = 300, height = 7, width = 11)
 
 
-parameterrecovery = (group_param_recov | subject_param_recov)+ plot_layout(guides = "collect") &
+parameterrecovery = (group_param_recov | subject_param_recov)+ plot_layout(guides = "collect") +
   theme(
     legend.position = "top",
     legend.justification = "center",

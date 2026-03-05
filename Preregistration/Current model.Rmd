@@ -1,68 +1,29 @@
----
-title: "Current model"
-author: Jesper Fischer Ehmsen^1^,
-        Siebe Everaets^xx^,
-        Micah G. Allen^1,2,\*^,
-        Francesca Fardo^1,3,\*^
-output:
-  html_document: default
-  word_document:
-    # reference_docx: Knitting files/docx_template.docx
-  pdf_document:
-    latex_engine: xelatex
-# bibliography: 
-  # - "Knitting files/References.bib"
-link-citations: yes
-linkcolor: blue
-# csl: Knitting files/science-advances.csl
-always_allow_html: yes
----
+<!-- Part 2: Current Model -->
 
-::: {custom-style="Title text"}
-^1^Center of Functionally Integrative Neuroscience (CFIN), Department of Clinical Medicine, Aarhus University
-
-^2^Cambridge Psychiatry, University of Cambridge, United Kingdom
-
-^3^Danish Pain Research Center, Department of Clinical Medicine, Aarhus University
-
-^\*^Equal contributions
-
-Corresponding author: Jesper Fischer Ehmsen (jesperfischer@cfin.au.dk)
-:::
-
-```{r load packages, warning = F, message = F, echo = F, include=FALSE}
-knitr::opts_chunk$set(dpi=300)
-
-# seed
-set.seed(123)
-
-# packages
+```{r packages3, warning = F, message = F, echo = F, include=FALSE}
+# Load additional packages needed for this section
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load("here", "knitr","yaml")
 
-knitr::opts_chunk$set(echo = TRUE)
+#renv::restore(project=here::here())
 
 required_packages = c("cowplot", "magick", "tidyverse", "flextable","truncnorm")
 lapply(required_packages, library, character.only = TRUE)
+
 ```
 
+# Part 2: Current Model
 
-### Static models of metacognition
+In this section we first describe the general structure of ideas of static models of perceptual decision making and confidence judgements. Next we describe, derive and simulate from proposed model, demonstrating that it can produce important patterns highlighted in the [Design considerations](Models and Data in Perceptual Decision-Making with Confidence.Rmd).
 
-Here we outline the general idea of static models of perceptual decision making and confidence judgements.
+## Static models of metacognition
 
-In SDT, an actor makes a binary choice on each trial i, $a_i \in \{-1,+1\}$ based on some internal evidence $e_i$. The action reflects the internal evidence on the true state the actor is trying to infer $D_i \in \{-1,+1\}$. 
+In SDT, an actor makes a binary choice on each trial i, $a_i \in \{-1,+1\}$ based on some internal evidence $e_i$. The action reflects the actor inference on the true state of the stimulus $D_i \in \{-1,+1\}$. 
 
 In SDT, evidence is drawn from a normal distribution, as perception is a noisy process, with a mean in the direction of the true state scaled by the strength of the signal $X_i$.
 
 $$
 e_i \sim \mathcal{N}(X_iD_i,\sigma_e)
-$$
-
-Here inorder to encompass **3** from the Patterns of metacognition section we introduce a parameter that can shift this evidence distribution, essentially introducing a bias in the encoding of evidence.
-
-$$
-e_i \sim \mathcal{N}(X_iD_i - \beta,\sigma_e) 
 $$
 
 To produce an action the actor compares the internal evidence to criterion $c$:
@@ -73,30 +34,23 @@ $$
 
 This criterion is usually thought to be static within an experimental setting for each agent.
 
-#### Meta-cognition
+#### Confidence Ratings
 
-After having made a choice, the agent might be asked to give a confidence judgement in their choice. A particularly prominent way to conceptualize this is to think that the agent computes the probability that the action that they produced was correct. Below we write one promient idea of how such confidence ratings might be computed that allows for error-monitoring [@FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017].
+Having made a binary choice, the agent is asked to give a confidence judgement in their choice. A particularly prominent way describe this is to assume that the agent computes the probability that the action, that they produced, was correct.  @FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017 proposed a framework that using the above assumption could also account for error-monitoring.
 
-
-In this formulation confidence judgement are based on draws from a multivariate normal, which contains the evidence used for the action $e_i$ and partically independent information only accesiable to the rater $r_i$, these quantities are assumed to be correlated with $\rho$ governing information sharing. I.e. if $\rho$ = 1, the confidence judgement is based on the same information as the action, however if $\rho$ = 0 the confidence judgement is based on completely independent information. Note we here write this model as originally proposed by Fleming and Daw without the evidence bias
+In their formulation confidence judgement are based on draws from a multivariate normal, which contains the evidence used for the action $e_i$ and partially independent information only accessible to the rater $r_i$, these quantities are assumed to be correlated with $\rho$ governing information sharing. I.e. if $\rho$ = 1, the confidence judgement is based on the same information as the action, however if $\rho$ = 0 the confidence judgement is based on completely independent information.
 
 $$
 \begin{bmatrix}e_i \\ r_i\end{bmatrix}\sim \mathcal{N}\left(\begin{bmatrix}X_iD_i \\ X_iD_i\end{bmatrix},\begin{bmatrix}\sigma_e^2 & \rho \cdot \sigma_e \cdot \sigma_m \\ \rho \cdot \sigma_e \cdot \sigma_m & \sigma_m^2\end{bmatrix}\right)
 $$
 
-The rater is then thought to use this information to calculate the subjective probability of being correct, to make a confidence judgement.
-
-One of the main arguments for such model and other models with independent information was to explain error-monitoring i.e. agents' ability to know that they produced an error and give low (even below guessing) confidence ratings, see [Design considerations](Models and Data in Perceptual Decision-Making with Confidence.Rmd), for an in depth consideration of this account and how it relates to dynamic models of meta-cognition and espcially post-decisional evidence accumulation.
-
-
+The rater is then thought to use this information to calculate the subjective probability of being correct, to make a confidence judgement. One of the main arguments for such model and other models with independent information was to explain error-monitoring i.e. agents' ability to know that they produced an error and give low (even below guessing) confidence ratings.
 
 ## Evidence copy (Choice Variability) model of metacogntion (EA/CV - Meta)
 
-Below we formalize the idea that independent information is not necessary to explain error-monitoring, if instead it is assumed that agents have variability in their choices, given the evidence.
+### Choices
 
-This can be formalized as instead of a deterministic decision policy (which is usually assumed in SDT), agents have a noisy decision process that can produce errors even though the evidence is in favor of a different choice.
-
-We therefore extend the standard SDT framework by introducing stochastic choice policy by assuming that the criterion varies from trial-by-trial: $c_i \sim \mathcal{N}(0,\sigma_c)$. This yielding:
+Below we argue that independent information is not necessary to explain error-monitoring, if it is instead assumed that agents have variability in their choices, given the evidence. The difference from the above account is that instead of a deterministic decision policy (which is usually assumed in SDT), agents have a noisy decision process that can produce errors even though the evidence is in favor of the correct choice. By extending the standard SDT framework with the introduction of a stochastic choice policy it is possible for agents to display error monitoring. One way to implement this is to assume that the criterion varies from trial-by-trial: $c_i \sim \mathcal{N}(0,\sigma_c)$. This yielding:
 
 $$
 a_i = \begin{cases}+1 & \text{if } e_i > c_i \\ -1 & \text{if } e_i \le c_i\end{cases}
@@ -105,20 +59,34 @@ $$
 Due to the fact that both $e_i$ and $c_i$ are normally distributed, it is possible to marginalize their difference which gives the probability of the action:
 
 $$
-P(a = 1 \mid D_i, X_i) = \Phi\left(\frac{D_i \cdot X_i- \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right) \tag{1}
+P(a = 1 \mid D_i, X_i) = \Phi\left(\frac{D_i \cdot X_i}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
 $$
 
-From choices alone, only $\sigma_e^2 + \sigma_c^2$ is identifiable, as both noise sources equivalently flatten the psychometric function. However, by including confidence ratings these can be disentangled.
+Before moving on to the confidence ratings we also assume that the evidence distribution might be biased for each subject. This assumption will help explain the fact that the psychometric function of the choices generally shift the other behavioral variables such as confidence ratings (see [@CAZIOTPerceptualConfidenceJudgmentsReflectSelfconsistency2021; @SANCHEZ-FUENZALIDAConfidenceReportsPerceptualDecisionMakingDissociate2025; @MIHALIIntrospectiveInferenceCounteractsPerceptualDistortion2023a; @NAVAJASIdiosyncraticNatureConfidence2017])
 
-For confidence ratings, we define:
+This leads to:
+
+$$
+e_i \sim \mathcal{N}(X_iD_i- \beta,\sigma_e)
+$$
+And when marginalized
+
+$$
+P(a = 1 \mid D_i, X_i) = \Phi\left(\frac{D_i \cdot X_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right) \tag{1}
+$$
+
+From choices alone, only the sum $\sigma_e^2 + \sigma_c^2$ can be identified, as both noise sources equivalently flatten the psychometric function. However, by including confidence ratings these can be disentangled.
+
+### Confidence ratings
+
+For confidence ratings, we assume that the agent computes the probability that the given choice was correct.
 
 $$
 \text{confidence} = P(\text{correct} \mid r, a) = P(D = a \mid r)
 $$
-Here we assume that the rater has access to a noisy evidence: $r_i \sim \mathcal{N}(e_i, \sigma_m)$, where $\sigma_m$ is meta cognitive noise. 
+Here we assume that the rater has access to a noisy readout of the evidence: $r_i \sim \mathcal{N}(e_i, \sigma_m)$, where $\sigma_m$ is meta cognitive noise. 
 
-This can be shown to yield:
-See the full derivation in [Derivations](Derivations/inverselogit.Rmd).
+This can be shown to yield: (See the full derivation in [Derivations](Derivations/inverselogit.Rmd)).
 
 $$
 P(D=1 \mid r_i, X_i) = g\left(\frac{2 \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right)
@@ -134,41 +102,42 @@ $$
 
 Here the function $g(.)$ is the inverse logit function i.e. $g(x)= \frac{1}{1+exp(-x)}$.
 
-From confidence alone, only $\sigma_e^2 + \sigma_m^2$ is identifiable. However, combining choices and confidence allows estimating all three parameters: $\sigma_e$, $\sigma_c$, and $\sigma_m$. 
+From confidence alone, only the sum $\sigma_e^2 + \sigma_m^2$  can be identified. However, combining choices and confidence allows estimating all three parameters: $\sigma_e$, $\sigma_c$, and $\sigma_m$. 
 
-As can be seen from equation (2), to compute the probability of being correct the agent (rater) needs access to the stimulus intensity ($X_i$), even though assumed in some models [@FLEMINGNeuralMediatorsChangesMindPerceptualDecisions2018a], we believe that the agent cannot have access to the objective stimulus intensity for several reasons. We will get back to these reasons and a final formulation without this term later. Interested readers are refereed to [@RAUSCHFoldedXpatternNotNecessarilyStatisticalSignature2019], were simulations are conducted with differing generative processes for the stimulus intensity.
+As can be seen from equation (2), to compute the probability of being correct the rater needs access to the stimulus intensity, $X_i$. Even though that it is assumed in some models [@FLEMINGNeuralMediatorsChangesMindPerceptualDecisions2018a], we believe that the rater cannot have access to the objective stimulus intensity. We will get back to this and a final formulation without this term later. Interested readers are refereed to [@RAUSCHFoldedXpatternNotNecessarilyStatisticalSignature2019], were simulations are conducted with differing generative processes for the stimulus intensity.
 
-
-
-Before demonstrating simulations from this model to provide an intuition for the meaning of the parameters and their interactions we demonstrate how this kind of model can be argued for, consider the below plate notation. 
+Below we showcase a plate notation schematic of the above proposed model, demonstrating a visualization of the noise parameters. 
 
 
-```{r,fig.height=8, fig.width=12, message=F,error=F,warning=F}
+```{r, out.width="100%", fig.align='center', message=F, error=F, warning=F, results='hide'}
 
-tinytex::latexmk(here::here("Preregistration","Figure scripts","Platenotations", "platenotation.tex"))
+invisible(tinytex::latexmk(here::here("Preregistration","Figure scripts","Platenotations", "platenotation.tex")))
 
 img1 <- image_read_pdf(here::here("Preregistration", "Figure scripts","Platenotations", "platenotation.pdf"),
                        density = 600)
 
+# Trim any remaining whitespace and resize
+img1 <- image_trim(img1)
+img1 <- image_resize(img1, "1200x")  # Adjust width as needed (height scales proportionally)
 
-print(img1)
+# Display the image (knitr will render it)
+img1
 ```
 
-
-An agent is presented with a stimulus that has a direction D (the true state of the world) and an intensity (X). This creates an internal evidence representation $e_i$. The brain then makes a copy of this evidence (an efference copy) (red split path). The internal evidence representation is then sent to the premotor and later motor cortex where an efferent signal is produced to generate an action, crucially this additional processing introduces noise 
-
+Figure 1; An agent is presented with a stimulus that has a direction $D_i$ (the true state of the world) and an intensity $X_i$. This creates an internal evidence representation $e_i$ (red point), due to noise in the sensory encoding ($\sigma_e$). This internal evidence representation is then sent to the pre-motor and motor cortex where an efferent signal is produced together with an efference copy (red split path). Due to additional noise($\sigma_c$)  in the processing and transmission of the signal to limb generating the action, it is possible that the action generated is in the opposite side of what the evidence entailed (green point). The efference copy might also be subjected to additional noise ($\sigma_m$), which is then used together with the action to produce a prediction error in the comparator $C_t$. This prediction error is then used to give a confidence ratings $C_t$.
 
 
+Next we demonstrate simulations from this model to provide an intuition for the meaning of the parameters and their interactions.
 
-## Simulations
+### Simulations
 
-We demonstrate that this model reproduces key behavioral patterns (folded-X, double-increase) under different parameter combinations. Simulations show that the ratio $\frac{\sigma_e}{\sigma_c}$ determines these patterns: 
+Below we demonstrate that the model reproduces key behavioral patterns of choice and confidence ratings under different parameter combinations. Foreshadowing the results, our simulations show that the ratio $\frac{\sigma_e}{\sigma_c}$ determines the main confidence patterns of folded-X or double increase which relate to error-monitoring.
 
-A low ratio (high $\sigma_c$ low $\sigma_e$) produces folded-X (strong error-monitoring), while a high ratio (low $\sigma_c$ high $\sigma_e$) produces double-increase (weak error-monitoring).
+* A low ratio (high $\sigma_c$ low $\sigma_e$) produces folded-X (strong error-monitoring), while a high ratio (low $\sigma_c$ high $\sigma_e$) produces double-increase (weak or no error-monitoring). 
 
-Metacognitive noise $\sigma_m$ flattens confidence curves regardless of accuracy.
+* The metacognitive noise $\sigma_m$ flattens the confidence curves regardless of accuracy.
 
-Note that for these simulations we assume that the bias in evidence encoding $\beta$ is 0 as this just shifts the psychometric function as well as the confidence curves horizontally
+Note: For all simulations below we assume that the bias in evidence encoding $\beta$ is 0. We will get back to this, which relates to the assumption of subjects have access to the objective stimulus intensity.
 
 ```{r}
 set.seed(199742)
@@ -204,7 +173,7 @@ df_interaction <- expand.grid(
 
 ```
 
-Now lets turn to how evidence, the physical stimulus and accuracy interacts across parameters:
+First, we might look at the distribution of internal evidence to the objective signed stimulus (i.e. the product of the stimulus intensity and the true state) across the choice parameters.
 
 ```{r, fig.height=6, fig.width=10,warning=F,message=F}
 
@@ -212,7 +181,7 @@ ACC = df_interaction %>%
   mutate(Accuracy = as.factor(ACC)) %>% 
   ggplot(aes(x = X*D, y = e, col = Accuracy)) +
   labs(x = "Signed Stimulus", y = "Evidence") +
-  geom_point()+
+  geom_point(alpha = 0.2)+
   facet_grid(sigma_e~sigma_c, scales = "free", labeller = label_both)+
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.5)+
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.5)+
@@ -222,16 +191,16 @@ ACC = df_interaction %>%
 ACC
 ```
 
-From the above plot its obvious that $\sigma_e$ scales the the range of evidence observed (see y-axis range for the different rows). When $\sigma_c$ is low (left column) choices are consistent (when the the evidence is positive and the signed stimulus is positive i.e. D = 1 then a correct response is given). When $\sigma_c$ increases this relationship essentially becomes more noisy with correct and incorrect choices being less distinguishable across the evidence = 0 line. Another way to display this is by plotting the actions instead of the accuracy: 
+From the above plot we see that $\sigma_e$ scales the the range of evidence observed, moving down the rows the y-axis greatly changes its range. When $\sigma_c$ is low (left column) choices are consistent (when the the evidence is positive and the signed stimulus is positive (i.e. D = 1), a correct response is given). When $\sigma_c$ increases this relationship essentially becomes more noisy, such that correct and incorrect choices are less distinguishable across the evidence = 0 line. 
 
-here the space is only split in two quadrants instead of 4.
+Another way to display this is by plotting the actions instead of the accuracy: 
 
 ```{r, fig.height=6, fig.width=10,warning=F,message=F}
 Act = df_interaction %>%
   mutate(Action = as.factor(a)) %>% 
   ggplot(aes(x = X*D, y = e, col = Action)) +
   labs(x = "Signed Stimulus", y = "Evidence") +
-  geom_point()+
+  geom_point(alpha = 0.2)+
   facet_grid(sigma_e~sigma_c, scales = "free", labeller = label_both)+
   geom_hline(yintercept = 0, linetype = 2, alpha = 0.5)+
   geom_vline(xintercept = 0, linetype = 2, alpha = 0.5)+
@@ -239,9 +208,7 @@ Act = df_interaction %>%
   theme(text = element_text(size = 14))
 Act
 ```
-
-
-Next we look at the realized confidence ratings as a function of the three different sigmas:
+Next we look at the confidence ratings as a function of the three different sigmas.
 
 ```{r}
 set.seed(199742)
@@ -271,7 +238,6 @@ simulate_interaction <- function(sigma_m, sigma_c,sigma_e) {
   data.frame(e = e,
              C = C,
              C_mu = C_mu,
-             # C_mu2 = C_mu2,
              ehat = ehat,
              a = a,
              X = X,
@@ -292,7 +258,7 @@ df_interaction <- expand.grid(
 
 
 
-First we can look to fix $\sigma_c = 1$ and then we look at how $\sigma_e$ & $\sigma_m$ change confidence ratings as a function of the Stimulus:
+First we fix $\sigma_c = 1$ and then we look at how $\sigma_e$ & $\sigma_m$ change confidence ratings as a function of the signed stimulus strength:
 
 ```{r, fig.height=6, fig.width=10, message=F, warning=F}
 df_interaction %>%
@@ -307,15 +273,16 @@ df_interaction %>%
     geom_pointrange(position = position_dodge(width =0.4))+
   facet_grid( sigma_e~ sigma_m, labeller = label_both) +
     geom_hline(yintercept = c(0,0.5,1), linetype = 2)+
+  # geom_vline(xintercept = 0, linetype = 2)+
   labs(x = "Signed Stimulus", y = "Confidence") +
   theme_minimal()+
   ylim(c(0,1))+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-From the above plot we see that when we plot confidence on the Signed Stimulus scale we end up with a somewhat double increase pattern, when the stimulus encoding uncertainty is high (i.e. 3 or 5). Furthermore we see a (")half) folded X when stimulus encoding uncertainty  is low. Generally we see that meta uncertainty makes the confidence ratings more flat lined at 0.5 regardless of their correctness.  
+From the above plot we see that when we plot confidence on the Signed Stimulus scale we end up with a double increase pattern when $\sigma_e$ is high. Furthermore, when $\sigma_e$ is low we see a folded X pattern. Lastly, when meta uncertainty ($\sigma_m$) increase both confidence curves becomes increasingly flat (i.e. closer to a flat line at 0.5) regardless of their correctness.
 
-Now we fix $\sigma_e = 1$ and then we look at $\sigma_c$ & $\sigma_m$:
+Next we fix $\sigma_e = 1$ and then we look at $\sigma_c$ & $\sigma_m$:
 
 ```{r, fig.height=6, fig.width=10, message=F, warning=F}
 df_interaction %>%
@@ -336,9 +303,9 @@ df_interaction %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-This plot generally shows the same as the one with $\sigma_c = 1$ but opposite in pattern. I.e. high $\sigma_c$ here is more of a folded X with lower values (espeically below 1) make a double increase.
+Here we observe a similar patterns as before with $\sigma_c = 1$. Here we have that a high $\sigma_c$ reflects a folded X, whereas lower values (especially below 1) make a double increase.
 
-lastly we might plot $sigma_m = 1$
+lastly we might plot $\sigma_m = 1$
 
 ```{r, fig.height=6, fig.width=10, message=F, warning=F}
 df_interaction %>%
@@ -360,22 +327,19 @@ df_interaction %>%
   ylim(c(0,1))+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
+Here we see that when $\sigma_e = \sigma_c$ (the diagonal), there is a mix between a folded X and a double increase pattern, with incorrect trials being close to 0.5 and independent of stimulus strength. Correct trials increase in confidence across all parameter combinations with stimulus strength. Looking at the upper triangle, where $\sigma_c > \sigma_e$ we see folded-X patterns, whereas in the lower triangle ($\sigma_c < \sigma_e$) we see the opposite pattern, double increase patterns. 
 
-We see that the diagonal where $\sigma_e = \sigma_c$ that there generally is a half-folded X, with incorrect trials being flat with stimulus strength with correct trials increasing in confidence with stimulus strength. Going to the upper triangle we move into the space where $\sigma_c > \sigma_e$ where we see folded-X patterns of varying "strengths". Moving to the lower triangle we see the opposite pattern with double increase patterns emerging again with varying "strengths". 
+These simulations show that from the current model's perspective, the double increase and Folded-X pattern arise due to different ratios of uncertainty in the encoding and choice. When choice variability is high compared to stimulus encoding, a folded X pattern arises whereas choice variability is low compared to stimulus encoding a double increase pattern arises. Meta uncertainty ($\sigma_m$) is agnostic to the accuracy of the rater and when it increases it makes the confidence curves more flat regardless of correctness.
 
-This means, that from the models perspective, double increase and Folded-X patterns arise from the ratio of uncertainty in the encoding of the stimulus and the choice variability. When choice variability is high compared to stimulus encoding a folded X pattern arises whereas choice variability is low compared to stimulus encoding a double increase pattern arises. $\sigma_m$, meta uncertainty is agnostic to the accuracy of the rater and when it increases it makes the curves of the confidence ratings more flat regardless of correctness.
+### Fitting
 
-## Fitting
+We want to fit this model using full Bayesian inference with Stan's NUTS sampler, treating the latent trial-by-trial evidence as parameters estimated jointly with the subject-by-subject noise parameters. Investigating our pilot data we saw that on a single-subject-level this model was possible to fit with sufficiently good sampler diagnostics. However, trying to fit this model in a hierarchical framework (i.e. drawing subject level parameters from group level parameters), we ran into sampling issues. As the current project is going to use a sequential sampling paradigm, a robust and efficient model is necessary. We therefore build a heuristic model that approximates the model shown above, without the need for estimation of trial-by-trial evidence.
 
-We fit this model using full Bayesian inference with Stan's NUTS sampler, treating latent trial-by-trial evidence as parameters estimated jointly with the noise parameters. Generally, from investigating our pilot data (see below) we saw that on a single-subject fitting this model is possible to fit with sufficiently good sampler diagnostics, however trying to fit this model in a hierarchical framework i.e. estimating group level parameters which subjects level parameters are drawn from we ran into sampling issues. 
-
-We therefore build a heuristic model that approximates the above model, without the need for the trial-by-trial evidence. The main reason for this is to leverage hierarchical bayesian inference as our main hypothesis is on a particular group level parameter of this model while we additionally will be conducting sequential sampling (see Sequential sampling section).
-
-## The Heuristic model
+### The Heuristic model
 
 While the above model is powerful, its computational complexity (especially in hierarchical settings) motivate a simpler heuristic approximation. The key challenge is that confidence requires trial-specific evidence $r_i$, which cannot be marginalized analytically, because the random variable is inside the inverse logit function. 
 
-The inverse logit function and the cummulative normal distribution are in practice close to being indistinguishable up to a constant i.e. $g(.) \sim \Phi(\frac{1}{1.7})$, see plot below:
+The inverse logit function and the cumulative normal distribution are in practice close to being indistinguishable up to a constant i.e. $g(.) \sim \Phi(\frac{1}{1.7})$, see plot below:
 
 ```{r, fig.height=6, fig.width=10,warning=F,message=F}
 # Compare inverse logit with cumulative normal approximation
@@ -391,10 +355,12 @@ data.frame(
   labs(x = "x", y = "Probability",
        title = "Comparison of Inverse Logit and Scaled Cumulative Normal") +
   theme_minimal() +
-  theme(text = element_text(size = 12), legend.position = "bottom")
+  theme(text = element_text(size = 12), legend.position = "top")
 ```
 
-By using this approximation it is possible to marginalize out the trial-by-trial evidence and thereby getting a computationally easier model to fit (and an equation for the expectation of confidence) with the same parameters. So with this approximation we go from equation (2) to the following approximation.
+Using this approximation it is possible to marginalize out the trial-by-trial evidence and hereby getting a computationally less expensive model (and an equation for the expectation of confidence) that uses the same parameters. 
+
+With this approximation we go from equation (2) to the following:
 
 $$
 P(\text{correct} \mid r_i, a, X_i) = \begin{cases}\Phi\left(\frac{C \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - \Phi\left(\frac{C \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases} \tag{3}
@@ -407,73 +373,58 @@ $$
 \Phi\left(\frac{C \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right)
 $$
 
-We want to marginalize over $r_i$ i.e. calculating the expectation of above equation across $r_i$. 
+We want to marginalize over $r_i$, meaning that we want to calculate the expectation of above equation, across $r_i$. 
 
-This is can be done using the general formula for the expectation of a random continuous variable
+This is can be done using the general formula for the expectation of a random continuous variable.
 
 $$
 \mathbb{E(X)} = \int_{-\infty}^\infty x \ p(x) dx
 $$
 
-substituting the variables with the following definition $b = \frac{CX_i}{\sigma_e^2 + \sigma_m^2}$
+Substituting the variables, with the following $b = \frac{CX_i}{\sigma_e^2 + \sigma_m^2}$
 
 $$
 \int_{-\infty}^\infty \Phi(b \cdot r_i) \ p(r_i) dr_i
 $$
 
-This integral can be shown to have the solution:
+with $r_i \sim \mathcal{N}(\mu,\sigma)$
 
-https://www.tandfonline.com/doi/abs/10.1080/03610918008812164
+This integral can be shown to have the [solution](https://www.tandfonline.com/doi/abs/10.1080/03610918008812164):
 
 $$
 \Phi \left(\frac{\mu \cdot b}{\sqrt{1+\sigma^2 \cdot b^2}}\right)
 $$
 
 
-with $r_i \sim \mathcal{N}(\mu,\sigma)$
-
-given that we have  $r_i \sim \mathcal{N}(X_iD_i - \beta, \sqrt{\sigma_m^2+\sigma_e^2})$ we get: 
+Given that we have $r_i \sim \mathcal{N}(X_iD_i - \beta, \sqrt{\sigma_m^2+\sigma_e^2})$, we get: 
 
 $$
-\Phi \left(\frac{\mathop{\mathbb{E}}(r_i) \cdot b}{\sqrt{1+(\sigma_e^2+\sigma_m^2) \cdot b^2}}\right)
+\Phi \left(\frac{\mathbb{E}(r_i) \cdot b}{\sqrt{1+(\sigma_e^2+\sigma_m^2) \cdot b^2}}\right)
 $$
 
-Here we write the expectation of $r_i$ instead of the mean of the $r_i$ distribution ($X_iD_i - \beta$), as this will be conditional on the choice. 
+Here we write the expectation of $r_i$, instead of the mean of the $r_i$ distribution ($X_iD_i - \beta$), as this will be conditional on the choice (remember we are looking at $a_i = 1$). 
 
-Writing out the definition of b and simplify we get:
-
-
-$$
-\Phi\left(\frac{\mathop{\mathbb{E}}(r_i) \cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
-$$
-
-This equation thus gives us the probability of being correct, when the choice is 1, meaning that we need to get the expectation of meta cognitive evidence $r_i$ conditional on the fact that the choice was 1. 
-
-Equation (3) thus now becomes
+Writing it all out and simplify, we get:
 
 $$
-P(\text{correct} \mid a, X_i) 
-
-\sim 
-
-\begin{cases}\Phi\left(\frac{\mathop{\mathbb{E}}(r_i \mid a = 1) \cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
-
-& 
-
-\text{if } a = 1 \\ 
-
-1 - \Phi\left(\frac{\mathop{\mathbb{E}}(r_i \mid a = -1) \cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
-
-& 
-
-\text{if } a = -1\end{cases} \tag{4}
+\Phi\left(\frac{\mathbb{E}(r_i) \cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
 $$
 
-Lastly, we need to calculate is the two expectations of $r_i$ given the choice i.e. $\mathop{\mathbb{E}}(r_i \mid a_i = 1)$ and $\mathop{\mathbb{E}}(r_i \mid a_i = -1)$
+This equation thus gives us the probability of being correct, when the choice is 1. Given that the rater knows the choice, we need to get the expectation of meta cognitive evidence ($r_i$) conditional on the choice. 
 
-#### Calculating the conditional expectations
+Equation (3), therefore now becomes:
+$$
+P(\text{correct} \mid a, X_i) = \begin{cases}
+\Phi\left(\frac{\mathbb{E}(r_i \mid a = 1) \cdot CX_i}{\sigma_e^2 + \sigma_m^2} \cdot \frac{1}{\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right) & \text{if } a = 1 \\ 
+1 - \Phi\left(\frac{\mathbb{E}(r_i \mid a = -1) \cdot CX_i}{\sigma_e^2 + \sigma_m^2} \cdot \frac{1}{\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right) & \text{if } a = -1
+\end{cases} \tag{4}
+$$
 
-To calculate these expectations, we need to account for the fact that the choice $a_i$ depends on the relationship between the evidence $e_i$ and the criterion $c_i$. and given that $r_i$ is a noisy readout of $e_i$ there is a dependency structure.
+The last step is now to calculate the two expectations of $r_i$ given the choice i.e. $\mathbb{E}(r_i \mid a_i = 1)$ and $\mathbb{E}(r_i \mid a_i = -1)$
+
+#### Calculating conditional expectations
+
+To calculate these expectations, we need to account for the fact that the choice $a_i$ depends on the relationship between the evidence $e_i$ and the criterion $c_i$, and given that $r_i$ is a noisy readout of $e_i$ there is a dependency structure.
 
 We have the following relationships:
 
@@ -483,12 +434,12 @@ We have the following relationships:
 - Choice: $a_i = 1$ if $e_i > c_i$, otherwise $a_i = -1$
 
 
-we can treat the difference distribution $e_i - c_i$ as a joint bivariate normal distribution with $r_i$ and calculate the expectation of $r_i$ given that the $e_i - c_i$ random variable is above 0 (i.e. the choice was 1).
+we can treat the difference distribution $e_i - c_i$ as a joint bivariate normal distribution with $r_i$ and calculate the expectation of $r_i$ given that the $e_i - c_i$ random variable is above 0 (or equivalently that the choice was 1).
 
-The difference $e_i - c_i$ follows a Gaussian distribution, as both random variables are Gaussians.
+The difference $e_i - c_i$ follows a Gaussian distribution, as both random variables are Gaussian.
 
 $$
-e_i - c_i \sim \mathcal{N}(X_iD_i - \beta, \sqrt{\sigma_e^2 + \sigma_c^2})
+(e_i - c_i) \sim \mathcal{N}(X_iD_i - \beta, \sqrt{\sigma_e^2 + \sigma_c^2})
 $$
 The joint bivariate normal distribution becomes:
 
@@ -509,12 +460,13 @@ X_iD_i - \beta
 \right)
 $$
 
-intuitively this makes sense as both the $e_i - c_i$ and $r_i$ distribution share $e_i$, with the same mean but are otherwise independent.
+Intuitively this bivariate normal distribution can be argued for by realizing that both distributions of $e_i - c_i$ and $r_i$ share $e_i$, with the same mean but are otherwise independent.
 
+The key mathematical insight is that the covariance between $e_i-c_i$ and $r_i$ is $\sigma_e^2$ and not zero. 
 
-The key mathematical insight is that the covariance between $e_i-c_i$ and $r_i$ is $\sigma_e^2$, not zero. 
+Writing the full covariance and expanding it using this we get:  
 
-writing the full covariance and expanding it using this we get:  (https://www.probabilitycourse.com/chapter5/5_3_1_covariance_correlation.php#:~:text=The%20covariance%20between%20two%20random%20variables%20X,and%20X%20and%20Y%20are%20positively%20correlated.)
+<!-- (https://www.probabilitycourse.com/chapter5/5_3_1_covariance_correlation.php#:~:text=The%20covariance%20between%20two%20random%20variables%20X,and%20X%20and%20Y%20are%20positively%20correlated) -->
 
 
 $$
@@ -523,33 +475,35 @@ $$
 $$
 \text{Cov}(e_i-c_i, r_i) = \text{Cov}(e_i,e_i) + \text{Cov}(e_i, \epsilon_m) - \text{Cov}(c_i,e_i) - \text{Cov}(c_i, \epsilon_m)=  \text{Cov}(e_i,e_i) = \text{Var}(e) =\sigma_e^2
 $$
-As $e_i$ and $\epsilon_m$ and also $c_i$ are independent, these covariance are 0 and we get:
+As $e_i$ and $\epsilon_m$ and also $c_i$ are independent, these covariances are 0:
 
 $$
 \text{Cov}(e_i-c_i, r_i) = \text{Cov}(e_i,e_i) = \text{Var}(e) =\sigma_e^2
 $$
-This shared variance structure means that $e_i-c_i$ and $r_i$ are correlated with correlation coefficient: See definition of the correlation coefficient below.
+
+This shared variance structure means that $e_i-c_i$ and $r_i$ are correlated with correlation coefficient.
 
 $$
 \rho = \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_c^2)} \cdot \sqrt{(\sigma_e^2 + \sigma_m^2)}} \tag{5}
 $$
 
 
-## Truncated normal distributions
+#### Truncated normal distributions
 
 To proceed, we need a general result from probability theory. Suppose we have two jointly normal random variables:
 
 $$
 \begin{pmatrix} Z \\ Y \end{pmatrix} \sim \mathcal{N}\left(\begin{pmatrix} \mu_Z \\ \mu_Y \end{pmatrix}, \begin{pmatrix} \sigma_Z^2 & \rho\sigma_Y\sigma_Z \\ \rho\sigma_Y\sigma_Z & \sigma_Y^2 \end{pmatrix}\right)
 $$
-It can be shown that the expectation of Y given that Z>0 is:
-See the full derivation in [Derivation](Derivations/Truncated Normal.Rmd).
+It can be shown that the expectation of Y given Z>0 is:
 
 $$
 \mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \sigma_Y\frac{\phi(z_z)}{\Phi(z_z)}
 $$
 
 With $z_Z = \frac{\mu_Z}{\sigma_Z}$
+
+For a full derivation see; [Derivation](Derivations/Truncated Normal.Rmd).
 
 
 Now replacing Y with $r_i$ and Z with $e_i - c_i$ we get:
@@ -560,30 +514,28 @@ $$
 
 With $z_z = \frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}$
 
-One might here use the correlation coefficient we found from equation (5) can be inserted see [Derivations](Derivations/no_correlation.Rmd).
-
 It can then easily be shown using the same steps that when the action is -1 i.e. $(e_i-c_i) < 0$ this becomes:
 
 $$
 \mathbb{E}(r_i \mid (e_i-c_i) > 0) =  (X_iD_i - \beta) - \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \frac{\phi(-z_z)}{\Phi(-z_z)}
 $$
 
-we might define $\lambda(x) = \frac{\phi(x)}{\Phi(x)}$ which is the inverse Mills ratio giving us:
+we might define $\lambda(x) = \frac{\phi(x)}{\Phi(x)}$, which is the inverse Mills ratio giving us:
 
 $$
-\mathop{\mathbb{E}}(r_i \mid a = 1) = (X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
+\mathbb{E}(r_i \mid a = 1) = (X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
 $$
 
 For $a = -1$ (when $e_i - c_i \leq 0$):
 
 $$
-\mathop{\mathbb{E}}(r_i \mid a = -1) = (X_iD_i - \beta) - \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
+\mathbb{E}(r_i \mid a = -1) = (X_iD_i - \beta) - \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
 $$
 Note that $\lambda(-x) = \frac{\phi(x)}{1-\Phi(x)}$ by properties of the normal distribution.
 
 ### Final confidence model
 
-Substituting these conditional expectations back into our marginalized confidence equation (4):
+Substituting these conditional expectations back into our marginalized confidence equation (4).
 
 $$
 P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} 
@@ -594,10 +546,10 @@ P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) 
 \cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right) 
 $$
 
-and simplifying
+Simplifying.
 
 $$
-P(\text{correct} \mid a = 1, X_i, D_i) = 
+P(correct \mid a = 1, X_i, D_i) = 
 
 \Phi\left(
 \left[
@@ -612,11 +564,11 @@ P(\text{correct} \mid a = 1, X_i, D_i) =
 $$
 
 
-which for the other choice becomes:
+which for a = -1 becomes.
 
 
 $$
-P(\text{correct} \mid a = -1, X_i, D_i) = 
+P(correct \mid a = -1, X_i, D_i) = 
 
 \Phi\left(
 \left[
@@ -630,7 +582,7 @@ P(\text{correct} \mid a = -1, X_i, D_i) =
 $$
 
 
-This gives us a fully marginalized model for confidence ratings that depends only on the parameters $\Theta_1 = (\beta, \sigma_e, \sigma_c, \sigma_m)$ and the observed data (choices $a_i$, stimuli $X_i$, true states $D_i$), without requiring trial-by-trial estimation of latent evidence variables $e_i$ and $r_i$.
+(6a) and (6b) gives us a fully marginalized model for confidence ratings that depends only on the parameters $\Theta_1 = (\beta, \sigma_e, \sigma_c, \sigma_m)$ and the observed data (choices $a_i$, stimuli $X_i$ and true states $D_i$), without requiring trial-by-trial estimation of latent evidence variables $e_i$ and $r_i$.
 
 Before interpreting on the parts of the terms we need to revert back to one of the key assumptions of this model as was outline just after introducing equation (2). When the subject calculates the subjective probability of being correct it is assumed that the subject has access to the stimulus intensity. Below we have highlighted which of the stimulus intensities this is related to:
 
@@ -642,17 +594,13 @@ P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) 
 \cdot C {\color{red}{X_i}}}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2{\color{red}{X^2_i}}}{\sigma_e^2+\sigma_m^2}}}\right) 
 $$
 
-Interestingly these two stimulus intensities, especially the first one (which is not from the marginalization) serves to make sure that at intensity 0 i.e. $X_i = 0$ the predicted confidence will always be 0.5. 
+Interestingly these two stimulus intensities, especially the first one (which is not from the marginalization) serves to make sure that at intensity 0 the predicted confidence will always be 0.5. So not only is it a strong assumption that the agent has access to the objective stimulus strength, this assumption does not even hold given the empirical observation that the lowest confidence rating shifts with the psychometric function which we highlighted in the [Models and Data Markdown](Models and Data in Perceptual Decision-Making with Confidence.Rmd). From the formalization that confidence ratings reflect a noisy, subjective probability of being correct, incorporating response biases, the above formulation falters as there is an objective anchor at $X_i = 0$. 
 
-Not only is this a strong assumption that we will challenge regardless, due to empirical findings of confidence bias (i.e. some subjects reporting higher confidence than others on average), but the main problem with this formulation is that with this anchor at (0,0.5) the confidence curves cannot produce one of the main empirical patterns of confidence ratings, which we highlighted in the [Models and Data Markdown](Models and Data in Perceptual Decision-Making with Confidence.Rmd). Here we formalized that confidence ratings reflect a noisy, subjective probability of being correct, incorporating response biases rather than purely objective performance. With the above formulation this is not possible as there is an objective anchor at $X_i = 0$. 
+Due to these consideration, supported by some empirical validation on our pilot data below, we believe that this particular stimulus intensity, coming from an unjustified assumption, needs to be accessed. 
 
-Due to these consideration, supported by some empirical validation on our pilot data below, we believe that this particular stimulus intensity, coming from an unjustified assumption of the agent having access to the stimulus intensity, needs to be accessed. 
+One interesting idea of how to deal with this, is to assume that the agent has a noisy readout of the stimulus strength, $\hat{X} \sim p(\hat{x}|\theta,c)$. The problem with such formulation is defining the probability distribution of the internal stimulus intensity. This probability distribution needs to be positively bound as $\hat{X} > 0$, which introduces an abitrary choice, but more importantly makes is non trivial to marginalize the trial-by-trial readout. Another approach would be to replace this stimulus intensity value with a constant, which could vary across subjects. Such parameterization would serve as a placeholder for idosyncratic differences in how subjects might use the stimulus intensity above and beyond what they should have access to. 
 
-One particular interesting idea of how to deal with this is to assume that the agent has a noisy readout of the stimulus strength, $\hat{X} \sim p(\hat{x}|\theta,c)$. The problem with such formulation is that the defining the probability distribution of the internal stimulus intensity is not trivial as its positively bound and therefore would not easily be marginalized as above. 
-
-Another approach would be to replace this stimulus intensity value with a constant across subject parameter that would serve as a placeholder for idosyncratic differences in how subjects might use the stimulus intensity above and beyond what they should have access to. 
-
-Instead of opting for these options we chose to assume that the agents do not have access to this stimulus intensity and therefore fix it to 1. This approach in its simplicity circumvents some of the troublesome computational aspects as well as obeying to what the agents is assumed to have access to, but just as importantly this makes it possible for the model to accommodate the emperical observation that the confidence curve follows the psychometric function of the binary choices.
+Instead of opting for these options, we chose to assume that the agents do not have access to this stimulus intensity and therefore fix it to 1. This approach in its simplicity circumvents some of the troublesome computational aspects, as well as obeying to what the agents is assumed to have access to. This also importantly this makes it possible for the model to accommodate the empirical observation that the confidence curve follows the psychometric function of the binary choices.
 
 This means that the final equations become
 
@@ -673,7 +621,6 @@ $$
 
 
 which for the other choice becomes:
-
 
 $$
 P(\text{correct} \mid a = -1, X_i, D_i) = 
@@ -696,45 +643,49 @@ $$
 C = \frac{2}{1.7}
 $$
 
-Of note in the above formula is that the terms inside the cummulative normal distribution function have clear interpretations. 
 
-Firstly the common factor is a correction factor for marginalization. thus we define: 
+In the above formula it is noteworthy that the terms inside the cumulative normal distribution function have clear interpretations. 
+
+Firstly the common factor, is a correction factor for marginalization. thus we define: 
 
 $$
 K_i = \frac{1} {\sqrt{1 + \frac{C^2}{\sigma_e^2+\sigma_m^2}}}
-$$ 
-whereas the two other terms can be thought to have a cognitive interpretation.
+$$
 
-looking back at equation 3 we had (now with $X_i = 1$)
+The two other terms can be thought to have more cognitive interpretations. Looking back at equation 3 we had (now with $X_i = 1$)
 
 $$
 P(\text{correct} \mid r_i, a, X_i) = \begin{cases}\Phi\left(\frac{C \cdot r_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - \Phi\left(\frac{C \cdot r_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases} \tag{3}
 $$
 
-we observe that the first term from equation 7 is just the expectation of the argument to the cumulative normal distribution function. This argument from the derivation is the log-likelihood ratio, which might also be seen as the average strength of evidence in favor of the true state. We might call this is I;
+One can observe that the first term from equation (7a / 7b) is just the expectation of the argument to the cumulative normal distribution function in equation (3). This argument, from the derivation is the log-likelihood ratio, can be interpreted as the average strength of evidence in favor of the true state. We might call this is I;
 
 $$
-I = \mathop{\mathbb{E}}\left(\frac{C \cdot r_i}{\sigma_e^2 + \sigma_m^2}\right) = \frac{(CX_iD_i - C\beta)}{\sigma_e^2 + \sigma_m^2}
+I_i = \mathbb{E}\left(\frac{C \cdot r_i}{\sigma_e^2 + \sigma_m^2}\right) = \frac{(CX_iD_i - C\beta)}{\sigma_e^2 + \sigma_m^2}
 $$
 
-The latter term in equation 7 adjusts this expectation, because of the action selected before the confidence rating thus we name this the S. 
-
+The latter term in equation (7a / 7b) adjusts this average evidence strength, because of the information contained by the action selected: 
 $$
-S = -\rho \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)C}{\sqrt{\sigma_e^2 + \sigma_m^2} }
+S_i = -\rho \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)C}{\sqrt{\sigma_e^2 + \sigma_m^2} }
 $$
 
-This term serves the purpose of changing the mean expectation to incorporate the information of the action to guide confidence. The addition of actions into the confidence computation have been proposed in the second order rater model (REF), from Fleming and Daw where they also re-analyzed data to show this pattern empirically. 
+This term serves the purpose of changing the mean expectation of the confidence to incorporate the information of the action. The addition of actions into the confidence computation have been proposed in the second order rater model from Fleming and Daw, where they also re-analyzed data to show this pattern empirically [@FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017]. To summarize, confidence computation can in this model be thought of as a weighting of the expected normalized evidence with a correction factor for having committed to a choice. Below we introduce a couple of additional parameters in order to encompass idiosyncrasies in the task and participants, as well as probabilistic relate the above formulation to the observed confidence ratings.
 
+#### Additional parameters
 
+We introduce 5 additional parameters. $\Theta_2 = (\kappa_c, \lambda, \mu_{\beta})$. 
 
-To summarize; Confidence computation can be thought of as a weighting of the expected normalized evidence with a correction factor for having commited to a choice. 
+* $\lambda$ is the lapse rate on the binary choices this is a stimulus independent factor that shifts the asympote of the psychometric function away from certainty i.e. the asymptotic becomes $\lambda$ and $1-\lambda$. 
 
-Now below we introduce a couple of additional parameters in order to encompass idiosyncrasies in the task and participants, as well as probabilistic relate the above formulation to our confidence ratings.
+* $\mu_{\beta}$ is a meta cognitive bias parameter, serving as an independent vertical shift of confidence ratings.
 
-We introduce 5 additional parameters. $\Theta_2 = (\kappa_c, \lambda, \mu_{\beta})$. $\lambda$ is the lapse rate on the binary choices this is a stimulus independent factor that shifts the asympote of the psychometric function away from certainty i.e. the asymptotic becomes $\lambda$ and $1-\lambda$. Further we define $\mu_{\beta}$ as meta cognitive bias, which serves as an independent shift of confidence ratings. The parameter $\kappa_c$ is the precision of the ordered beta likelihood respectively. Lastly we introduce subject level parameters not hierarchically drawn which are the two cutpoints for the ordered beta likelihood $c_0,c_1$. These parameters help generalize the beta-distribution to outcomes that contain 0 and 1 ratings. The last three parameters serve to probabilistically relate the expected value of the confidence ratings to the confidence rating data. See (XXX) for the ordered beta likelihood. 
+* $\kappa_c$ is the precision of the ordered beta likelihood. 
+
+* Lastly $c_0,c_1$ reflects the two cutpoints for the ordered beta likelihood. These two parameters help generalize the beta-distribution to outcomes that contain 0 and 1 ratings. 
+
+See [@KUBINECOrderedBetaRegressionParsimoniousWellFittingModel2023] for the ordered beta likelihood. 
 
 The complete set of parameters for the model are: 
-
 
 $$
 \Theta_s = \begin{bmatrix}
@@ -756,9 +707,9 @@ $$
 (c_{1_s} , c_{0_s}) \sim \delta([1,10,1])
 $$
 
-Note in the above formulation that $\mathcal{N}$ is a multivariate normal distribution with mean and covariance. Further all contraints on the parameters as written were acomplised by transformation. All positively constrainted parameters were exponentiated, parameters with an upper and lower bound were transformed with the inverse logit function and multiplied appropriately. The constraint of the cutputs were applied by the prior of a dirchlet distribution. 
+In the above formulation that $\mathcal{N}$ is a multivariate normal distribution with mean and covariance. Further all constraints on the parameters as written were accomplished by transformation, all positively constrained parameters were exponentiated, parameters with an upper and lower bound were transformed with the inverse logit function and multiplied appropriately. The constraint of the cut-points were applied by the prior of a Dirichlet distribution ($\delta()$). Note, the cutpoints are sampled on a subject-by-subject basis. 
 
-and the equations for model becomes:
+The full model becomes.
 
 $$
 \\
@@ -782,15 +733,16 @@ K_i = \frac{1} {\sqrt{1 + \frac{C^2}{\sigma_{e_s}^2+\sigma_{m_s}^2}}}
 
 $$
 
+Next we show verification of the above formulated marginalized heuristic model, by simulating data from from equation (2) (with $X_i = 1$) averaging across the signed stimulus axis and displaying for the same parameter estimates (i.e. $\Theta_1$) of the marginalized heuristic model.
 
-
-
-Below we showcase the above heuristic model fit to data simulated from equation (2) (with $X_i = 1$) to show that the two are approximately close. 
+The In the first validation step we simulate from different combinations of noise parameters (facets).
 
 ```{r, error=F,message=F,warning=F, fig.height=10,fig.width=10}
 source("~/RDM-metacognition/Preregistration/scripts/Simulation.R")
 
 library(tidyverse)
+
+trials = 500000
 
 # Define high/low values
 sigma_e_vals <- c(-2, -1.5)   # example low/high
@@ -820,7 +772,7 @@ midpoints <- breaks[-length(breaks)] + 0.1
 
 df_mech = param_grid %>% 
     rowwise() %>%
-    mutate(sims = list(simulate_data_p_bias(100000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1))) %>% 
+    mutate(sims = list(simulate_data_p_bias(500000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1))) %>% 
     ungroup() %>% 
     unnest() %>% 
     mutate(XD = X * D,
@@ -831,7 +783,7 @@ df_mech = param_grid %>%
 
 df_heu = param_grid %>% 
     rowwise() %>%
-    mutate(sims = list(simulate_data_margin_bias(5000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1))) %>% 
+    mutate(sims = list(simulate_data_margin_bias(500, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1))) %>% 
     ungroup() %>% 
     unnest() %>% 
     mutate(XD = X*D) %>% 
@@ -870,6 +822,10 @@ rbind(df_mech,df_heu) %>% ggplot()+
   
 ```
 
+In the above plot we see the results from averring `r trials` simulated trials from equation (2), for each bin of the signed stimulus intensity scale (dots are mean and approximate 95 Interval). The thick solid lines represents the marginalized heuristic model predictions. 
+
+
+Next we simulate using fixed noise parameters and change the bias $\beta$. Note, that now we are displaying the action and not the accuracy of the choice.
 
 ```{r, error=F,message=F,warning=F, fig.height=10,fig.width=10}
 
@@ -901,7 +857,7 @@ midpoints <- breaks[-length(breaks)] + 0.1
 
 df_mech = param_grid %>% 
     rowwise() %>%
-    mutate(sims = list(simulate_data_p_bias(100000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1))) %>% 
+    mutate(sims = list(simulate_data_p_bias(500000, sigma_e = sigma_e, sigma_k = sigma_k, sigma_m = sigma_m, bias = bias, seed = 1))) %>% 
     ungroup() %>% 
     unnest() %>% 
     mutate(XD = X * D,
@@ -952,15 +908,14 @@ rbind(df_mech) %>% ggplot()+
   
 ```
 
-Note that each facet contains the parameters that were used for simulating the data for both models. Datapoints with error bars are derived from averaging 100000 points across the -1 ; 1 stimulus range in increments of 0.05 (error bars contain approximate 95% converage) from equation (2). Lines are the expected values derived from equation (7) from 5000 points. As can be seen the approximation for the expectation of the trial-by-trial model is excellent.
-
+In the above plot we see the results from averring `r trials` simulated trials from equation (2), for each bin of the signed stimulus intensity scale (dots are mean and approximate 95 Interval). The thick solid lines represents the marginalized heuristic model predictions. 
 
 
 Next, we demonstrate parameter recovery simulating from equation (2) (with $X_i = 1$) and fitting with the heuristic model derived above. 
 
 
 ```{r}
- 
+
 ```
 
 
@@ -1011,27 +966,18 @@ rbind(
 
 ```
 
-Generally the two models align well in their subject level parameter estimates, further justifing this simplification that makes theoretical sense.
+Generally the two models align well in their subject level parameter estimates, further justifying this simplification which makes theoretical sense.
 
-
-
-
-```{r,fig.height=12, fig.width=18, message=F,error=F,warning=F}
-magick::image_read(here::here("Preregistration","Figures","Pilot_predictive_checks.PNG"))
-```
-
-
-## pilot data fit from Hierarchical Heurestic model
+Next we show predictive checks of the Hierarchical Heurestic model for our pilot participants.
 
 ```{r,fig.height=12, fig.width=18, message=F,error=F,warning=F}
 magick::image_read(here::here("Preregistration","Figures","Pilot_predictive_checks.PNG"))
 ```
 
 
+### Hierarchical parameter recovery
 
-## Hierarchical parameter recovery
-
-Using the data from the simulations of the sequential sampling we also have access to parameter recovery, where the simulated datasets were extracted from the draws of the above posterior distribution, below we showcase that the model can to an adequte degree recover its parameters on a subject and group level:
+To further robustness check our implementation of the model as well as the planned sequential sampling, we simulated new subjects from the posterior distribution of the hierarchical model. We did this by extracting a draw from the posterior and then simulating 25 subjects from this draw. We then fitted the model to increasing steps (i.e. 5,7,9, 12,15,20,25) of subjects, to demonstrate that the sequential sampling approach would be feasible. This also allowed us to do parameter recovery on the hierarchical model without additional computational resources. Below we showcase that the model can to an adequate degree recover its parameters on a subject and group level for parameters of interest.
 
 ```{r,fig.height=7, fig.width=14, message=F,error=F,warning=F}
 magick::image_read(here::here("Preregistration","Figures","parameterrecovery_hier.PNG"))

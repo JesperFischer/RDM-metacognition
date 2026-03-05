@@ -40,34 +40,6 @@ fit = function(){
   qq = rnorm(1,1,1)
   
   df = simulate_data_mcmc_x1(n = 300)
-# 
-#   mod = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Simulations","old.stan"))
-#   
-#   datastan = list(a = df$a_gauss,
-#                   ACC = df$ACC,
-#                   C = df$C,
-#                   # rts = df$rts,
-#                   N = nrow(df),
-#                   XD = df$X * df$D,
-#                   X = df$X)
-#   
-#   
-#   fit = mod$sample(data = datastan,
-#                    iter_warmup = 500,
-#                    refresh = 0,
-#                    iter_sampling = 500,
-#              parallel_chains = 4)
-#   
-#   div = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq,
-#                                                         time = fit$time()$total)
-#   
-#   estimated = fit$summary("gm") %>% mutate(variable = c("alpha","beta","confprec","metauncor","metauninc","metabias"
-#                                             )) %>% mutate(div = max(div$num_divergent))
-#   
-#   loo = fit$loo()
-#   
-#   pareto_o7 = sum(loo$diagnostics$pareto_k > 0.7)
-  
   
   modnew = cmdstanr::cmdstan_model(here::here("Stanmodels","Heurestic models","Simulations","Heurestic_X1.stan"))
 
@@ -152,118 +124,24 @@ results_list = results_list[-which(results_list == "Error")]
 
 ```{r}
 results_list = readRDS("~/RDM-metacognition/Simulations/Heurestic/Saved models/1000sim_300trials_finalHeu_X1.RData")
+results_list = results_list[-which(results_list == "Error")]
 
 inner_join(
-  map_dfr(results_list,1), 
+  map_dfr(results_list,1) %>% select(sim_n,sigma_k,sigma_e,sigma_m,bias,conf_prec) %>% 
+    mutate(beta = brms::logit_scaled(bias/2 + 0.5), bias = NULL,
+           confprec = log(conf_prec), conf_prec = NULL) %>% 
+    pivot_longer(cols = c(sigma_k,sigma_e,sigma_m,beta,confprec), values_to = "simulated", names_to = "variable"), 
   map_dfr(results_list,2) %>% 
-    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
-    select(mean,variable,sim_n,div) %>% 
-    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
-    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
-    mutate(sim_n = esti_sim_n)
+    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400 & div == 0) %>% 
+    select(mean,q5,q95,variable,sim_n,div) 
 ) %>% 
-    # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
-  ggplot(aes(x = esti_sigma_e, y = sigma_e))+geom_point(alpha = 0.1)+geom_abline()+
-  ggtitle("action model")
-
-# inner_join(
-#   map_dfr(results_list,1), 
-#   map_dfr(results_list,2) %>% 
-#     filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
-#     select(mean,variable,sim_n,div) %>% 
-#     pivot_wider(names_from = "variable",values_from = "mean") %>% 
-#     unnest()
-# ) %>% 
-#     # filter(div == 0 &  1/sqrt(sigma_k^2+sigma_e^2) < 20 & exp(beta) < 50) %>% 
-#   ggplot(aes(x = exp(beta), y = 1/sqrt(exp(sigma_k)^2+exp(sigma_e)^2)))+geom_point()+geom_abline()+
-#   ggtitle("old model")
-```
-
-```{r}
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,2) %>% 
-    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
-    select(mean,variable,sim_n,div) %>% 
-    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
-    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
-    mutate(sim_n = esti_sim_n)
-) %>% 
-    # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
-  ggplot(aes(x = esti_sigma_k, y = sigma_k))+geom_point(alpha = 0.1)+geom_abline()+
-  ggtitle("action model")
+  ggplot(aes(x = simulated, y = mean, ymin = q5, ymax = q95))+geom_pointrange(alpha = 0.1)+geom_abline()+
+  theme_classic()+
+  ylab("Estimated [95 % HDI]")+
+  xlab("Simulated value")+
+  facet_wrap(~variable, scales = "free")
 
 ```
-
-
-
-```{r}
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,2) %>% 
-    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
-    select(mean,variable,sim_n,div) %>% 
-    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
-    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
-    mutate(sim_n = esti_sim_n)
-) %>% 
-    # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
-  ggplot(aes(x = esti_sigma_m, y = sigma_m))+geom_point(alpha = 0.1)+geom_abline()+
-  ggtitle("action model")
-
-```
-
-
-
-
-
-```{r}
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,2) %>% 
-    filter(rhat < 1.03 & ess_bulk > 400, ess_tail > 400) %>% 
-    select(mean,variable,sim_n,div) %>% 
-    pivot_wider(names_from = "variable",values_from = c("mean")) %>% 
-    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
-    mutate(sim_n = esti_sim_n)
-) %>% 
-    # filter(div == 0 & 1/sqrt(sigma_k^2+sigma_e^2) < 20) %>% 
-  ggplot(aes(x = (brms::inv_logit_scaled(esti_beta)-0.5)* 2, y = bias))+geom_point(alpha = 0.1)+geom_abline()+
-  ggtitle("action model")
-
-```
-
-
-```{r}
-
-inner_join(
-  map_dfr(results_list,1), 
-  map_dfr(results_list,2) %>% 
-    select(mean,variable,sim_n,div) %>% 
-    pivot_wider(names_from = "variable",values_from = "mean") %>% 
-    unnest() %>% drop_na() %>% rename_with(~ paste0("esti_", .x)) %>% 
-    mutate(sim_n = esti_sim_n)
-) %>% 
-  # filter(div == 0) %>% 
-  ggplot(aes(x = exp(esti_confprec), y = conf_prec))+geom_point(alpha = 0.1)+geom_abline()+
-    ggtitle("action model")
-
-
-
-# inner_join(
-#   map_dfr(results_list,1), 
-#   map_dfr(results_list,2) %>% 
-#     select(mean,variable,sim_n,div) %>% 
-#     pivot_wider(names_from = "variable",values_from = "mean") %>% 
-#     unnest() 
-# ) %>% 
-#   filter(div == 0) %>% 
-#   ggplot(aes(x = exp(confprec), y = conf_prec))+geom_point()+geom_abline()+
-#     ggtitle("old model")
-
-```
-
-
 
 ```{r}
 

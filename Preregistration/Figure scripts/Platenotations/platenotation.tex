@@ -1,4 +1,4 @@
-\documentclass[tikz,border=1pt]{standalone}
+\documentclass[tikz,border=0pt]{standalone}
 
 \usepackage{amsmath}
 \usepackage{xcolor}
@@ -16,6 +16,7 @@
 
 \begin{document}
 
+\centering
 \begin{tikzpicture}
 
 
@@ -234,15 +235,15 @@
 \pgfsetcornersarced{\pgfpoint{5mm}{5mm}}
 \node[draw=black, fit=(m0-1-2) (m0-3-4) (ct1), inner sep=4mm] {};
 
-\node[
-  draw,
-  thick,
-  rounded corners=6pt,
-  fit=(m0),
-  inner sep=8mm,
-  label={[font=\bfseries]above: EC-Meta},
-  name=wholemodel
-] {};
+% Outer border removed
+% \node[
+%   draw,
+%   thick,
+%   rounded corners=6pt,
+%   fit=(m0),
+%   inner sep=8mm,
+%   name=wholemodel
+% ] {};
 
 \end{tikzpicture}
 \end{document}

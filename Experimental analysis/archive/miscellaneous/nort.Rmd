@@ -1,0 +1,592 @@
+---
+title: "Decision and Confidence: Evidence-Based Policy with Metacognition"
+author: ""
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+---
+
+
+```{r}
+pacman::p_load(cmdstanr, tidyverse,posterior, bayesplot, tidybayes,
+               brms, patchwork, cowplot,ggpubr,flextable)
+
+
+invisible(lapply(
+  list.files(here::here("Analysis", "Scripts"), full.names = TRUE),
+  function(f) source(f, echo = FALSE, print.eval = FALSE)
+))
+
+
+df <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_1.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+  # filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  filter(RT < 2.5) %>% 
+  mutate(Confidence = (SR_conf+1)/2)
+
+
+mod = cmdstanr::cmdstan_model(here::here("Derivations","test_conf.stan"))
+
+# mod = cmdstanr::cmdstan_model(here::here("Derivations","test_conf_shift_evidence.stan"))
+
+mod = cmdstanr::cmdstan_model(here::here("Derivations","test_nort.stan"))
+
+mod = cmdstanr::cmdstan_model(here::here("Derivations","Collaps_DDM.stan"))
+mod = cmdstanr::cmdstan_model(here::here("Derivations","Collaps_DDM_simp.stan"))
+
+
+datastan = list(a = df$Y,
+                RT = df$RT,
+                D = df$D,
+                C = df$Confidence,
+                N = nrow(df),
+                minRT = min(df$RT),
+                XD = df$coherence * df$D,
+                X = df$coherence)
+
+
+fit_kelly = mod$sample(data = datastan,
+                 iter_warmup = 500,
+                 refresh = 100,
+                 adapt_delta = 0.90,
+                 iter_sampling = 500,
+           parallel_chains = 4)
+
+fit_kelly
+
+fit_kelly$summary(c("a_int","a_beta","v_int","v_beta","b","ndt","sigma_m_log","prec_conf_log"))
+
+evi = fit_kelly$summary("evidence")
+evi %>% mutate(RT = df$RT) %>% ggplot(aes(x = mean, xmin = q5, xmax = q95, y = RT))+geom_pointrange()+geom_smooth()
+
+
+df <- read_csv(here::here("Data","Pilots","Jesper_2025_17_12","RDM_reportz_sub5.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+    mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+    # filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  mutate(Confidence = (SR_conf+1)/2)
+
+# df$RT[1] = df$RT[1]-0.5
+
+
+datastan = list(a = df$Y,
+                RT = df$RT,
+                D = df$D,
+                C = df$Confidence,
+                N = nrow(df),
+                minRT = min(df$RT),
+                XD = df$coherence * df$D,
+                X = df$coherence)
+
+fit_jesper = mod$sample(data = datastan,
+                 iter_warmup = 500,
+                 refresh = 100,
+                 
+                 adapt_delta = 0.90,
+                 iter_sampling = 500,
+           parallel_chains = 4)
+
+
+fit_jesper$summary(c("a_int","a_beta","v_int","v_beta","b","ndt","sigma_m_log","prec_conf_log"))
+
+evi = fit_jesper$summary("evidence")
+evi %>% mutate(RT = df$RT) %>% ggplot(aes(x = mean, xmin = q5, xmax = q95, y = RT))+geom_pointrange()+geom_smooth()
+
+
+
+
+
+df <- read_csv(here::here("Data","Pilots","Siebe_2025_03_12","data.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+    mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+    # filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  mutate(Confidence = (SR_conf+1)/2) %>% 
+  filter(RT < 2.5) %>% 
+  dplyr::select(Y,RT,D,Confidence,coherence,RTrating,X) %>% 
+  drop_na()
+
+
+# mod = cmdstanr::cmdstan_model(here::here("Derivations","test_conf.stan"))
+
+datastan = list(a = df$Y,
+                RT = df$RT,
+                D = df$D,
+                C = df$Confidence,
+                N = nrow(df),
+                minRT = min(df$RT),
+                XD = df$coherence * df$D,
+                X = df$coherence)
+
+
+fit_siebe = mod$sample(data = datastan,
+                 iter_warmup = 500,
+                 refresh = 100,
+                 
+                 adapt_delta = 0.90,
+                 iter_sampling = 500,
+           parallel_chains = 4)
+
+
+
+fit_siebe$summary(c("a_int","a_beta","v_int","v_beta","b","ndt","sigma_m_log","prec_conf_log"))
+
+evi = fit_siebe$summary("evidence")
+evi %>% mutate(RT = df$RT) %>% ggplot(aes(x = mean, xmin = q5, xmax = q95, y = RT))+geom_pointrange()+geom_smooth()
+
+
+df <- read_csv(here::here("Data","Pilots","Siebe_2025_17_12","RDM_reportz_sub6.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+    mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+    # filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  mutate(Confidence = (SR_conf+1)/2)  %>% 
+  filter(RT < 2.5) %>% 
+  dplyr::select(Y,RT,D,Confidence,coherence,RTrating,X) %>% 
+  drop_na()
+
+
+
+
+# mod = cmdstanr::cmdstan_model(here::here("Derivations","test_conf.stan"))
+
+datastan = list(a = df$Y,
+                RT = df$RT,
+                D = df$D,
+                C = df$Confidence,
+                N = nrow(df),
+                minRT = min(df$RT),
+                XD = df$coherence * df$D,
+                X = df$coherence)
+
+fit_siebe2 = mod$sample(data = datastan,
+                 iter_warmup = 500,
+                 refresh = 100,
+                 
+                 adapt_delta = 0.90,
+                 iter_sampling = 500,
+           parallel_chains = 4)
+
+
+evi = fit_siebe2$summary("evidence")
+evi %>% mutate(RT = df$RT) %>% ggplot(aes(x = mean, xmin = q5, xmax = q95, y = RT))+geom_pointrange()+geom_smooth()
+
+
+
+df <- read_csv(here::here("Data","Pilots","Arthur_2025_09_01","RDM_reportz_sub10.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+    mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+    filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  mutate(Confidence = as.numeric(SR_conf))  %>% 
+  filter(RT < 2.5) %>% 
+  dplyr::select(Y,RT,D,Confidence,coherence,RTrating,X) %>% 
+  drop_na()
+
+
+# mod = cmdstanr::cmdstan_model(here::here("Derivations","test_conf.stan"))
+
+datastan = list(a = df$Y,
+                RT = df$RT,
+                D = df$D,
+                C = df$Confidence,
+                N = nrow(df),
+                minRT = min(df$RT),
+                XD = df$coherence * df$D,
+                X = df$coherence)
+
+
+
+fit_art = mod$sample(data = datastan,
+                 iter_warmup = 500,
+                 refresh = 100,
+                 
+                 adapt_delta = 0.95,
+                 iter_sampling = 500,
+           parallel_chains = 4)
+
+
+
+evi = fit_art$summary("evidence")
+evi %>% mutate(RT = df$RT) %>% ggplot(aes(x = mean, xmin = q5, xmax = q95, y = RT))+geom_pointrange()+geom_smooth()
+
+
+```
+
+
+```{r, fig.width=8,fig.height=6}
+dia = function(fit){
+  
+  parameters = c("sigma_choice","mean_choice","prec_conf","sigma_m","sigma_e")
+  sum = fit$summary(c(parameters))
+
+  plot = mcmc_pairs(fit$draws(c(parameters)),np = nuts_params(fit))
+  plot2 = mcmc_trace(fit$draws(c(parameters)),np = nuts_params(fit))
+  
+  return(list(sum,plot,plot2, fit$diagnostic_summary()))
+  
+}
+
+dia(fit_kelly)
+
+
+```
+
+
+```{r, fig.width=8,fig.height=6}
+dia(fit_jesper)
+```
+
+
+```{r, fig.width=8,fig.height=6}
+dia(fit_siebe)
+```
+
+
+
+```{r, fig.width=8,fig.height=6}
+dia(fit_siebe2)
+```
+
+```{r}
+df <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_1.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+  filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  filter(RT < 2.5) %>% 
+  mutate(Confidence = (SR_conf+1)/2)
+
+
+
+
+
+df <- read_csv(here::here("Data","Pilots","Siebe_2025_03_12","data.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+    mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>%
+  filter(Trialtype == "Main") %>%
+  # filter(SR_conf != "None") %>%
+    # filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  mutate(Confidence = (SR_conf+1)/2) %>%
+  filter(RT < 2.5) %>%
+  dplyr::select(Y,RT,D,Confidence,coherence,X,ACC) %>%
+  drop_na()
+
+
+
+
+fit = fit_siebe
+# preds = data.frame(fit$summary("pred_rt"))
+# 
+# df %>%
+#   mutate(preds_mean = preds$mean,
+#          preds_q95 = preds$q95,
+#          preds_q5 = preds$q5) %>%
+#   ggplot()+
+#   geom_point(aes(x = X, y = RT))+
+#     geom_pointrange(aes(x = X, y = preds_mean, ymin = preds_q5, ymax = preds_q95), col = "red")
+
+# 
+# 
+# df %>% 
+#   mutate(preds_mean = preds$mean,
+#          preds_q95 = preds$q95,
+#          preds_q5 = preds$q5) %>% 
+#   ggplot()+
+#   # geom_point(aes(x = X, y = RT))+
+#     geom_pointrange(aes(x = RT, y = preds_mean, ymin = preds_q5, ymax = preds_q95))
+#     
+#     
+preds = data.frame(fit$summary("mu_conf"))
+
+    
+
+df %>% 
+  mutate(preds_mean = preds$mean,
+         preds_q95 = preds$q95,
+         preds_q5 = preds$q5) %>% 
+  ggplot()+
+  geom_point(aes(x = X, y = Confidence, col = as.factor(ACC)))+
+    geom_pointrange(aes(x = X, y = preds_mean, ymin = preds_q5, ymax = preds_q95, col = as.factor(ACC)))
+    
+
+
+df %>% 
+  mutate(preds_mean = preds$mean,
+         preds_q95 = preds$q95,
+         preds_q5 = preds$q5) %>% 
+  ggplot()+
+    geom_pointrange(aes(x = Confidence, y = preds_mean, ymin = preds_q5, ymax = preds_q95, col = as.factor(ACC)))+
+  geom_abline()
+    
+    
+    
+    
+
+
+```
+
+
+```{r}
+
+df <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_1.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+  # filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  filter(RT < 2.5) %>% 
+  mutate(Confidence = (SR_conf+1)/2)
+
+
+
+
+fit = fit_kelly
+# preds = data.frame(fit$summary("pred_rt"))
+# 
+# df %>% 
+#   mutate(preds_mean = preds$mean,
+#          preds_q95 = preds$q95,
+#          preds_q5 = preds$q5) %>% 
+#   ggplot()+
+#   geom_point(aes(x = X, y = RT))+
+#     geom_pointrange(aes(x = X, y = preds_mean, ymin = preds_q5, ymax = preds_q95), col = "red")
+#     
+
+
+# df %>% 
+#   mutate(preds_mean = preds$mean,
+#          preds_q95 = preds$q95,
+#          preds_q5 = preds$q5) %>% 
+#   ggplot()+
+#   # geom_point(aes(x = X, y = RT))+
+#     geom_pointrange(aes(x = RT, y = preds_mean, ymin = preds_q5, ymax = preds_q95))
+#     
+    
+preds = data.frame(fit$summary("mu_conf"))
+
+    
+
+df %>% 
+  mutate(preds_mean = preds$mean,
+         preds_q95 = preds$q95,
+         preds_q5 = preds$q5) %>% 
+  ggplot()+
+  geom_point(aes(x = X, y = Confidence, col = as.factor(ACC)))+
+    geom_pointrange(aes(x = X, y = preds_mean, ymin = preds_q5, ymax = preds_q95, col = as.factor(ACC)))
+    
+    
+df %>% 
+  mutate(preds_mean = preds$mean,
+         preds_q95 = preds$q95,
+         preds_q5 = preds$q5) %>% 
+  ggplot()+
+    geom_pointrange(aes(x = Confidence, y = preds_mean, ymin = preds_q5, ymax = preds_q95, col = as.factor(ACC)))+
+  geom_abline()
+    
+ 
+
+```
+
+
+
+```{r}
+
+cols_10 <- c(
+  "darkred",  # very dark red
+  "darkgreen",  # very dark green
+  "#ef3b2c",  # dark red
+  "#41ab5d",  # dark green
+  "red",  # darker red
+  "green",  # green
+  "#ef3b2c",  # dark red
+  "#41ab5d",  # dark green
+  "darkred",  # very dark red
+  "darkgreen"   # very dark green
+)
+
+df <- read_csv(here::here("Data","Pilots","Jesper_2025_17_12","RDM_reportz_sub5_1.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+    mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+    # filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  mutate(Confidence = (SR_conf+1)/2)
+
+
+evi = fit_jesper$summary("evidence")
+ehat = fit_jesper$summary("ehat")
+
+
+
+data.frame(evidence = evi$mean, ehat = ehat$mean, conf = df$Confidence, correct = as.factor(df$ACC)) %>% 
+    mutate(conf = as.factor(cut(conf,5))) %>%
+  ggplot(aes(x = evidence, y = ehat, fill = interaction(correct,conf)),col = correct)+geom_point(shape = 21, size = 3)+
+  scale_fill_manual(values = cols_10)+
+  scale_color_manual(values = c("red","green"))
+  facet_wrap(~correct)
+
+data.frame(evidence = evi$mean, ehat = ehat$mean, conf = df$Confidence, correct = as.factor(df$ACC)) %>% 
+  mutate(dif = evidence-ehat) %>% 
+  ggplot(aes(x = dif, y = conf, col = correct))+geom_point()
+  facet_wrap(~correct)
+
+
+```
+
+```{r}
+
+
+df <- read_csv(here::here("Data","Pilots","Siebe_2025_03_12","data.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+    mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>%
+  filter(Trialtype == "Main") %>%
+  # filter(SR_conf != "None") %>%
+    # filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  mutate(Confidence = (SR_conf+1)/2) %>%
+  filter(RT < 2.5) %>%
+  dplyr::select(Y,RT,D,Confidence,coherence,X,ACC) %>%
+  drop_na()
+
+
+
+evi = fit_siebe$summary("evidence")
+ehat = fit_siebe$summary("ehat")
+
+
+
+data.frame(evidence = evi$mean, ehat = ehat$mean, conf = df$Confidence, correct = as.factor(df$ACC)) %>% 
+    mutate(conf = as.factor(cut(conf,5))) %>%
+  ggplot(aes(x = evidence, y = ehat, fill = interaction(correct,conf)),col = correct)+geom_point(shape = 21, size = 3)+
+  scale_fill_manual(values = cols_10)+
+  scale_color_manual(values = c("red","green"))
+  facet_wrap(~correct)
+  
+  
+data.frame(evidence = evi$mean, ehat = ehat$mean, conf = df$Confidence, correct = as.factor(df$ACC)) %>% 
+  mutate(dif = evidence-ehat) %>% 
+  ggplot(aes(x = dif, y = conf, col = correct))+geom_point()
+  facet_wrap(~correct)
+
+```
+
+
+
+
+```{r}
+
+
+df <- read_csv(here::here("Data","Pilots","Kelly_2025_17_12","RDM_reportz_sub3_1.csv")) %>%
+  mutate(resp = ifelse(resp == "down",0,1),
+         interval = as.numeric(interval),
+       stim = ifelse(`dots direction` == 270, -coherence,coherence)) %>%
+  mutate(D = ifelse(`dots direction` == 270, -1, 1)) %>% 
+  mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
+                      ifelse(resp == 0 & stim < 0, 1,0))) %>%
+  filter(Trialtype == "Main") %>%
+  filter(SR_conf != "None") %>%
+  # filter(scale == "conf") %>%
+  mutate(SR_conf = as.numeric(SR_conf)) %>%
+  rename(X = stim, RT = RTdec, Correct = cor, Y = resp) %>%
+  filter(RT < 2.5) %>% 
+  mutate(Confidence = (SR_conf+1)/2)
+
+
+evi = fit_kelly$summary("evidence")
+ehat = fit_kelly$summary("ehat")
+
+
+
+
+data.frame(evidence = evi$mean, ehat = ehat$mean, conf = df$Confidence, correct = as.factor(df$ACC)) %>% 
+    mutate(conf = as.factor(cut(conf,5))) %>%
+  ggplot(aes(x = evidence, y = ehat, fill = interaction(correct,conf)),col = correct)+geom_point(shape = 21, size = 3)+
+  scale_fill_manual(values = cols_10)+
+  scale_color_manual(values = c("red","green"))
+  facet_wrap(~correct)
+data.frame(evidence = evi$mean, ehat = ehat$mean, conf = df$Confidence, correct = as.factor(df$ACC)) %>% 
+  mutate(dif = evidence-ehat) %>% 
+  ggplot(aes(x = dif, y = conf, col = correct))+geom_point()
+  facet_wrap(~correct)
+
+```
+
