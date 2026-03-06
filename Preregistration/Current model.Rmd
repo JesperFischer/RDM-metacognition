@@ -1,3 +1,4 @@
+
 <!-- Part 2: Current Model -->
 
 ```{r packages3, warning = F, message = F, echo = F, include=FALSE}
@@ -109,19 +110,20 @@ As can be seen from equation (2), to compute the probability of being correct th
 Below we showcase a plate notation schematic of the above proposed model, demonstrating a visualization of the noise parameters. 
 
 
-```{r, out.width="100%", fig.align='center', message=F, error=F, warning=F, results='hide'}
+```{r platenotation, out.width="100%", fig.align='center', message=F, error=F, warning=F, fig.cap="Plate notation of the EC-Meta model"}
 
 invisible(tinytex::latexmk(here::here("Preregistration","Figure scripts","Platenotations", "platenotation.tex")))
 
-img1 <- image_read_pdf(here::here("Preregistration", "Figure scripts","Platenotations", "platenotation.pdf"),
-                       density = 600)
-
-# Trim any remaining whitespace and resize
-img1 <- image_trim(img1)
-img1 <- image_resize(img1, "1200x")  # Adjust width as needed (height scales proportionally)
-
-# Display the image (knitr will render it)
-img1
+# For PDF output, include the PDF directly; for HTML/Word, convert to image
+if (knitr::is_latex_output()) {
+  knitr::include_graphics(here::here("Preregistration", "Figure scripts","Platenotations", "platenotation.pdf"))
+} else {
+  img1 <- image_read_pdf(here::here("Preregistration", "Figure scripts","Platenotations", "platenotation.pdf"),
+                         density = 600)
+  img1 <- image_trim(img1)
+  img1 <- image_resize(img1, "1200x")
+  print(img1)
+}
 ```
 
 Figure 1; An agent is presented with a stimulus that has a direction $D_i$ (the true state of the world) and an intensity $X_i$. This creates an internal evidence representation $e_i$ (red point), due to noise in the sensory encoding ($\sigma_e$). This internal evidence representation is then sent to the pre-motor and motor cortex where an efferent signal is produced together with an efference copy (red split path). Due to additional noise($\sigma_c$)  in the processing and transmission of the signal to limb generating the action, it is possible that the action generated is in the opposite side of what the evidence entailed (green point). The efference copy might also be subjected to additional noise ($\sigma_m$), which is then used together with the action to produce a prediction error in the comparator $C_t$. This prediction error is then used to give a confidence ratings $C_t$.
@@ -538,63 +540,32 @@ Note that $\lambda(-x) = \frac{\phi(x)}{1-\Phi(x)}$ by properties of the normal 
 Substituting these conditional expectations back into our marginalized confidence equation (4).
 
 $$
-P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} 
-
-\cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)\right]
-
-
-\cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right) 
+P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)\right] \cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right) 
 $$
 
 Simplifying.
 
 $$
-P(correct \mid a = 1, X_i, D_i) = 
-
-\Phi\left(
-\left[
-
-\frac{(CX_i^2D_i - C\beta X_i)}{\sigma_e^2 + \sigma_m^2} +
-
-\rho \cdot \frac{ \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)CX_i}{\sqrt{\sigma_e^2 + \sigma_m^2} } 
-
-\right]
-
-\cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right) \tag{6a}
+P(correct \mid a = 1, X_i, D_i) = \Phi\left(\left[\frac{(CX_i^2D_i - C\beta X_i)}{\sigma_e^2 + \sigma_m^2} + \rho \cdot \frac{ \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)CX_i}{\sqrt{\sigma_e^2 + \sigma_m^2} }\right] \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right) \tag{6a}
 $$
 
 
 which for a = -1 becomes.
 
-
 $$
-P(correct \mid a = -1, X_i, D_i) = 
-
-\Phi\left(
-\left[
-\frac{(CX_i^2D_i - C\beta X_i)}{\sigma_e^2 + \sigma_m^2} -
-
-\rho \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)CX_i}{\sqrt{\sigma_e^2 + \sigma_m^2} } 
-
-\right]
-
-\cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right) \tag{6b}
+P(correct \mid a = -1, X_i, D_i) = 1-\Phi\left(\left[\frac{(CX_i^2D_i - C\beta X_i)}{\sigma_e^2 + \sigma_m^2} - \rho \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)CX_i}{\sqrt{\sigma_e^2 + \sigma_m^2} }\right] \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right) \tag{6b}
 $$
 
 
 (6a) and (6b) gives us a fully marginalized model for confidence ratings that depends only on the parameters $\Theta_1 = (\beta, \sigma_e, \sigma_c, \sigma_m)$ and the observed data (choices $a_i$, stimuli $X_i$ and true states $D_i$), without requiring trial-by-trial estimation of latent evidence variables $e_i$ and $r_i$.
 
-Before interpreting on the parts of the terms we need to revert back to one of the key assumptions of this model as was outline just after introducing equation (2). When the subject calculates the subjective probability of being correct it is assumed that the subject has access to the stimulus intensity. Below we have highlighted which of the stimulus intensities this is related to:
+Before interpreting on the parts of the terms we need to revert back to one of the key assumptions of this model as was outline just after introducing equation (2). When the subject calculates the subjective probability of being correct it is assumed that the subject has access to the stimulus intensity. Below we show which of the stimulus intensities this is related to (the two $X_i$ terms that we highlight):
 
 $$
-P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} 
-
-\cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)\right]
-
-\cdot C {\color{red}{X_i}}}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2{\color{red}{X^2_i}}}{\sigma_e^2+\sigma_m^2}}}\right) 
+P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\frac{\left[(X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)\right] \cdot C \mathbf{X_i}}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2\mathbf{X^2_i}}{\sigma_e^2+\sigma_m^2}}}\right) 
 $$
 
-Interestingly these two stimulus intensities, especially the first one (which is not from the marginalization) serves to make sure that at intensity 0 the predicted confidence will always be 0.5. So not only is it a strong assumption that the agent has access to the objective stimulus strength, this assumption does not even hold given the empirical observation that the lowest confidence rating shifts with the psychometric function which we highlighted in the [Models and Data Markdown](Models and Data in Perceptual Decision-Making with Confidence.Rmd). From the formalization that confidence ratings reflect a noisy, subjective probability of being correct, incorporating response biases, the above formulation falters as there is an objective anchor at $X_i = 0$. 
+Interestingly these two stimulus intensities (shown in bold), especially the first one (which is not from the marginalization) serves to make sure that at intensity 0 the predicted confidence will always be 0.5. So not only is it a strong assumption that the agent has access to the objective stimulus strength, this assumption does not even hold given the empirical observation that the lowest confidence rating shifts with the psychometric function which we highlighted in the [Models and Data Markdown](Models and Data in Perceptual Decision-Making with Confidence.Rmd). From the formalization that confidence ratings reflect a noisy, subjective probability of being correct, incorporating response biases, the above formulation falters as there is an objective anchor at $X_i = 0$. 
 
 Due to these consideration, supported by some empirical validation on our pilot data below, we believe that this particular stimulus intensity, coming from an unjustified assumption, needs to be accessed. 
 
@@ -605,42 +576,22 @@ Instead of opting for these options, we chose to assume that the agents do not h
 This means that the final equations become
 
 $$
-P(\text{correct} \mid a = 1, X_i, D_i) = 
-
-\Phi\left(
-\left[
-
-\frac{(CX_iD_i - C\beta)}{\sigma_e^2 + \sigma_m^2} +
-
-\rho \cdot \frac{ \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)C}{\sqrt{\sigma_e^2 + \sigma_m^2} } 
-
-\right]
-
-\cdot\frac{1} {\sqrt{1 + \frac{C^2}{\sigma_e^2+\sigma_m^2}}}\right) \tag{7a}
+P(\text{correct} \mid a = 1, X_i, D_i) = \Phi\left(\left[\frac{(CX_iD_i - C\beta)}{\sigma_e^2 + \sigma_m^2} + \rho \cdot \frac{ \lambda\left(\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)C}{\sqrt{\sigma_e^2 + \sigma_m^2} }\right] \cdot\frac{1} {\sqrt{1 + \frac{C^2}{\sigma_e^2+\sigma_m^2}}}\right) \tag{7a}
 $$
 
 
 which for the other choice becomes:
 
 $$
-P(\text{correct} \mid a = -1, X_i, D_i) = 
-
-\Phi\left(
-\left[
-\frac{(CX_iD_i - C\beta)}{\sigma_e^2 + \sigma_m^2} -
-
-\rho \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)C}{\sqrt{\sigma_e^2 + \sigma_m^2} } 
-
-\right]
-
-\cdot\frac{1} {\sqrt{1 + \frac{C^2}{\sigma_e^2+\sigma_m^2}}}\right) \tag{7b}
+P(\text{correct} \mid a = -1, X_i, D_i) = \Phi\left(\left[\frac{(CX_iD_i - C\beta)}{\sigma_e^2 + \sigma_m^2} - \rho \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)C}{\sqrt{\sigma_e^2 + \sigma_m^2} }\right] \cdot\frac{1} {\sqrt{1 + \frac{C^2}{\sigma_e^2+\sigma_m^2}}}\right) \tag{7b}
 $$
 
 with:
 $$
-\lambda(x) = \frac{\phi(x)}{\Phi(x)}
-\\
-C = \frac{2}{1.7}
+\begin{aligned}
+\lambda(x) &= \frac{\phi(x)}{\Phi(x)} \\
+C &= \frac{2}{1.7}
+\end{aligned}
 $$
 
 
@@ -673,9 +624,9 @@ This term serves the purpose of changing the mean expectation of the confidence 
 
 #### Additional parameters
 
-We introduce 5 additional parameters. $\Theta_2 = (\kappa_c, \lambda, \mu_{\beta})$. 
+We introduce 5 additional parameters. $\Theta_2 = (\kappa_c, \gamma, \mu_{\beta})$. 
 
-* $\lambda$ is the lapse rate on the binary choices this is a stimulus independent factor that shifts the asympote of the psychometric function away from certainty i.e. the asymptotic becomes $\lambda$ and $1-\lambda$. 
+* $\gamma$ is the lapse rate on the binary choices this is a stimulus independent factor that shifts the asympote of the psychometric function away from certainty i.e. the asymptotic becomes $\gamma$ and $1-\gamma$. 
 
 * $\mu_{\beta}$ is a meta cognitive bias parameter, serving as an independent vertical shift of confidence ratings.
 
@@ -688,23 +639,22 @@ See [@KUBINECOrderedBetaRegressionParsimoniousWellFittingModel2023] for the orde
 The complete set of parameters for the model are: 
 
 $$
-\Theta_s = \begin{bmatrix}
-           beta_s \\
+\begin{aligned}
+\Theta_s &= \begin{bmatrix}
+           \beta_s \\
            \sigma_{e_s} \\
            \sigma_{c_s} \\
            \sigma_{m_s} \\
            \mu_{\beta_s} \\
            \kappa_{c_s} \\
-           \lambda_s 
+           \gamma_s 
          \end{bmatrix} 
          \sim 
-         \mathcal{N}(\mu_{\Theta},\Sigma_{\Theta}) 
-\\         
-\beta_s  \in [-1,1], \sigma_{e_s} >0, \sigma_{c_s} >0, \sigma_{m_s} > 0, 
-\\
-\mu_{\beta_s} \in \mathop{\mathbb{R}}, \kappa_{c_s} > 0, \lambda_s \in [0,0.5]
-\\
-(c_{1_s} , c_{0_s}) \sim \delta([1,10,1])
+         \mathcal{N}(\mu_{\Theta},\Sigma_{\Theta}) \\
+\text{where } & \beta_s  \in [-1,1], \sigma_{e_s} >0, \sigma_{c_s} >0, \sigma_{m_s} > 0, \\
+& \mu_{\beta_s} \in \mathbb{R}, \kappa_{c_s} > 0, \gamma_s \in [0,0.5] \\
+& (c_{1_s} , c_{0_s}) \sim \delta([1,10,1])
+\end{aligned}
 $$
 
 In the above formulation that $\mathcal{N}$ is a multivariate normal distribution with mean and covariance. Further all constraints on the parameters as written were accomplished by transformation, all positively constrained parameters were exponentiated, parameters with an upper and lower bound were transformed with the inverse logit function and multiplied appropriately. The constraint of the cut-points were applied by the prior of a Dirichlet distribution ($\delta()$). Note, the cutpoints are sampled on a subject-by-subject basis. 
@@ -712,25 +662,21 @@ In the above formulation that $\mathcal{N}$ is a multivariate normal distributio
 The full model becomes.
 
 $$
-\\
-P(a = 1) = \Phi\left(\frac{D_i \cdot X_i- \beta_s}{\sqrt{\sigma_{e_s}^2 + \sigma_{c_s}^2}}\right)
-\\
-\mu_{c_i} = \begin{cases}\Phi\left((I_i-S_i)\cdot C_i\right) & \text{if } a_i = 1 
-\\ 
-1 - \Phi\left((I_i+S_i)\cdot C_i\right) & \text{if } a_i = -1\end{cases}
-\\
-a_i \sim \mathcal{bernoulli}(p(a_i = 1))
-\\
-Conf_i \sim \mathcal{ord\beta}(\mu_{c_i},\kappa_{c_s},c_{0_s},c_{1_s})
+\begin{aligned}
+P(a = 1) &= \Phi\left(\frac{D_i \cdot X_i- \beta_s}{\sqrt{\sigma_{e_s}^2 + \sigma_{c_s}^2}}\right) \\
+\mu_{c_i} &= \begin{cases}\Phi\left((I_i-S_i)\cdot C_i\right) & \text{if } a_i = 1 \\ 
+1 - \Phi\left((I_i+S_i)\cdot C_i\right) & \text{if } a_i = -1\end{cases} \\
+a_i &\sim \mathcal{bernoulli}(p(a_i = 1)) \\
+Conf_i &\sim \mathcal{ord\beta}(\mu_{c_i},\kappa_{c_s},c_{0_s},c_{1_s})
+\end{aligned}
 $$
 
 with
 
 $$
-I_i = \frac{(CX_iD_i - C\beta)}{\sigma_{e_s}^2 + \sigma_{m_s}^2},
-S_i = -\rho_s \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta_s}{\sqrt{\sigma_{e_s}^2 + \sigma_{c_s}^2}}\right)C}{\sqrt{\sigma_{e_s}^2 + \sigma_{m_s}^2} },
+I_i = \frac{(CX_iD_i - C\beta)}{\sigma_{e_s}^2 + \sigma_{m_s}^2}, \quad
+S_i = -\rho_s \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta_s}{\sqrt{\sigma_{e_s}^2 + \sigma_{c_s}^2}}\right)C}{\sqrt{\sigma_{e_s}^2 + \sigma_{m_s}^2} }, \quad
 K_i = \frac{1} {\sqrt{1 + \frac{C^2}{\sigma_{e_s}^2+\sigma_{m_s}^2}}}
-
 $$
 
 Next we show verification of the above formulated marginalized heuristic model, by simulating data from from equation (2) (with $X_i = 1$) averaging across the signed stimulus axis and displaying for the same parameter estimates (i.e. $\Theta_1$) of the marginalized heuristic model.
@@ -923,7 +869,7 @@ Lastly, we fit this model to our pilot data hierarchically and compare to the si
 
 ## Model comparison
 
-```{r, echo = T}
+```{r, echo = FALSE, message=F, error=F, warning=F}
 model_with_x <- readRDS(here::here("Experimental analysis","Heurestic models",
                                    "saved models","saved models hier","fit_finalheu_lapse_cypertron.rds"))
 
