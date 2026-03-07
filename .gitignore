@@ -18,3 +18,4 @@
 /Experimental analysis/MCMC/saved models hier/fit_hier.rds
 *.rds
 Experimental analysis/Heurestic models/saved models/
+Sequential sampling/Fits/Hierarchical/Hierarchical_fit.rds

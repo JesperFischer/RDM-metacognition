@@ -181,6 +181,7 @@ df_interaction <- expand.grid(
   mutate(data = list(simulate_interaction(sigma_m, sigma_c,sigma_e))) %>% 
   unnest(data)
 
+
 ```
 
 First, we might look at the distribution of internal evidence over the objective signed stimulus (i.e. the product of the stimulus intensity and the true state) across the two parameters govering the choices i.e. $\sigma_e$ and $\sigma_c$ being the evidence encoding and choice varability respectively.
@@ -583,8 +584,44 @@ $$
 & (c_{1_s} , c_{0_s}) \sim \delta([1,10,1])
 \end{aligned}
 $$
-
 In the above formulation that $\mathcal{N}$ is a multivariate normal distribution with mean and covariance. Further all constraints on the parameters as written were accomplished by transformation, all positively constrained parameters were exponentiated, parameters with an upper and lower bound were transformed with the inverse logit function and multiplied appropriately. The constraint of the cut-points were applied by the prior of a Dirichlet distribution ($\delta()$). Note, the cutpoints are sampled on a subject-by-subject basis. 
+
+The priors on these are
+The priors of the model are as follows:
+
+
+$$
+\begin{align*}
+\mu_{\beta} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of threshold)} \\
+\mu_{\sigma_{e_s}} &\sim \mathcal{N}(-2, 2) & \text{(group mean of encoding uncertainty)} \\
+\mu_{\sigma_{c_s}} &\sim \mathcal{N}(-2, 2) & \text{(group mean of choice varability)} \\
+\mu_{\sigma_{m_s}} &\sim \mathcal{N}(-2, 2) & \text{(group mean of meta uncertainty)} \\
+\mu_{\beta_c} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of meta bias)} \\
+\mu_{\gamma_s} &\sim \mathcal{N}(2, 2) & \text{(group mean of lapse rate)} \\
+\mu_{\kappa_c} &\sim \mathcal{N}(-4, 2) & \text{(group mean of confidence precision)} \\
+\mu_{\Delta{\sigma_{m_s}}} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of effect of ISI on meta uncertainty)} \\
+\mu_{\Delta{\mu_{\beta_c}}} &\sim \mathcal{N}(0, 0.5)  & \text{(group mean of effect of ISI on meta bias)} \\
+\end{align*}
+$$
+
+
+$$
+\begin{align*}
+\tau_{\beta} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of threshold)} \\
+\tau_{\sigma_{e_s}} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of encoding uncertainty)} \\
+\tau_{\sigma_{c_s}} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of choice varability)} \\
+\tau_{\sigma_{m_s}} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of meta uncertainty)} \\
+\tau_{\beta_c} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of meta bias)} \\
+\tau_{\gamma_s} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of lapse rate)} \\
+\tau_{\kappa_c} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of confidence precision)} \\
+\tau_{\Delta{\sigma_{m_s}}} &\sim \mathcal{N}(0, 0.5) & \text{(Between subject SD of effect of ISI on meta uncertainty)} \\
+\tau_{\Delta{\mu_{\beta_c}}} &\sim \mathcal{N}(0, 0.5)  & \text{(Between subject SD of effect of ISI on meta bias)} \\
+\end{align*}
+$$
+
+- $\mathbf{R} \sim \mathrm{LKJ}(\eta = 2)$ (correlation matrix for the multivariate normal distribution.)
+- $z_{expo} \sim \mathcal{N}(0, 1)$ (participant deviations)
+- $c_0, c_{1}$: see Dirichlet prior in Stan code
 
 The full model becomes.
 
@@ -606,9 +643,15 @@ S_i = -\rho_s \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta_s}{\sqrt{\sigma_{e
 K_i = \frac{1} {\sqrt{1 + \frac{C^2}{\sigma_{e_s}^2+\sigma_{m_s}^2}}}
 $$
 
+
+
+
+
 Next we show verification of the above formulated marginalized heuristic model, by simulating data from from equation (2) (with $X_i = 1$) averaging across the signed stimulus axis and displaying for the same parameter estimates (i.e. $\Theta_1$) of the marginalized heuristic model.
 
 The In the first validation step we simulate from different combinations of noise parameters (facets).
+
+
 
 ```{r, error=F,message=F,warning=F, fig.height=10,fig.width=10}
 source(here::here("Preregistration","scripts","Simulation.R"))

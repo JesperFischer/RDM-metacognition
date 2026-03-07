@@ -26,12 +26,19 @@ df = load_data()
 ```{r, fig.height=6,fig.width=8, message=F,warning=F}
 plot_beh_data(df%>% filter(Trialtype == "Main", scale == "conf"), 9, F)
 ```
-## fit the subject level model for each subject:
+## check subjects for exclusion and  fit the subject level model for each subject:
 
 ```{r}
 dd = df %>% 
   mutate(subject = as.numeric(as.factor(subject))) %>% 
-  filter(Trialtype == "Main", scale == "conf") %>% drop_na()
+  filter(Trialtype == "Main", scale == "conf")
+
+exclusions_correct = dd %>% group_by(ID) %>% summarize(n = sum(Correct)/n()) %>% filter(n < 0.6)
+exclusions_ntrials = dd %>% select(interTrial.interval, interval,coherence,X,Correct,Y,RT,Confidence,ID) %>% drop_na() %>% 
+  group_by(ID) %>% summarize(n = n()) %>% filter(n < (36*7-30))
+
+
+dd = dd %>% filter(!ID %in% c(exclusions_correct$ID, exclusions_ntrials$ID))
 
 ```
 
@@ -87,7 +94,7 @@ dia_hier(fit, dd)
 # posterior predictives:
 
 ```{r, fig.width=8,fig.height=6, error=F,message=F,warning=F}
-pps = pp_hier(fit_hier, dd, n_bins = 10)
+pps = pp_hier(fit, dd, n_bins = 10)
 
 pps[[1]]
 ```
@@ -112,8 +119,6 @@ combined_plot = combined_plot+theme(axis.title = element_text(size = 14),
 
 combined_plot
 
-
-ggsave(here::here("Preregistration","Figures","Pilot_predictive_checks.PNG"),dpi = 300, height = 12, width = 18)
 
 ```
 

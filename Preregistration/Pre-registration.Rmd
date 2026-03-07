@@ -69,8 +69,9 @@ pacman::p_load("here", "knitr","yaml","cowplot", "magick", "tidyverse", "flextab
 
 
 This pre-registration consists of 3 parts; 
+
 1. **considerations of models and empirical data of perceptual decision making tasks with confidence ratings**
-2. **Outlining two computational models**
+2. **Outlining the computational model**
 3. **Design, methods, hypotheses and sample size considerations of the current study.**
 
 These three parts are covered in 3 separate documents, with this document including them all.

@@ -8,7 +8,11 @@ The current study examines motion discrimination and meta-cognition in a Random 
 
 Dynamic models of meta-cognition assume that evidence is accumulated until a response boundary is reached and a binary decision is initialized. After the binary choice is given, additional evidence is assumed to be accumulated (i.e. post-decisionally) in order to give a confidence rating to the binary choice. If this post-decisional evidence accumulation is informative about the correctness of the choice, one would expect that increasing waiting time should increase the quality of the confidence ratings (i.e. confidence ratings would be closer to the objective probability that the choice was correct). However, if evidence used for the confidence rating is already computed around the time of the decision (i.e. pre-decisional) one would expect there to be no-difference or even expect the opposite effect. The reverse effect would indicate a situation where there exists some leakage of the information (perhaps due to memory constraints). In this study we manipulate the post decisional time window to examine its effects on the quality of the confidence ratings.
 
-Previous studies investigating post decisional evidence accumulation have generally found that if post-decisional evidence accumulation exists it is easiest to detect in speed binary decision making tasks for easy trials, where increased post-decisional timing can decrease confidence ratings for incorrect choices. In this first study we set out to test the opposite case, a non-speeded perceptual decision making task with a range of trials from very easy to very hard (individually calibrated). As the evidence is not clear and we do not nessecarily expect to find a significant difference in how post-decisional timing changes meta-cognitive uncertainty, we set out to test this in a Bayesian framework using sequential sampling. This not only let us provide evidence for the NULL-hypothesis (post-decisional time does not change the quality of the confidence ratings), but also allows us to collect as many participants as strictly needed to provide sufficient evidence.
+Previous studies investigating post decisional evidence accumulation have generally found that if post-decisional evidence accumulation exists it is easiest to detect in speeded decision making tasks for easy trials, where increased post-decisional time can decrease confidence ratings for incorrect choices. In this first study we set out to test the opposite case, a non-speeded perceptual decision making task with a range of trials from very easy to very hard (individually calibrated). 
+
+<!-- Ths s the mre severe test f the thery  -->
+
+As the evidence is not clear and we do not necessarily expect to find a significant difference in how post-decisional timing changes meta-cognitive uncertainty, we set out to test this in a Bayesian framework using sequential sampling. This not only let us provide evidence for the NULL-hypothesis (post-decisional time does not change the quality of the confidence ratings), but also allows us to collect as many participants as strictly needed to provide sufficient evidence.
 
 ### Hypotheses
 
@@ -29,7 +33,7 @@ To limit the number of subjects needed to get sufficient evidence for our infere
 
 #### Priors
 
-As our sequential sampling approach uses bayesfactors for the termination of data collection, the prior distribution of this parameter is highly influential. To maximize transparency we visualize the curves that we allow given the prior below.
+As our sequential sampling approach uses bayesfactors for the termination of data collection, the prior distribution of this parameter is highly influential. To maximize transparency we visualize the curves that we allow given the prior below, interested readers are also refereed to  [Sequential Sampling](../Sequential sampling/) directory, here we provide scripts for fitting visualizing and diagnosing our model.
 
 ```{r, fig.height=8, fig.width=12, warning=F,error=F,message=F}
 source(here::here("Simulations","Heurestic","scripts","Simulate_mcmc.R"))
@@ -102,7 +106,7 @@ As mentioned above we simulated subjects from draws of the posterior that was in
 ```{r, fig.height=8, fig.width=12, warning=F,error=F,message=F}
 magick::image_read(here::here("Preregistration","Figures","sequential_samping_plot.PNG"))
 ```
-In the above plot we show the development of the effect of the inter-stimulus-interval on both meta cognitive bias (green) and meta cognitive uncertainty (orange). Circles display a fitted model without divergences, above 400 effective sample size for both the bulk and the tails and rhat values below 1.03. The Left side displays the posterior distribution of each parameter for increasing subjects. The right side displays the development of the Bayes-factors for increasing subjects for the same draw of the posterior distribution fitted to our pilot data.
+In the above plot we show the development of the effect of the interval between choice and confidence rating on both meta cognitive bias (green) and meta cognitive uncertainty (orange). Circles display a fitted model without divergences, above 400 effective sample size for both the bulk and the tails and rhat values below 1.03. The Left side displays the posterior distribution of each parameter for increasing subjects. The right side displays the development of the Bayes-factors for increasing subjects for the same draw of the posterior distribution fitted to our pilot data.
 
 
 From the above plot it can be seen that even with this model we might run into convergences issues, below we describe our approach for determining and dealing with convergences issues. 
@@ -193,8 +197,10 @@ These physiological measures will allow us to test the theoretical assumptions o
 
 ### Exploratory analyses
 
-3. **Ex-Hypothesis 1:** Autonomic responses, particularly pupil size, will show an initial response to the stimulus, but also a second response after the decision, reflecting action appraisal.
+1. **Ex-Hypothesis 1:** Autonomic responses, particularly pupil size, will show an initial response to the stimulus, but also a second response after the decision, reflecting action appraisal.
 
 
-3. **Ex-Hypothesis 2:** The Autonomic responses for the initial response to the stimulus will scale with the stimulus intensity, whereas the second response will scale with the prediction error of the action and the expected value.
+2. **Ex-Hypothesis 2:** The Autonomic responses for the initial response to the stimulus will scale with the stimulus intensity, whereas the second response will scale with the prediction error of the action and the expected value.
 
+
+As the analysis plan of these two hypotheses were not fully developed before data collect we highlight them as exploratory.
