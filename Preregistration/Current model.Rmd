@@ -50,7 +50,7 @@ $$
 The rater is then thought to use this information to compute the subjective probability of being correct which is used to generate a confidence rating. One of the main arguments for such model and other models with independent information was to explain error-monitoring i.e. agents' ability to know that they produced an error and give low (even below guessing) confidence ratings. The necessity of independent information for error monitoring follows from the fact that a rational agent who bases both choice and confidence on the same information (i.e. $\rho = 1$ in the above model), and whose choices are deterministic, cannot make an error while being aware of it. Any information indicating that the choice is incorrect would also determine the choice itself, thereby preventing the error
 
 
-## Efference copy (Choice Variability) model of metacogntion (EA/CV - Meta)
+## Efference copy (Choice Variability) model of metacognition (EA/CV - Meta)
 
 ### Choices
 
@@ -105,7 +105,7 @@ Where $g(.)$ is the inverse logit transformation i.e. $g(x)= \frac{1}{1+exp(-x)}
 
 From confidence alone, only the sum $\sigma_e^2 + \sigma_m^2$  can be identified. However, combining choices and confidence allows estimating all three parameters: $\sigma_e$, $\sigma_c$, and $\sigma_m$. 
 
-As can be seen from equation (2), to compute the probability of being correct the rater needs access to the stimulus intensity, $X_i$. Even though that it is assumed in some models [@FLEMINGNeuralMediatorsChangesMindPerceptualDecisions2018a], we believe that the rater cannot have access to the objective stimulus intensity. We will get back to this and a final formulation without this term later. Interested readers are refereed to [@RAUSCHFoldedXpatternNotNecessarilyStatisticalSignature2019], were simulations are conducted with different generative processes for the stimulus intensity.
+As can be seen from equation (2), to compute the probability of being correct the rater needs access to the stimulus intensity, $X_i$. Even though that it is assumed in some models [@FLEMINGNeuralMediatorsChangesMindPerceptualDecisions2018a], we believe that the rater cannot have access to the objective stimulus intensity. We will get back to this and a final formulation without this term later. Interested readers are referred to [@RAUSCHFoldedXpatternNotNecessarilyStatisticalSignature2019], were simulations are conducted with different generative processes for the stimulus intensity.
 
 Below we showcase a plate notation schematic of the above proposed model, demonstrating a visualization of the noise parameters. 
 
@@ -136,7 +136,7 @@ Below we demonstrate that the model reproduces key behavioral patterns of choice
 
 <!-- Same here: not sure about weak error-monitoring, also we should mention here that the second one is why metanoise can be seen as a measure of metaC efficiency--> 
 
-<!-- Not sure i agree with you in how these terms (efficiency and sensitivity) are used in the meta-cognitive litterature. I would argue that both relate correct and incorrect choices to confidence ratings with efficiency being dependent on stimulus dificulty. So metanoise is related but not the main player, the ratio is the main contributor to see a difference between correct and incorrect trials in the confidence ratings--> 
+<!-- Not sure i agree with you in how these terms (efficiency and sensitivity) are used in the meta-cognitive literature. I would argue that both relate correct and incorrect choices to confidence ratings with efficiency being dependent on stimulus dificulty. So metanoise is related but not the main player, the ratio is the main contributor to see a difference between correct and incorrect trials in the confidence ratings--> 
 
 
 
@@ -184,7 +184,7 @@ df_interaction <- expand.grid(
 
 ```
 
-First, we might look at the distribution of internal evidence over the objective signed stimulus (i.e. the product of the stimulus intensity and the true state) across the two parameters govering the choices i.e. $\sigma_e$ and $\sigma_c$ being the evidence encoding and choice varability respectively.
+First, we might look at the distribution of internal evidence over the objective signed stimulus (i.e. the product of the stimulus intensity and the true state) across the two parameters governing the choices i.e. $\sigma_e$ and $\sigma_c$ being the evidence encoding and choice variability respectively.
 
 ```{r, fig.height=6, fig.width=10,warning=F,message=F}
 
@@ -202,7 +202,7 @@ ACC = df_interaction %>%
 ACC
 ```
 
-From the above plot we see that $\sigma_e$ broadens the the range of evidence observed (essentially making it more noisy based on the same external stimulus), moving down the rows the y-axis greatly changes its range. When $\sigma_c$ is low (left column) choices are consistent (when the the evidence is positive and the signed stimulus is positive (i.e. D = 1), a correct response is given). When $\sigma_c$ increases this relationship essentially becomes more noisy, such that correct and incorrect choices are less distinguishable across the zero-evidence line and zero-signed-stimulus line. 
+From the above plot we see that $\sigma_e$ broadens the range of evidence observed (essentially making it more noisy based on the same external stimulus), moving down the rows the y-axis greatly changes its range. When $\sigma_c$ is low (left column) choices are consistent (when the the evidence is positive and the signed stimulus is positive (i.e. D = 1), a correct response is given). When $\sigma_c$ increases this relationship essentially becomes more noisy, such that correct and incorrect choices are less distinguishable across the zero-evidence line and zero-signed-stimulus line. 
 
 Another way to display this is by plotting the actions instead of the accuracy: 
 
@@ -318,7 +318,7 @@ df_interaction %>%
 
 Here we observe a similar patterns as before with $\sigma_c = 1$. Here a high $\sigma_c$ reflects a folded X, whereas lower values (especially below 1) make a double increase. As before when meta uncertainty ($\sigma_m$) increase both confidence curves becomes increasingly flat (i.e. closer to a flat line at 0.5) regardless of their correctness. 
 
-lastly we plot the simulated data for varying $\sigma_c$ and $\sigma_e$ when $\sigma_m = 1$
+Lastly we plot the simulated data for varying $\sigma_c$ and $\sigma_e$ when $\sigma_m = 1$
 
 ```{r, fig.height=6, fig.width=10, message=F, warning=F}
 df_interaction %>%
@@ -433,7 +433,7 @@ $$
 \Phi\left(\frac{\mathbb{E}(r_i) \cdot CX_i}{ \sigma_e^2 + \sigma_m^2} \cdot\frac{1} {\sqrt{1 + \frac{C^2X^2_i}{\sigma_e^2+\sigma_m^2}}}\right)
 $$
 
-This equation gives the probability of being correct when the choice is 1. However, because the rater knows the actor’s choice, and the rater’s evidence is a noisy readout of the evidence used to generate that choice, observing the choice provides the rater with additional information about the underlying evidence. Mathematically this means that if the rater uses all the available evidence then the expectation of the avaliable evidence needs to be conditional on the actors choice.
+This equation gives the probability of being correct when the choice is 1. However, because the rater knows the actor’s choice, and the rater’s evidence is a noisy readout of the evidence used to generate that choice, observing the choice provides the rater with additional information about the underlying evidence. Mathematically this means that if the rater uses all the available evidence then the expectation of the available evidence needs to be conditional on the actors choice.
 
 
 Equation (3), therefore now becomes:
@@ -488,9 +488,9 @@ $$
 Interestingly these two stimulus intensities (shown in bold), especially the first one (which is not from the marginalization) serves to make sure that at intensity 0 the predicted confidence will always be 0.5. So not only is it a strong assumption that the agent has access to the objective stimulus strength, this assumption does not even hold given the empirical observation that the lowest confidence rating shifts with the bias which we highlighted in part 1. If confidence ratings are treated as noisy, biased subjective probabilities of being correct, the formulation above becomes problematic due to its reliance on an objective anchor at $X_i = 0$. Due to these consideration, supported by some empirical validation on our pilot data below, we believe that this particular stimulus intensity, coming from an unjustified assumption, needs to be accessed. 
 
 
-One interesting idea of how to deal with this, is to assume that the agent has a noisy readout of the stimulus strength, $\hat{X} \sim p(\hat{x}|\theta,c)$. The problem with such formulation is defining the probability distribution of the internal stimulus intensity. This probability distribution needs to be positively bound as $\hat{X} > 0$, which introduces an abitrary choice, but more importantly makes it non trivial to marginalize the trial-by-trial readout. Another approach would be to replace this stimulus intensity value with a constant, which could vary across subjects. Such parameterization would serve as a placeholder for idosyncratic differences in how subjects might use the stimulus intensity above and beyond what they should have access to. 
+One interesting idea of how to deal with this, is to assume that the agent has a noisy readout of the stimulus strength, $\hat{X} \sim p(\hat{x}|\theta,c)$. The problem with such formulation is defining the probability distribution of the internal stimulus intensity. This probability distribution needs to be positively bound as $\hat{X} > 0$, which introduces an arbitrary choice, but more importantly makes it non trivial to marginalize the trial-by-trial readout. Another approach would be to replace this stimulus intensity value with a constant, which could vary across subjects. Such parameterization would serve as a placeholder for idiosyncratic differences in how subjects might use the stimulus intensity above and beyond what they should have access to. 
 
-Instead of opting for these options, we chose to assume that the agents do not have access to this stimulus intensity and therefore fix it to 1. This approach in its simplicity circumvents some of the troublesome computational aspects, as well as obeying to what the agents is assumed to have access to. This also importantly this makes it possible for the model to accommodate the empirical observation that the confidence curve follows the psychometric function of the binary choices. Below we will showcase that from our pilot data the two models (fixing this particular simulus intensity to 1, or letting it vary based on the true stimulus intensity) have equvilent approximite leavue one out cross-validation performance.
+Instead of opting for these options, we chose to assume that the agents do not have access to this stimulus intensity and therefore fix it to 1. This approach in its simplicity circumvents some of the troublesome computational aspects, as well as obeying to what the agents is assumed to have access to. This also importantly this makes it possible for the model to accommodate the empirical observation that the confidence curve follows the psychometric function of the binary choices. Below we will showcase that from our pilot data the two models (fixing this particular stimulus intensity to 1, or letting it vary based on the true stimulus intensity) have equivalent approximate leave one out cross-validation performance.
 
 This means that the final equations become
 
@@ -594,7 +594,7 @@ $$
 \begin{align*}
 \mu_{\beta} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of threshold)} \\
 \mu_{\sigma_{e_s}} &\sim \mathcal{N}(-2, 2) & \text{(group mean of encoding uncertainty)} \\
-\mu_{\sigma_{c_s}} &\sim \mathcal{N}(-2, 2) & \text{(group mean of choice varability)} \\
+\mu_{\sigma_{c_s}} &\sim \mathcal{N}(-2, 2) & \text{(group mean of choice variability)} \\
 \mu_{\sigma_{m_s}} &\sim \mathcal{N}(-2, 2) & \text{(group mean of meta uncertainty)} \\
 \mu_{\beta_c} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of meta bias)} \\
 \mu_{\gamma_s} &\sim \mathcal{N}(2, 2) & \text{(group mean of lapse rate)} \\
@@ -609,7 +609,7 @@ $$
 \begin{align*}
 \tau_{\beta} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of threshold)} \\
 \tau_{\sigma_{e_s}} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of encoding uncertainty)} \\
-\tau_{\sigma_{c_s}} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of choice varability)} \\
+\tau_{\sigma_{c_s}} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of choice variability)} \\
 \tau_{\sigma_{m_s}} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of meta uncertainty)} \\
 \tau_{\beta_c} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of meta bias)} \\
 \tau_{\gamma_s} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of lapse rate)} \\
@@ -647,7 +647,7 @@ $$
 
 
 
-Next we show verification of the above formulated marginalized heuristic model, by simulating data from from equation (2) (with $X_i = 1$) averaging across the signed stimulus axis and displaying for the same parameter estimates (i.e. $\Theta_1$) of the marginalized heuristic model.
+Next we show verification of the above formulated marginalized heuristic model, by simulating data from equation (2) (with $X_i = 1$) averaging across the signed stimulus axis and displaying for the same parameter estimates (i.e. $\Theta_1$) of the marginalized heuristic model.
 
 The In the first validation step we simulate from different combinations of noise parameters (facets).
 
@@ -738,7 +738,7 @@ rbind(df_mech,df_heu) %>% ggplot()+
   
 ```
 
-In the above plot we see the results from averring `r trials` simulated trials from equation (2), for each bin of the signed stimulus intensity scale (dots are mean and approximate 95 Interval). The thick solid lines represents the marginalized heuristic model predictions. 
+In the above plot we see the results from averaging `r trials` simulated trials from equation (2), for each bin of the signed stimulus intensity scale (dots are mean and approximate 95 Interval). The thick solid lines represents the marginalized heuristic model predictions. 
 
 
 Next we simulate using fixed noise parameters and change the bias $\beta$. Note, that now we are displaying the action and not the accuracy of the choice.
@@ -824,7 +824,7 @@ rbind(df_mech) %>% ggplot()+
   
 ```
 
-In the above plot we see the results from averring `r trials` simulated trials from equation (2), for each bin of the signed stimulus intensity scale (dots are mean and approximate 95 Interval). The thick solid lines represents the marginalized heuristic model predictions. 
+In the above plot we see the results from averaging `r trials` simulated trials from equation (2), for each bin of the signed stimulus intensity scale (dots are mean and approximate 95 Interval). The thick solid lines represents the marginalized heuristic model predictions. 
 
 
 Next, we showcase model comparison on approximate leave one trial out cross validation for the models assuming that the rater has access to the objective stimulus intensity and the reduced model with $X_i = 1$
@@ -886,9 +886,9 @@ magick::image_read(here::here("Preregistration","Figures","parameter_comparison_
 
 Generally the two models align well in their subject level parameter estimates, further justifying this simplification which makes theoretical sense.
 
-### Posteiror predictive checks
+### Posterior predictive checks
 
-Next we show predictive checks of the Hierarchical heurestic model for our pilot participants.
+Next we show predictive checks of the Hierarchical heuristic model for our pilot participants.
 
 ```{r,fig.height=12, fig.width=18, message=F,error=F,warning=F}
 magick::image_read(here::here("Preregistration","Figures","Pilot_predictive_checks.PNG"))
@@ -904,5 +904,90 @@ magick::image_read(here::here("Preregistration","Figures","parameterrecovery_hie
 ```
 
 
+
+### Sequential sampling
+
+#### Priors
+
+As our sequential sampling approach uses bayesfactors for the termination of data collection, the prior distribution of this parameter is highly influential. To maximize transparency we visualize the curves that we allow given the prior below, interested readers are also referred to  [Sequential Sampling](../Sequential sampling/) directory, here we provide scripts for fitting visualizing and diagnosing our model.
+
+```{r, fig.height=8, fig.width=12, warning=F,error=F,message=F}
+source(here::here("Simulations","Heurestic","scripts","Simulate_mcmc.R"))
+
+n_sims <- 50
+
+df_list <- lapply(1:n_sims, function(i){
+  df <- sim_trials(300, seed = i)
+  df$sim_id <- i
+  df
+})
+
+df_all <- do.call(rbind, df_list)
+
+df_all %>% pivot_longer(cols = c("theta","c_mu")) %>% 
+  mutate(ACC = as.factor(ifelse(name == "theta","Response",ACC))) %>% 
+  group_by(ACC,name,X,sim_id) %>% 
+  summarize(mean = mean(value),
+            se = sd(value) / sqrt(n())) %>% 
+  ggplot(aes(x = X, y = mean, ymin = mean-2*se, ymax = mean+2*se, col = ACC, group = interaction(ACC,sim_id)))+
+  # geom_pointrange()+
+  facet_wrap(~name,ncol = 1)+
+  scale_color_manual(values = c("darkred","darkgreen","black"))+
+  geom_smooth(se = F, alpha = 0.25)+
+  theme_minimal()
+```
+
+The plot above shows the prior predictive checks of the group level parameters (i.e. these curves represent group level curves). As can be seen the curves generally span everything. Now in order to test whether our sequential sampling approach works we simulate data from draws of the posterior distribution of our pilot data, we then investigate how the bayesfactors of both hypotheses outlined above evolve over time. Instead of drawing the parameters of interest we fix these to either -0.05, 0 or 0.05 to test that we can detect effects of this magnitude in both direction, but also terminate sampling if there is no effect. Below we display the size of these effects (simulated data from the mean of the group means).
+
+```{r, fig.height=8, fig.width=12, warning=F,error=F,message=F}
+effects <- c(-0.05, 0, 0.05)
+
+# Create all combinations (if you had two effects)
+grid <- expand.grid(effect1 = effects, effect2 = effects)
+
+df_list <- vector("list", nrow(grid))
+
+for(i in 1:nrow(grid)){
+  df_list[[i]] <- sim_trials_fix(300, 1997, grid$effect1[i], grid$effect2[i])
+  df_list[[i]]$sigma_m_beta <- grid$effect1[i]
+  df_list[[i]]$meta_bias_beta <- grid$effect2[i]
+}
+
+df_effects <- do.call(rbind, df_list)
+
+
+df_effects %>% 
+  # filter(ACC == 1) %>% 
+  mutate(Accuracy = ACC) %>% 
+  mutate(ITI = as.factor(cut(interval,3))) %>% 
+  group_by(X,ITI,Accuracy,meta_bias_beta,sigma_m_beta) %>% 
+  summarize(mean = mean(c_mu),
+            se = sd(c_mu) / sqrt(n())) %>% 
+  ggplot()+
+  geom_hline(yintercept = 0.5, linetype = 2)+
+  scale_color_manual(values = c("orange","orange3","darkred","green","green3","darkgreen"))+
+  geom_pointrange(aes(x = X, y = mean, ymin = mean-2*se, ymax = mean+2*se, col = interaction(ITI,Accuracy)))+
+  geom_smooth(aes(x = X, y = mean, col = interaction(ITI,Accuracy)),se = F)+
+  facet_grid(sigma_m_beta~meta_bias_beta, labeller = label_both)+
+  theme_minimal()
+
+
+```
+
+
+As mentioned above we simulated subjects from draws of the posterior that was informed by our pilot data. We then fitted the model to increasing steps (i.e. 5,7,9, 12,15,20,25) of subjects, to demonstrate that the sequential sampling approach would be feasible. below we showcase 5 such trajectories of Bayes factors across the number of subjects used, together with another panel showing how the posterior distribution of the parameter of interest changes with increasing subjects.
+
+
+```{r, fig.height=8, fig.width=12, warning=F,error=F,message=F}
+magick::image_read(here::here("Preregistration","Figures","sequential_samping_plot.PNG"))
+```
+
+
+In the above plot we show the development of the effect of the interval between choice and confidence rating on both meta cognitive bias (green) and meta cognitive uncertainty (orange). Circles display a fitted model without divergences, above 400 effective sample size for both the bulk and the tails and rhat values below 1.03. The Left side displays the posterior distribution of each parameter for increasing subjects. The right side displays the development of the Bayes-factors for increasing subjects for the same draw of the posterior distribution fitted to our pilot data.
+
+
+From the above plot it can be seen that even with this model we might run into convergences issues, below we describe our approach for determining and dealing with convergences issues. 
+
+Firstly, we will collect data from 15 subjects before we fit our hierarchical model the first time and test the size of the bayes-fator. We do this as hierarchical models generally need some initial data to be able to converge (see also plot above for simulation). We will then after each additional 5 subjects check the infered bayes factor as this coincides with the expected number of subjects being collected each day.
 
 

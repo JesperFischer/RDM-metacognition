@@ -68,7 +68,7 @@ pacman::p_load("here", "knitr","yaml","cowplot", "magick", "tidyverse", "flextab
 ```
 
 
-This pre-registration consists of 3 parts; 
+This pre-registration consists of 3 parts, with the two initial parts being the justification for our experimental design and computational model respectively. The last part is the main Pre-registration.
 
 1. **considerations of models and empirical data of perceptual decision making tasks with confidence ratings**
 2. **Outlining the computational model**

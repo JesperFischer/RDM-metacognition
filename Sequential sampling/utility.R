@@ -631,7 +631,15 @@ fit_model_hier = function(df,
     parallel_chains = 4)
   
   if(grepl("Hierarchical",model$stan_file())){
-    fit$save_object(here::here("Sequential sampling","Fits","Hierarchical","Hierarchical_fit.rds"))
+    
+    if(dir.exists(here::here("Sequential sampling","Fits","Hierarchical"))){
+      fit$save_object(here::here("Sequential sampling","Fits","Hierarchical","Hierarchical_fit.rds"))
+    }else{
+      dir.create(here::here("Sequential sampling","Fits","Hierarchical"))
+      fit$save_object(here::here("Sequential sampling","Fits","Hierarchical","Hierarchical_fit.rds"))
+      
+    }
+    
   }
   
   return(fit)
