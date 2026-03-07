@@ -1,13 +1,14 @@
----
-title: "inverselogit"
-output: html_document
----
 
+
+<details style="border: 2px solid #3498db; border-radius: 5px; padding: 15px; margin: 20px 0; background-color: #f8f9fa;">
+<summary style="cursor: pointer; font-size: 1.1em; font-weight: bold; color: #2c3e50; padding: 5px;"><b>📘 Click to expand: Derivation of the probability of correctness given noisy evidence.</b></summary>
+
+<div style="margin-top: 15px;">
 
 If we assume, as Signal detection theory, that the evidence is Gaussian, we can write:
 
 $$
-e \sim \mathcal{N}(D \cdot X_i, \sigma)
+e \sim \mathcal{N}(D \cdot X_i, \sigma_e)
 $$
 
 We now assume that the agent computes the posterior probability of D given the evidence he collected. This means that for the case where D = 1 we have from bayes theorm that:
@@ -34,15 +35,15 @@ Plugging in the Gaussian distributions from the assumption of the evidence:
 
 
 $$
-e \mid D=1 \sim \mathcal{N}(X_i, \sigma^2), \quad 
-e \mid D=-1 \sim \mathcal{N}(-X_i, \sigma^2)
+e \mid D=1 \sim \mathcal{N}(X_i, \sigma_e^2), \quad 
+e \mid D=-1 \sim \mathcal{N}(-X_i, \sigma_e^2)
 $$
 
 Then the likelihoods are:
 
 $$
-P(e \mid D=1) = \frac{1}{\sqrt{2\pi\sigma^2}} \exp\Big(-\frac{(e - X_i)^2}{2\sigma^2}\Big), \quad
-P(e \mid D=-1) = \frac{1}{\sqrt{2\pi\sigma^2}} \exp\Big(-\frac{(e + X_i)^2}{2\sigma^2}\Big)
+P(e \mid D=1) = \frac{1}{\sqrt{2\pi\sigma_e^2}} \exp\Big(-\frac{(e - X_i)^2}{2\sigma_e^2}\Big), \quad
+P(e \mid D=-1) = \frac{1}{\sqrt{2\pi\sigma_e^2}} \exp\Big(-\frac{(e + X_i)^2}{2\sigma_e^2}\Big)
 $$
 
 Plugging these into the posterior formula:
@@ -50,21 +51,27 @@ Plugging these into the posterior formula:
 
 $$
 \begin{aligned}
-P(D=1 \mid e) &= \frac{\exp\Big(-\frac{(e - X_i)^2}{2\sigma^2}\Big)}{\exp\Big(-\frac{(e - X_i)^2}{2\sigma^2}\Big) + \exp\Big(-\frac{(e + X_i)^2}{2\sigma^2}\Big)}
+P(D=1 \mid e) &= \frac{\exp\Big(-\frac{(e - X_i)^2}{2\sigma_e^2}\Big)}{\exp\Big(-\frac{(e - X_i)^2}{2\sigma_e^2}\Big) + \exp\Big(-\frac{(e + X_i)^2}{2\sigma_e^2}\Big)}
 \end{aligned}
 $$
 
-Now if one factors out the $\exp\Big(-\frac{(e - X_i)^2}{2\sigma^2}\Big)$ term from the numerator we get:
+Now if one factors out the $\exp\Big(-\frac{(e - X_i)^2}{2\sigma_e^2}\Big)$ term from the numerator we get:
 
 $$
-P(D=1 \mid e) = \frac{1}{1 + \exp\Big(\frac{(e + X_i)^2 - (e - X_i)^2}{2\sigma^2}\Big)}
+P(D=1 \mid e) = \frac{1}{1 + \exp\Big(\frac{(e + X_i)^2 - (e - X_i)^2}{2\sigma_e^2}\Big)}
 $$
 writing out the sqaures $(e + X_i)^2 = e^2 + X_i^2 + 2\cdot e \cdot X_i$ & $(e - X_i)^2 = e^2 + X_i^2 - 2\cdot e \cdot X_i$, we end up with:
 
 $$
-P(D=1 \mid e) = \frac{1}{1 + \exp\Big(-\frac{2 \cdot e \cdot X_i}{\sigma^2}\Big)}
+P(D=1 \mid e) = \frac{1}{1 + \exp\Big(-\frac{2 \cdot e \cdot X_i}{\sigma_e^2}\Big)}
 $$
 This type of fraction is exactly the inverse logit transformation $g(.) = \frac{1}{1+exp(-x)}$, which means:
 $$
-P(D=1 \mid e) = g\Big(\frac{2 \cdot e \cdot X_i}{\sigma^2}\Big)
+P(D=1 \mid e) = g\Big(\frac{2 \cdot e \cdot X_i}{\sigma_e^2}\Big)
 $$
+
+
+</div>
+
+</details>
+

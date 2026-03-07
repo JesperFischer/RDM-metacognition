@@ -345,7 +345,7 @@ plot_beh_data_tog = function(df,n_bins,ACC = F, r_data = F){
 
 
 fit_model_ss = function(df,
-                        model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Single Subject.stan")),
+                        model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Single Subject.stan")),
                         samples = 1000){
   
   
@@ -372,7 +372,7 @@ fit_model_ss = function(df,
     max_treedepth = 12,
     parallel_chains = 4)
   
-  if(grepl("Heurestic",model$stan_file())){
+  if(grepl("Single Subject",model$stan_file())){
     fit$save_object(here::here("Sequential sampling","Fits","Single Subject",paste0("fit_",unique(df$ID),".rds")))
   }
   
@@ -598,7 +598,7 @@ pp = function(fit,df,n_bins){
 
 
 fit_model_hier = function(df,
-                        model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Hierarchical.stan")),
+                        model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical.stan")),
                         samples = 1000){
   
   
@@ -625,12 +625,12 @@ fit_model_hier = function(df,
     refresh = 100,
     iter_sampling = samples,
     iter_warmup = samples,
-    adapt_delta = 0.95,
+    adapt_delta = 0.99,
     init = pf,
     max_treedepth = 12,
     parallel_chains = 4)
   
-  if(grepl("Heurestic",model$stan_file())){
+  if(grepl("Hierarchical",model$stan_file())){
     fit$save_object(here::here("Sequential sampling","Fits","Hierarchical","Hierarchical_fit.rds"))
   }
   

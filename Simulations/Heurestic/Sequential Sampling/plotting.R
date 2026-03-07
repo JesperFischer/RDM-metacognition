@@ -175,32 +175,52 @@ sequential_samping_plot = (main_parameters +
                              theme(
                                legend.position = "top",
                                legend.justification = "center",
-                               axis.title = element_text(size = 14),
-                               axis.text = element_text(size = 12, color = "black"),
+                               legend.text = element_text(size = 18),
+                               legend.title = element_text(size = 20),
+                               strip.text = element_text(size = 20),
+                               axis.title = element_text(size = 18),
+                               axis.text = element_text(size = 16, color = "black"),
                                axis.ticks.length = unit(0.2, "cm")
                              ) | 
-                             Sequential_sampling+ 
+                             Sequential_sampling + 
                              theme(
                                legend.position = "top",
                                legend.justification = "center",
-                               axis.title = element_text(size = 14),
-                               axis.text = element_text(size = 12, color = "black"),
+                               legend.text = element_text(size = 18),
+                               legend.title = element_text(size = 20),
+                               strip.text = element_text(size = 20),
+                               axis.title = element_text(size = 18),
+                               axis.text = element_text(size = 16, color = "black"),
                                axis.ticks.length = unit(0.2, "cm")
-                             )) 
+                             ))
 
 
-ggsave(here::here("Preregistration","Figures","sequential_samping_plot.PNG"),sequential_samping_plot,dpi = 300, height = 7, width = 11)
+ggsave(here::here("Preregistration","Figures","sequential_samping_plot.PNG"),sequential_samping_plot,dpi = 300, height = 12, width = 20)
 
 
-parameterrecovery = (group_param_recov | subject_param_recov)+ plot_layout(guides = "collect") +
+parameterrecovery = group_param_recov +                                
+  theme(
+  legend.position = "top",
+  legend.justification = "center",
+  legend.text = element_text(size = 18),
+  legend.title = element_text(size = 20),
+  strip.text = element_text(size = 20),
+  axis.title = element_text(size = 18),
+  axis.text = element_text(size = 16, color = "black"),
+  axis.ticks.length = unit(0.2, "cm")
+) | 
+  subject_param_recov+  
   theme(
     legend.position = "top",
     legend.justification = "center",
-    axis.title = element_text(size = 14),
-    axis.text = element_text(size = 12, color = "black"),
+    legend.text = element_text(size = 18),
+    legend.title = element_text(size = 20),
+    strip.text = element_text(size = 20),
+    axis.title = element_text(size = 18),
+    axis.text = element_text(size = 16, color = "black"),
     axis.ticks.length = unit(0.2, "cm")
   )
 
 
-ggsave(here::here("Preregistration","Figures","parameterrecovery_hier.PNG"),parameterrecovery,dpi = 300, height = 7, width = 14)
+ggsave(here::here("Preregistration","Figures","parameterrecovery_hier.PNG"),parameterrecovery,dpi = 300, height = 12, width = 20)
 

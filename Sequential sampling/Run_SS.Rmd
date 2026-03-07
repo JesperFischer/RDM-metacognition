@@ -10,10 +10,7 @@ pacman::p_load(cmdstanr, tidyverse,posterior, bayesplot, tidybayes,
                brms, patchwork, cowplot,ggpubr,flextable)
 
 
-invisible(lapply(
-  list.files(here::here("Sequential sampling", "utility"), full.names = TRUE),
-  function(f) source(f, echo = FALSE, print.eval = FALSE)
-))
+source(here::here("Sequential sampling", "utility.R"))
 
 ```
 
@@ -25,29 +22,64 @@ df = load_data()
 
 
 ## plotting the behavioral data:
+
 ```{r, fig.height=6,fig.width=8, message=F,warning=F}
-plot_beh_data(df,NULL,F)
-
-plot_beh_data_tog(df %>% filter(Trialtype == "Main"), NULL, F)
-
-plot_beh_data_tog(df %>% mutate(subject = as.numeric(as.factor(subject))) %>% 
-  filter(subject %in% 1:11) %>% 
-  filter(Trialtype == "Main", scale == "conf") %>% drop_na(), 6, F)
+plot_beh_data(df%>% filter(Trialtype == "Main", scale == "conf"), 9, F)
 ```
+## fit the subject level model for each subject:
 
-## fit the standard model with meta-uncertainty and meta-bias
 ```{r}
+dd = df %>% 
+  mutate(subject = as.numeric(as.factor(subject))) %>% 
+  filter(Trialtype == "Main", scale == "conf") %>% drop_na()
 
 ```
 
 
 ```{r}
-fit_hier <- readRDS(here::here("Experimental analysis","Heurestic models","saved models","saved models hier","fit_finalheu_lapse_x1.rds"))
+dd_by_subj <- split(dd, dd$ID)
+
+if(length(list.files(here::here("Sequential sampling","Fits","Single Subject"))) == length(dd_by_subj)){
+  
+  models = list.files(here::here("Sequential sampling","Fits","Single Subject"), full.names = T)
+  fits = list()
+  for(model in models[1:length(models)]){
+    fit = readRDS(model)
+    paths = str_split(model, "/")[[1]]
+    name = paths[length(paths)]
+    
+    fits[[str_remove(str_remove(name,".rds"),"fit_")]] = fit  
+  }
+  
+}else{
+  fits <- lapply(dd_by_subj, function(d) {
+  fit_model_ss(d)})
+}
+
+```
+
+
+```{r, fig.width=8,fig.height=6}
+diagnoistics_ss = dia(fits, dd)
+
+diagnoistics_ss[[1]]
+```
+
+
+## Fit Hierarchical model
+
+```{r}
+if(length(list.files(here::here("Sequential sampling","Fits","Hierarchical"))) != 0){
+    model = list.files(here::here("Sequential sampling","Fits","Hierarchical"), full.names = T)
+    fit = readRDS(model)
+}else{
+  fit = fit_model_hier(dd)
+}
 ```
 
 
 ```{r, fig.width=16,fig.height=12}
-dia_hier(fit_hier, dd)
+dia_hier(fit, dd)
 ```
 
 

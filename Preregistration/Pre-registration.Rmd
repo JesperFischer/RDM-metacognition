@@ -64,12 +64,7 @@ set.seed(123)
 
 # packages
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load("here", "knitr","yaml")
-
-#renv::restore(project=here::here())
-
-required_packages = c("cowplot", "magick", "tidyverse", "flextable")
-lapply(required_packages, library, character.only = TRUE)
+pacman::p_load("here", "knitr","yaml","cowplot", "magick", "tidyverse", "flextable")
 ```
 
 
@@ -80,16 +75,24 @@ This pre-registration consists of 3 parts;
 
 These three parts are covered in 3 separate documents, with this document including them all.
 
+_______________________________________________________
+
+
 ```{r child1, child="Models and Data in Perceptual Decision-Making with Confidence.Rmd"}
 ```
+
+_______________________________________________________
+
 
 ```{r child2, child="Current model.Rmd"}
 ```
 
+_______________________________________________________
+
 ```{r child3, child="Design methods hypotheses.Rmd"}
 ```
 
-
+_______________________________________________________
 
 
 
