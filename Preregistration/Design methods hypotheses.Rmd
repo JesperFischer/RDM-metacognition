@@ -102,13 +102,14 @@ As mentioned above we simulated subjects from draws of the posterior that was in
 ```{r, fig.height=8, fig.width=12, warning=F,error=F,message=F}
 magick::image_read(here::here("Preregistration","Figures","sequential_samping_plot.PNG"))
 ```
-In the above plot we show the development of the effect of the inter-stimulus-interval on both meta cognitive bias (green) and meta cognitive uncertainty (orange). Circles display a fitted model without divergences above 400 effective sample size for both the bulk and the tails and rhat values below 1.03. Left side displays the updating of the posterior distribution of each parameter for increasing subjects. The right side displays the development of the Bayes-factors for the same draw of the posterior fitted to our pilot data.
+In the above plot we show the development of the effect of the inter-stimulus-interval on both meta cognitive bias (green) and meta cognitive uncertainty (orange). Circles display a fitted model without divergences, above 400 effective sample size for both the bulk and the tails and rhat values below 1.03. The Left side displays the posterior distribution of each parameter for increasing subjects. The right side displays the development of the Bayes-factors for increasing subjects for the same draw of the posterior distribution fitted to our pilot data.
 
 
-As can be seen from the simulated sequential sampling we might run into a problem of getting bad diagnostics from the sampler even with this marginalized heuristic model. Here we firstly define our initial sampler parameters, then what we deem sufficiently good sampler diagnostics and lastly contingency plans if we do not get convergence.
+From the above plot it can be seen that even with this model we might run into convergences issues, below we describe our approach for determining and dealing with convergences issues. 
 
+Firstly, we will collect data from 15 subjects before we fit our hierarchical model the first time and test the size of the bayes-fator. We do this as hierarchical models generally need some initial data to be able to converge (see also plot above for stimulation). We will then after each additional 5 subjects check the infered bayes factor as this coincides with the expected number of subjects being collected each day.
 
-
+Below we define our initial sampler parameters, then what we deem sufficiently good sampler diagnostics, and lastly contingency plans if we do not get convergence.
 
 
 ##### Initial Sampler Configuration
