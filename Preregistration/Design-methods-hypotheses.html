@@ -389,10 +389,9 @@ the opposite case, a non-speeded perceptual decision making task with a
 range of trials from very easy to very hard (individually calibrated).
 Here we test the theory that post decisional evidence accumulation might
 unfold over a longer time period even in non-speeded perceptual decision
-making tasks. As previous literature has shown inconclusive evidence
-whether post decisional evidence accumulation can matter in a task
-without time constraints and long intervals between choice and
-confidence ratings, we set out to test this in a Bayesian framework
+making tasks. As previous literature has shown inconclusive evidence of
+whether post decisional evidence accumulation can matter in non-speeded
+decision making tasks, we set out to test this in a Bayesian framework
 using sequential sampling. This not only let us provide evidence for the
 NULL-hypothesis (post-decisional time does not change the quality of the
 confidence ratings), but also allows us to collect as many participants
@@ -412,7 +411,7 @@ has reached a Bayes factor of either 30 or 1/30, which is our
 termination criteria.</li>
 </ul></li>
 <li><p><strong>Hypothesis 2:</strong> Increasing the post-decisional
-time window will lead to no difference in confidence bias.</p>
+time window will also lead to no difference in confidence bias.</p>
 <ul>
 <li><strong>Test specification:</strong><br />
 This hypothesis is tested by allowing the <span class="math inline">\(\mu_\beta\)</span> parameter to vary by the
@@ -434,12 +433,13 @@ reaches either 30 or 1/30, or we have collected 50 subjects. We will
 start examining the Bayesfactors in increments of 5 subjects when we
 have reached 15 total subjects. This is mainly due to stability of the
 model estimation, as well as expecting to test around 5 subjects per
-day.</p>
+day. The bayes-factor used in the current study is the savage dickey
+bayes-factor evaluated at 0 <span class="citation">[@WAGENMAKERSBayesianHypothesisTestingPsychologistsTutorialSavage2010a]</span>.</p>
 <p>Below we define our initial sampler parameters, then what we deem
 sufficiently good sampler diagnostics, and lastly contingency plans if
 we do not get convergence.</p>
-<div id="initial-sampler-configuration" class="section level5">
-<h5>Initial Sampler Configuration</h5>
+<div id="initial-sampler-configuration" class="section level4">
+<h4>Initial Sampler Configuration</h4>
 <p>The model is initially estimated using the following sampler
 settings:</p>
 <ul>
@@ -454,7 +454,6 @@ settings:</p>
 </ul>
 <p>These values represent our baseline configuration for model
 estimation.</p>
-</div>
 <div id="convergence-criteria" class="section level5">
 <h5>Convergence Criteria</h5>
 <p>Sampler convergence and reliability will be assessed using the
@@ -490,9 +489,9 @@ parameterization).</li>
 <p>These steps are intended to improve sampler stability and ensure
 reliable posterior estimation.</p>
 <p>Interested readers are referred to the directory used to perform the
-<a href="../Sequential%20sampling/">Sequential Sampling</a>. Here the
-full Stan model and the scripts for checking diagnostics and model fit
-are present.</p>
+Sequential Sampling (../Sequential Sampling). Here the full Stan model
+and the scripts for checking diagnostics and model fit are present.</p>
+</div>
 </div>
 </div>
 </div>

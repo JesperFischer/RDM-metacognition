@@ -1,5 +1,5 @@
 ---
-title: "Metacognitive uncertainty in Correct and Error trials across inter-stimulus-intervals"
+title: "Metacognitive uncertainty in Correct and Error trials across the post decisional response window"
 author: Jesper Fischer Ehmsen^1^,
         Siebe Everaets^xx^,
         Arthur S. Courtin^1^,

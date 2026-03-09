@@ -599,8 +599,8 @@ $$
 \mu_{\beta_c} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of meta bias)} \\
 \mu_{\gamma_s} &\sim \mathcal{N}(2, 2) & \text{(group mean of lapse rate)} \\
 \mu_{\kappa_c} &\sim \mathcal{N}(-4, 2) & \text{(group mean of confidence precision)} \\
-\mu_{\Delta{\sigma_{m_s}}} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of effect of ISI on meta uncertainty)} \\
-\mu_{\Delta{\mu_{\beta_c}}} &\sim \mathcal{N}(0, 0.5)  & \text{(group mean of effect of ISI on meta bias)} \\
+\mu_{\Delta{\sigma_{m_s}}} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of effect of PDW on meta uncertainty)} \\
+\mu_{\Delta{\mu_{\beta_c}}} &\sim \mathcal{N}(0, 0.5)  & \text{(group mean of effect of PDW on meta bias)} \\
 \end{align*}
 $$
 
@@ -614,11 +614,12 @@ $$
 \tau_{\beta_c} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of meta bias)} \\
 \tau_{\gamma_s} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of lapse rate)} \\
 \tau_{\kappa_c} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of confidence precision)} \\
-\tau_{\Delta{\sigma_{m_s}}} &\sim \mathcal{N}(0, 0.5) & \text{(Between subject SD of effect of ISI on meta uncertainty)} \\
-\tau_{\Delta{\mu_{\beta_c}}} &\sim \mathcal{N}(0, 0.5)  & \text{(Between subject SD of effect of ISI on meta bias)} \\
+\tau_{\Delta{\sigma_{m_s}}} &\sim \mathcal{N}(0, 0.5) & \text{(Between subject SD of effect of PDW on meta uncertainty)} \\
+\tau_{\Delta{\mu_{\beta_c}}} &\sim \mathcal{N}(0, 0.5)  & \text{(Between subject SD of effect of PDW on meta bias)} \\
 \end{align*}
 $$
 
+- with PDW being the Post Decisional response window.
 - $\mathbf{R} \sim \mathrm{LKJ}(\eta = 2)$ (correlation matrix for the multivariate normal distribution.)
 - $z_{expo} \sim \mathcal{N}(0, 1)$ (participant deviations)
 - $c_0, c_{1}$: see Dirichlet prior in Stan code
