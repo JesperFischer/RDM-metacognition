@@ -2,14 +2,14 @@
 .Rhistory
 .RData
 .Ruserdata
-/Data/pilots/Siebe_2025_03_12/Siebe02122025_biopack.txt
-/Data/pilots/Siebe_2025_03_12/full_siebe_data.csv
-/Data/pilots/Kelly_2025_17_12/kellydone.txt
-/Data/pilots/Jesper_2025_17_12/JesperDONE.txt
-/Data/Pilots/Jesper_2025_17_12/RDM_reportz_eyetrack_5.asc
-/Data/Pilots/Siebe_2025_03_12/RDM_reportz_eyetrack_0.asc
-/Data/Pilots/Kelly_2025_17_12/RDM_reportz_eyetrack_3.asc
-/Data/Pilots/Jesper_2025_17_12/full_jespere_data.csv
+Pilot/Data/pilots/Siebe_2025_03_12/Siebe02122025_biopack.txt
+Pilot/Data/pilots/Siebe_2025_03_12/full_siebe_data.csv
+Pilot/Data/pilots/Kelly_2025_17_12/kellydone.txt
+Pilot/Data/pilots/Jesper_2025_17_12/JesperDONE.txt
+Pilot/Data/Pilots/Jesper_2025_17_12/RDM_reportz_eyetrack_5.asc
+Pilot/Data/Pilots/Siebe_2025_03_12/RDM_reportz_eyetrack_0.asc
+Pilot/Data/Pilots/Kelly_2025_17_12/RDM_reportz_eyetrack_3.asc
+Pilot/Data/Pilots/Jesper_2025_17_12/full_jespere_data.csv
 /Savedmodels/removed_models/fit1_jespere_nort_mec.rds
 /Savedmodels/removed_models/fit1_siebe_nort_mec.rds
 
