@@ -20,7 +20,7 @@ In this first study we set out to test a non-speeded perceptual decision making 
 2. **Hypothesis 2:** Increasing the post-decisional time window will lead to no difference in confidence bias.
 
     - **Test specification:**  
-      This hypothesis is tested by allowing the $\mu_\beta$ parameter to vary by the post-decisional time window. The primary test evaluates whether the group-level parameter differs from 0 (i.e. does the 95 Highest density interval include 0), here we also aim to report the Bayes factor to determine the strength of the evidence compared to the NULL (i.e. there is no difference). This test will be conducted when the data collection has been terminated.
+      This hypothesis is tested by allowing the $mu_{\beta_c}$ parameter to vary by the post-decisional time window. The primary test evaluates whether the group-level parameter differs from 0 (i.e. does the 95 Highest density interval include 0), here we also aim to report the Bayes factor to determine the strength of the evidence compared to the NULL (i.e. there is no difference). This test will be conducted when the data collection has been terminated.
 
 ### Priors and Sequential Sampling.
 
@@ -61,9 +61,9 @@ If the above convergence criteria are not met, we will apply the following steps
 1. Increase the number of iterations.
 2. Increase the target acceptance rate (`adapt_delta`).
 3. Increase the maximum tree depth (`max_treedepth`).
-5. Reconsider model parameterization (i.e. centered vs non-centered parameterization).
-6. Estimate the lapse-rate parameter non-hierarchically
-7. Estimate the choice variability parameter non-hierarchically
+4. Reconsider model parameterization (i.e. centered vs non-centered parameterization).
+5. Estimate the lapse-rate parameter non-hierarchically
+6. Estimate the choice variability parameter non-hierarchically
 
 
 These steps are intended to improve sampler stability and ensure reliable posterior estimation.
@@ -73,7 +73,7 @@ Interested readers are referred to the directory used to perform the Sequential 
 
 ## Participants 
 
-Eligible participants will be 18–40 years old, have normal or corrected‑to‑normal vision, and be proficient in English. Individuals with neurological or psychiatric diagnoses or those taking medication that may affect cognitive performance are also not eligible to participate. Subjects will be recruited through COBE Lab its participant pool to insure fast and effective recruitment and will be rewarded with 110DKK.
+Eligible participants will be 18–40 years old, have normal or corrected‑to‑normal vision, and be proficient in English. Individuals with neurological or psychiatric diagnoses or those taking medication that may affect cognitive performance are also not eligible to participate. Subjects will be recruited through COBE Lab's participant pool to insure fast and effective recruitment and will be rewarded with 110DKK.
 
 
 ## Design
@@ -87,11 +87,11 @@ n_blocks = 8
 n_total = n_trials * n_blocks
 ```
 
-In total, participants will complete `r n_total` trials, spread over `r n_blocks` blocks of `r n_trials` trials. Before the main experiment begins, participants receive instructions on how to perform the decision task. They then complete six easy, non‑speeded practice trials without confidence ratings, followed by 120 more difficult practice trials. Afterward, participants receive additional instructions about the confidence scale and complete 10 easy, non‑speeded practice trials that include confidence ratings, after which the main experiment begins. The key variables of interest are response choice, accuracy, response times, confidence ratings, and the response times associated with those confidence ratings.
+In total, participants will complete `r n_total` trials, spread over `r n_blocks` blocks of `r n_trials` trials, which from our pilot data has shown good parameter estimation for subject-level-parameters. Before the main experiment begins, participants receive instructions on how to perform the decision task. They then complete six easy, non‑speeded practice trials without confidence ratings, followed by 120 more difficult practice trials. Afterward, participants receive additional instructions about the confidence scale and complete 10 easy, non‑speeded practice trials that include confidence ratings, after which the main experiment begins. The key variables of interest are response choice, accuracy, response times, confidence ratings, and the response times associated with those confidence ratings.
 
 To ensure that task difficulty is calibrated at the individual level, the 120 harder practice trials are used as part of a staircase procedure. In a random dot kinematogram, task difficulty is determined by several stimulus properties, which can be broadly grouped into two categories: stimulus parameters and stimulus noisiness. To ensure that difficulty is optimally calibrated for each participant, we use the first 40 of the harder practice trials to staircase the dotlife parameter in the Dotstimclass in [psychopy](https://www.psychopy.org/api/visual/dotstim.html). This is a stimulus parameter that determines how many frames a dot lives before disappearing. Once an appropriate dot‑life value is identified, we start staircasing coherence. Coherence controls the stimulus signal-to-noise ratio and is the most commonly manipulated difficulty parameter in the literature. It ranges from 0 to 1 and determines the proportion of signal to noise dots, with higher values indicating a greater percentage of signal dots.
 
-The remaining 80 trials are used to estimate the slope and threshold of the participant’s psychometric function on coherence. Both staircases are implemented in PsychoPy using the QUEST+ Bayesian adaptive procedure, which selects each stimulus to minimize posterior entropy over the psychometric parameters [@WATSONQUESTGeneralMultidimensionalBayesianAdaptivePsychometric2017}. Using the estimated psychometric function, we determine the coherence levels for the main experiment based on a set of predefined target accuracies  ($ACC = [0.51, 0.6, 0.7, 0.8, 0.99]$). The corresponding coherence values are then sampled in a quasi‑normal fashion: the extreme accuracy levels (0.51 and 0.99) appear once per direction, the intermediate levels appear twice, and the 0.70 level appears three times. In each block of the main experiment, trials are presented in a pseudo‑randomized sequence of upward and downward motion such that no more than three consecutive trials share the same direction. This reduces the risk of implicit directional bias. All of this ensures that participants use the full confidence scale and that difficulty is balanced across upward and downward motion directions.
+The remaining 80 trials are used to estimate the slope and threshold of the participant’s psychometric function on coherence. Both staircases are implemented in PsychoPy using the QUEST+ Bayesian adaptive procedure, which selects each stimulus to minimize posterior entropy over the psychometric parameters [@WATSONQUESTGeneralMultidimensionalBayesianAdaptivePsychometric2017]. Using the estimated psychometric function, we determine the coherence levels for the main experiment based on a set of predefined target accuracies  ($ACC = [0.51, 0.6, 0.7, 0.8, 0.99]$). The corresponding coherence values are then sampled in a quasi‑normal fashion: the extreme accuracy levels (0.51 and 0.99) appear once per direction, the intermediate levels appear twice, and the 0.70 level appears three times. In each block of the main experiment, trials are presented in a pseudo‑randomized sequence of upward and downward motion such that no more than three consecutive trials share the same direction. This reduces the risk of implicit directional bias. All of this ensures that participants use the full confidence scale and that difficulty is balanced across upward and downward motion directions.
 
 ## Exclusion criteria
 
