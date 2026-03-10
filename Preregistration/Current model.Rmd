@@ -586,9 +586,7 @@ $$
 $$
 In the above formulation that $\mathcal{N}$ is a multivariate normal distribution with mean and covariance. Further all constraints on the parameters as written were accomplished by transformation, all positively constrained parameters were exponentiated, parameters with an upper and lower bound were transformed with the inverse logit function and multiplied appropriately. The constraint of the cut-points were applied by the prior of a Dirichlet distribution ($\delta()$). Note, the cutpoints are sampled on a subject-by-subject basis. 
 
-The priors on these are
 The priors of the model are as follows:
-
 
 $$
 \begin{align*}
@@ -599,8 +597,6 @@ $$
 \mu_{\beta_c} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of meta bias)} \\
 \mu_{\gamma_s} &\sim \mathcal{N}(2, 2) & \text{(group mean of lapse rate)} \\
 \mu_{\kappa_c} &\sim \mathcal{N}(-4, 2) & \text{(group mean of confidence precision)} \\
-\mu_{\Delta{\sigma_{m_s}}} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of effect of PDW on meta uncertainty)} \\
-\mu_{\Delta{\mu_{\beta_c}}} &\sim \mathcal{N}(0, 0.5)  & \text{(group mean of effect of PDW on meta bias)} \\
 \end{align*}
 $$
 
@@ -614,12 +610,9 @@ $$
 \tau_{\beta_c} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of meta bias)} \\
 \tau_{\gamma_s} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of lapse rate)} \\
 \tau_{\kappa_c} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of confidence precision)} \\
-\tau_{\Delta{\sigma_{m_s}}} &\sim \mathcal{N}(0, 0.5) & \text{(Between subject SD of effect of PDW on meta uncertainty)} \\
-\tau_{\Delta{\mu_{\beta_c}}} &\sim \mathcal{N}(0, 0.5)  & \text{(Between subject SD of effect of PDW on meta bias)} \\
 \end{align*}
 $$
 
-- with PDW being the Post Decisional response window.
 - $\mathbf{R} \sim \mathrm{LKJ}(\eta = 2)$ (correlation matrix for the multivariate normal distribution.)
 - $z_{expo} \sim \mathcal{N}(0, 1)$ (participant deviations)
 - $c_0, c_{1}$: see Dirichlet prior in Stan code
@@ -645,14 +638,9 @@ K_i = \frac{1} {\sqrt{1 + \frac{C^2}{\sigma_{e_s}^2+\sigma_{m_s}^2}}}
 $$
 
 
-
-
-
 Next we show verification of the above formulated marginalized heuristic model, by simulating data from equation (2) (with $X_i = 1$) averaging across the signed stimulus axis and displaying for the same parameter estimates (i.e. $\Theta_1$) of the marginalized heuristic model.
 
-The In the first validation step we simulate from different combinations of noise parameters (facets).
-
-
+In the first validation step we simulate from different combinations of noise parameters (facets).
 
 ```{r, error=F,message=F,warning=F, fig.height=10,fig.width=10}
 source(here::here("Preregistration","scripts","Simulation.R"))
@@ -739,10 +727,10 @@ rbind(df_mech,df_heu) %>% ggplot()+
   
 ```
 
+
 In the above plot we see the results from averaging `r trials` simulated trials from equation (2), for each bin of the signed stimulus intensity scale (dots are mean and approximate 95 Interval). The thick solid lines represents the marginalized heuristic model predictions. 
 
-
-Next we simulate using fixed noise parameters and change the bias $\beta$. Note, that now we are displaying the action and not the accuracy of the choice.
+Next we simulate using fixed noise parameters and change the bias $\beta$. Note; that now we are displaying the action and not the accuracy of the choice.
 
 ```{r, error=F,message=F,warning=F, fig.height=10,fig.width=10}
 
@@ -828,7 +816,32 @@ rbind(df_mech) %>% ggplot()+
 In the above plot we see the results from averaging `r trials` simulated trials from equation (2), for each bin of the signed stimulus intensity scale (dots are mean and approximate 95 Interval). The thick solid lines represents the marginalized heuristic model predictions. 
 
 
-Next, we showcase model comparison on approximate leave one trial out cross validation for the models assuming that the rater has access to the objective stimulus intensity and the reduced model with $X_i = 1$
+### Model for the current experiment.
+
+In the current experiment we will present participants with a random dot kinematogram on each trials where subjects are asked to choose which direction the majority of dots are moving. After an experimental delay (post decisional response window) subjects are asked to give a confidence rating. We aim to test whether this post decisional response window changes the meta-cognitive noise and metacognitive bias parameter of the above model. This will be implemented in the following way:
+
+$$
+\sigma_{m_t}  = \sigma_{m_s} + \Delta{\sigma_{m_s}} \cdot PDW_t\\
+\mu_{\beta_t} = \mu_{\beta_s} + \Delta{\mu_{\beta_s}} \cdot PDW_t
+$$
+
+With the subject level changes due to the post decisional window (PDW) being drawn from another group level parameter from the multivariate normal distribution highlighted above. These group-level parameters are then given the following priors:
+
+
+$$
+\begin{align*}
+\mu_{\Delta{\sigma_{m_s}}} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of effect of PDW on meta uncertainty)} \\
+\mu_{\Delta{\mu_{\beta_c}}} &\sim \mathcal{N}(0, 0.5)  & \text{(group mean of effect of PDW on meta bias)} \\
+\tau_{\Delta{\sigma_{m_s}}} &\sim \mathcal{N}(0, 0.5) & \text{(Between subject SD of effect of PDW on meta uncertainty)} \\
+\tau_{\Delta{\mu_{\beta_c}}} &\sim \mathcal{N}(0, 0.5)  & \text{(Between subject SD of effect of PDW on meta bias)} \\
+
+\end{align*}
+$$
+
+- with PDW being the Post Decisional response window.
+- ${\Delta{\sigma_{m_s}}}$ and $\Delta{\mu_{\beta_c}}$ being the change in meta-cognitive uncertainty and meta cognitive bias based on PDW respectively.
+
+Next, we investigate how this model with meta cognitive uncertainty and meta cognitive bias being able to vary by PDW fit to our pilot data. The first step is to showcase model comparison on approximate leave one trial out cross validation for the models assuming that the rater has access to the objective stimulus intensity and the reduced model where we assume that the this stimulus intensity is 1 i.e. $X_i = 1$
 
 
 ### Model comparison
@@ -905,12 +918,11 @@ magick::image_read(here::here("Preregistration","Figures","parameterrecovery_hie
 ```
 
 
-
 ### Sequential sampling
 
 #### Priors
 
-As our sequential sampling approach uses bayesfactors for the termination of data collection, the prior distribution of this parameter is highly influential. To maximize transparency we visualize the curves that we allow given the prior below, interested readers are also referred to  [Sequential Sampling](../Sequential sampling/) directory, here we provide scripts for fitting visualizing and diagnosing our model.
+As our sequential sampling approach uses Bayes Factors for the termination of data collection, the prior distribution of this parameter is highly influential. To maximize transparency we visualize the curves that we allow given the prior below, interested readers are also referred to  [Sequential Sampling](../Sequential sampling/) directory, here we provide scripts for fitting visualizing and diagnosing our model.
 
 ```{r, fig.height=8, fig.width=12, warning=F,error=F,message=F}
 source(here::here("Simulations","Heurestic","scripts","Simulate_mcmc.R"))
@@ -938,7 +950,7 @@ df_all %>% pivot_longer(cols = c("theta","c_mu")) %>%
   theme_minimal()
 ```
 
-The plot above shows the prior predictive checks of the group level parameters (i.e. these curves represent group level curves). As can be seen the curves generally span everything. Now in order to test whether our sequential sampling approach works we simulate data from draws of the posterior distribution of our pilot data, we then investigate how the bayesfactors of both hypotheses outlined above evolve over time. Instead of drawing the parameters of interest we fix these to either -0.05, 0 or 0.05 to test that we can detect effects of this magnitude in both direction, but also terminate sampling if there is no effect. Below we display the size of these effects (simulated data from the mean of the group means).
+The plot above shows the prior predictive checks of the group level parameters (i.e. these curves represent group level curves). As can be seen the curves generally span everything. Now in order to test whether our sequential sampling approach works, we simulate data from draws of the posterior distribution of our pilot data, we then investigate how the Bayes Factors of both hypotheses outlined above evolve over the number of subjects collected. Instead of selecting the posterior draws of our parameters of interest i.e. $\mu_{\Delta{\sigma_{m_s}}}$ and $\mu_{\Delta{\mu_{\beta_c}}}$ we specifically fixed these to either -0.05, 0 or 0.05 to test that we can detect effects of this magnitude in both direction, but also terminate sampling if the effect is zero. Below we display the size of these effects (simulated data from the mean of the group means).
 
 ```{r, fig.height=8, fig.width=12, warning=F,error=F,message=F}
 effects <- c(-0.05, 0, 0.05)
