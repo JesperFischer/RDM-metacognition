@@ -107,8 +107,7 @@ From confidence alone, only the sum $\sigma_e^2 + \sigma_m^2$  can be identified
 
 As can be seen from equation (2), to compute the probability of being correct the rater needs access to the stimulus intensity, $X_i$. Even though that it is assumed in some models [@FLEMINGNeuralMediatorsChangesMindPerceptualDecisions2018a], we believe that the rater cannot have access to the objective stimulus intensity. We will get back to this and a final formulation without this term later. Interested readers are referred to [@RAUSCHFoldedXpatternNotNecessarilyStatisticalSignature2019], were simulations are conducted with different generative processes for the stimulus intensity.
 
-Below we showcase a plate notation schematic of the above proposed model, demonstrating a visualization of the noise parameters. 
-
+Below we showcase a plate notation schematic of the above proposed model, showcasing what the noise parameters mean visually. 
 
 ```{r platenotation, out.width="100%", fig.align='center', message=F, error=F, warning=F}
 
@@ -126,7 +125,10 @@ if (knitr::is_latex_output()) {
 }
 ```
 
-The agent is presented with a stimulus that has a direction $D_i$ (the true state of the world) and a strength $X_i$. An internal representation of the physical stimulus (evidence) is accessible to the agent $e_i$ (red point), which is a noisy readout of the physical stimulus. This internal evidence representation is then sent to the pre-motor and motor cortex where an efferent signal is produced together with an efference copy (red split path). Due to additional noise ($\sigma_c$)  in the processing and transmission of the signal to the limb generating the action, it is possible that the action generated, is in the opposite side of what the evidence entailed (green point). Simultaneously the efference copy might also be subjected to additional noise ($\sigma_m$), which is used together with the action to produce a prediction error in the comparator $C_t$. This prediction error is then used to compute confidence ratings $C_t$. <!-- We should definitely elaborate on the underlying neural representation more and earlier, reading it in the annotation feels weird--> 
+
+Our above model assumes that an agent is presented with a stimulus that has a direction $D_i$ (the true state of the world) and a strength $X_i$. An internal representation of the physical stimulus (evidence) is accessible to the agent $e_i$ (red point), which is a noisy readout of the physical stimulus. This internal evidence representation is then sent to the pre-motor and motor cortex where an efferent signal is produced together with an efference copy (red split path). Due to additional noise ($\sigma_c$)  in the processing and transmission of the signal to the limb generating the action, it is possible that the action generated, is in the opposite side of what the evidence entailed (green point). Simultaneously the efference copy might also be subjected to additional noise ($\sigma_m$), which is used together with the action to produce a prediction error in the comparator $C_t$. This prediction error is then used to compute confidence ratings $C_t$. 
+
+<!-- We should definitely elaborate on the underlying neural representation more and earlier, reading it in the annotation feels weird--> 
 
 Next, we present simulations from the model to build intuition about the parameters and how they interact.
 
@@ -515,38 +517,202 @@ C &= \frac{2}{1.7}
 $$
 
 
-In the above formula it is noteworthy that the terms inside the cumulative normal distribution function have clear interpretations. 
+In the above formula it is noteworthy that the terms inside the cumulative normal distribution function have clear interpretations.
 
-Firstly the common factor, is a correction factor for marginalization. thus we define: 
-
-$$
-K_i = \frac{1} {\sqrt{1 + \frac{C^2}{\sigma_e^2+\sigma_m^2}}}
-$$
-
-The two other terms can be thought to have more cognitive interpretations. Looking back at equation 3 we had (now with $X_i = 1$)
+Firstly, the common factor is a correction for marginalization:
 
 $$
-P(\text{correct} \mid r_i, a, X_i) = \begin{cases}\Phi\left(\frac{C \cdot r_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - \Phi\left(\frac{C \cdot r_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases} \tag{3}
+K_i = \frac{1}{\sqrt{1 + \frac{C^2}{\sigma_e^2+\sigma_m^2}}}
 $$
 
-One can show that the first term from equation (7a / 7b) is just the expectation of the argument to the cumulative normal distribution function in equation (3). This argument, from the derivation is the log-likelihood ratio, which can be interpreted as the average strength of evidence in favor of the true state. We might call this is I;
+The two remaining terms have direct cognitive interpretations. Looking back at equation (3) (now with $X_i = 1$), one can show that the first term from equations (7a/7b) is the expectation of the log-likelihood ratio — the argument inside $\Phi(\cdot)$. It can be interpreted as the **prior belief about being correct based purely on the stimulus**, before any information about the action is taken into account:
 
 $$
-I_i = \mathbb{E}\left(\frac{C \cdot r_i}{\sigma_e^2 + \sigma_m^2}\right) = \frac{(CX_iD_i - C\beta)}{\sigma_e^2 + \sigma_m^2}
+I_i = \mathbb{E}\left(\frac{C \cdot r_i}{\sigma_e^2 + \sigma_m^2}\right) = \frac{C(X_iD_i - \beta)}{\sigma_e^2 + \sigma_m^2}
 $$
 
-The latter term in equation (7a / 7b) adjusts this average evidence, because of the information contained within the action: 
+The second term updates this prior using the information carried by the action via the efference copy:
 
 $$
-S_i = -\rho \cdot \frac{ \lambda\left(-\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)C}{\sqrt{\sigma_e^2 + \sigma_m^2} }
+S_i = \pm\rho \cdot \frac{\lambda\left(\pm\frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)C}{\sqrt{\sigma_e^2 + \sigma_m^2}}
 $$
 
-This term serves the purpose of changing the mean expectation of the confidence to incorporate the information of the action. The addition of actions into the confidence computation have been proposed in the second order rater model from Fleming and Daw, where they also re-analyzed data to show this pattern empirically [@FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017]. 
+This term functions as an **internal action prediction error**, it reflects the discrepancy between what action the evidence predicted and what action was actually executed, as observed through the noisy efference copy channel. Its magnitude is governed by the inverse Mills ratio $\lambda(\cdot)$, which is large when the action was surprising given the evidence. This corresponds to errors at high stimulus intensity, and near zero when the action was fully expected i.e. correct responses at high stimulus intensity. Confidence in probit space is therefore the sum of a prior and a prediction error multiplied by the correction factor.
 
-<!-- I might be wrong but without it being conditioned on the action you also have no error monitorin right so maybe nice to mention that --> 
+$$
+\Phi^{-1}(\mu_{c_i}) = (I_i + S_i) \cdot K_i
+$$
 
-To summarize, confidence computation can in this model be thought of as a weighting of the expected normalized evidence with a correction factor for having committed to a choice. Below we introduce a couple of additional parameters in order to encompass idiosyncrasies in the task and participants, as well as probabilistic relate the above formulation to the observed confidence ratings.
+This is analogous to a reinforcement learning rule where a prior value estimate is corrected by a prediction error, but here no external feedback is necessary, the efference copy itself serves as the internal reference signal. The addition of action information into confidence computation was proposed in the second-order rater model of @FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017, with empirical support from reanalysis of behavioral data. The present formulation makes the mechanism explicit: it is the efference copy that supplies the prediction error.
 
+For completeness, we below show the magnitude of these two terms as a function of the signed stimulus intensity. For a range of stimulus intensities $U(0.05,1)$ we show how both $I_i$ and $S_i$ change as a function of choice correctness.
+
+```{r, fig.height=6, fig.width=10,warning=F,message=F}
+source(here::here("Preregistration","scripts","Simulation.R"))
+
+n_trials <- 50000
+
+simulate_components <- function(sigma_e, sigma_c, sigma_m, beta = 0, n = n_trials) {
+  X  <- runif(n, 0.001, 1)
+  D  <- sample(c(-1, 1), n, replace = TRUE)
+  XD <- X * D
+
+  # Stochastic choice
+  p_a1 <- pnorm((XD - beta) / sqrt(sigma_e^2 + sigma_c^2))
+  a    <- rbinom(n, 1, p_a1)
+  ACC  <- as.integer((a == 1 & D == 1) | (a == 0 & D == -1))
+
+  K   <- K_fn(sigma_e, sigma_m)
+  I_i <- I_fn(XD, beta, sigma_e, sigma_m)
+  S_i <- S_fn(XD, beta, sigma_e, sigma_c, sigma_m, a)
+  # Internal prediction error magnitude (the action-update term)
+  IPE <- S_i * K
+
+  tibble(
+    XD      = XD,
+    a       = a,
+    ACC     = factor(ACC, levels = c(0, 1), labels = c("Error", "Correct")),
+    I_i     = I_i,
+    S_i     = S_i,
+    IPE     = (IPE),           # |S_i * K_i|  — action prediction error
+    SEI     = abs(I_i) * K,  # |I_i * K_i|  — stimulus evidence information
+    mu_c    = if_else(a == 1,
+                      pnorm((I_i + S_i) * K),
+                      1 - pnorm((I_i + S_i) * K)),
+    sigma_e = sigma_e,
+    sigma_c = sigma_c,
+    sigma_m = sigma_m
+  )
+}
+
+sigma_e_vals <- c(0.3, 0.4, 0.5)
+sigma_m_vals <- c(0.3, 0.4, 0.5)
+sigma_c_fixed <- 0.5
+
+df_grid <- expand.grid(se = sigma_e_vals, sm = sigma_m_vals) %>%
+  rowwise() %>%
+  mutate(data = list(simulate_components(se, sigma_c_fixed, sm, beta = 0, n = 20000))) %>%
+  unnest(data)
+
+breaks <- seq(-1, 1, by = 0.1)
+
+p1_grid <- df_grid %>%
+  mutate(bin    = cut(XD, breaks = breaks, include.lowest = TRUE, labels = FALSE),
+         XD_bin = (breaks[bin] + breaks[bin + 1]) / 2,
+         sigma_e_label = paste0("σ_e = ", sigma_e),
+         sigma_m_label = paste0("σ_m = ", sigma_m)) %>%
+  group_by(XD_bin, sigma_e_label, sigma_m_label) %>%
+  summarise(mean_I = mean(I_i), se = sd(I_i) / sqrt(n()), .groups = "drop") %>%
+  mutate(sigma_e_label = factor(sigma_e_label, levels = paste0("σ_e = ", sigma_e_vals)),
+         sigma_m_label = factor(sigma_m_label, levels = paste0("σ_m = ", sigma_m_vals))) %>%
+  ggplot(aes(x = XD_bin, y = mean_I, col = sigma_e_label)) +
+  geom_hline(yintercept = 0, linetype = 2, colour = "grey50", linewidth = 0.4) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "grey50", linewidth = 0.4) +
+  geom_line(linewidth = 1) +
+  facet_grid(~ sigma_m_label, scales = "free") +
+  labs(
+    x = expression(X[i] %.% D[i]),
+    y = expression(I[i])
+  ) +
+  theme_classic(base_size = 12) +
+  theme(
+    legend.title = element_blank()
+  )
+
+p1_grid
+```
+
+Here we see that $\sigma_m$ and $\sigma_e$ have qualitatively the same effect on $I_i$; both reduce the strength of the relationship between signed stimulus intensity and average evidence in favor of the true state.
+
+Now we might look at how the parameters influence the second part i.e. $S_i$. First we plot varying degrees of $\sigma_m$ for $\sigma_e = 0.5$ and $\sigma_c = 0.5$
+
+```{r, fig.height=6, fig.width=10,warning=F,message=F}
+# --- Plot A: what sigma_m does — fix sigma_e & sigma_c, vary sigma_m as colour ---
+
+sigma_m_vals_A <- c(0.2, 0.5, 1.0, 2.0)
+
+df_A <- expand.grid(sm = sigma_m_vals_A) %>%
+  rowwise() %>%
+  mutate(data = list(simulate_components(0.5, 0.5, sm, beta = 0, n = 20000))) %>%
+  unnest(data) %>%
+  select(-sm)
+
+pA <- df_A %>%
+    mutate(bin    = cut(XD, breaks = breaks, include.lowest = TRUE, labels = FALSE),
+           XD_bin = (breaks[bin] + breaks[bin + 1]) / 2,
+           sigma_m_label = factor(paste0("σ_m = ", sigma_m),
+                                  levels = paste0("σ_m = ", sigma_m_vals_A)),
+           action_label  = ifelse(a == 1, "a = 1", "a = -1")) %>%
+    group_by(XD_bin, sigma_m_label, action_label) %>%
+    summarise(mean_S = mean(S_i), .groups = "drop") %>%
+    ggplot(aes(x = XD_bin, y = mean_S,
+               colour   = sigma_m_label,
+               linetype = action_label,
+               group    = interaction(sigma_m_label, action_label))) +
+    annotate("rect", xmin = 0,    xmax =  Inf, ymin = 0,    ymax =  Inf, fill = "green", alpha = .15) +
+    annotate("rect", xmin = -Inf, xmax =  0,   ymin = -Inf, ymax =  0,   fill = "green", alpha = .15) +
+    annotate("rect", xmin = -Inf, xmax =  0,   ymin = 0,    ymax =  Inf, fill = "red",   alpha = .15) +
+    annotate("rect", xmin = 0,    xmax =  Inf, ymin = -Inf, ymax =  0,   fill = "red",   alpha = .15) +
+
+    geom_hline(yintercept = 0, linetype = 2, colour = "grey50", linewidth = 0.4) +
+    geom_vline(xintercept = 0, linetype = 2, colour = "grey50", linewidth = 0.4) +
+    geom_line(linewidth = 1.2) +
+    scale_colour_viridis_d(option = "C", end = 0.85) +
+    labs(x = expression(X[i] %.% D[i]), y = expression(S[i]),
+         colour = NULL, linetype = NULL) +
+    theme_classic(base_size = 12)
+pA
+
+```
+
+In the above plot each quadrant corresponds to a different state of the decision process. The green quadrants indicate correct responses; the red quadrants indicate errors. Line colour represents different levels of metacognitive uncertainty $\sigma_m$. It is clear that the magnitude of $S_i$ is uniformly attenuated as $\sigma_m$ increases.
+
+
+```{r, fig.height=6, fig.width=10,warning=F,message=F}
+# --- Plot B: shape of S_i — fix sigma_m, vary sigma_e (rows) x sigma_c (cols) ---
+
+sigma_e_vals_B <- c(0.3, 0.5, 1.0)
+sigma_c_vals_B <- c(0.3, 0.5, 1.0)
+
+df_B <- expand.grid(se = sigma_e_vals_B, sc = sigma_c_vals_B) %>%
+  rowwise() %>%
+  mutate(data = list(simulate_components(se, sc, sigma_m = 0.2, beta = 0, n = 20000))) %>%
+  unnest(data) %>%
+  select(-se, -sc)
+
+pB <- df_B %>%
+  mutate(bin    = cut(XD, breaks = breaks, include.lowest = TRUE, labels = FALSE),
+         XD_bin = (breaks[bin] + breaks[bin + 1]) / 2,
+         sigma_e_label = factor(paste0("σ_e = ", sigma_e),
+                                levels = paste0("σ_e = ", sigma_e_vals_B)),
+         sigma_c_label = factor(paste0("σ_c = ", sigma_c),
+                                levels = paste0("σ_c = ", sigma_c_vals_B)),
+         action_label  = ifelse(a == 1, "a = 1", "a = -1")) %>%
+  group_by(XD_bin, action_label, sigma_e_label, sigma_c_label) %>%
+  summarise(mean_S = mean(S_i), se = sd(S_i) / sqrt(n()), .groups = "drop") %>%
+  ggplot(aes(x = XD_bin, y = mean_S, colour = sigma_e_label,
+             linetype = action_label,
+             group    = interaction(action_label, sigma_e_label))) +
+  annotate("rect", xmin =  0,   xmax =  Inf, ymin =  0,   ymax =  Inf, fill = "green", alpha = .15) +
+  annotate("rect", xmin = -Inf, xmax =  0,   ymin = -Inf, ymax =  0,   fill = "green", alpha = .15) +
+  annotate("rect", xmin = -Inf, xmax =  0,   ymin =  0,   ymax =  Inf, fill = "red",   alpha = .15) +
+  annotate("rect", xmin =  0,   xmax =  Inf, ymin = -Inf, ymax =  0,   fill = "red",   alpha = .15) +
+  geom_hline(yintercept = 0, linetype = 2, colour = "grey50", linewidth = 0.4) +
+  geom_vline(xintercept = 0, linetype = 2, colour = "grey50", linewidth = 0.4) +
+  geom_line(linewidth = 1) +
+  facet_grid(~ sigma_c_label) +
+  labs(x = expression(X[i] %.% D[i]), y = expression(S[i]),
+       colour = NULL, linetype = NULL) +
+  theme_classic(base_size = 12) +
+  theme(strip.background = element_blank(), legend.title = element_blank())
+
+pB
+```
+
+Here the same quadrant structure applies. The plot shows that increasing either $\sigma_e$ or $\sigma_c$ reduces the magnitude of $S_i$.
+
+
+To summarize, confidence in this model is the sum of a stimulus-based prior $I_i$ and an action-based prediction error $S_i$, scaled by the marginalization factor $K_i$. The prediction error is largest for incorrect responses at high stimulus intensity and smallest for correct responses at high stimulus intensity, a pattern with direct implications for how we expect physiological responses, particularly pupil dilation, to track the decision process.
 
 #### Additional parameters
 
@@ -622,8 +788,8 @@ The full model becomes.
 $$
 \begin{aligned}
 P(a = 1) &= \Phi\left(\frac{D_i \cdot X_i- \beta_s}{\sqrt{\sigma_{e_s}^2 + \sigma_{c_s}^2}}\right) \\
-\mu_{c_i} &= \begin{cases}\Phi\left((I_i-S_i)\cdot C_i\right) & \text{if } a_i = 1 \\ 
-1 - \Phi\left((I_i+S_i)\cdot C_i\right) & \text{if } a_i = -1\end{cases} \\
+\mu_{c_i} &= \begin{cases}\Phi\left((I_i-S_i)\cdot K_i\right) & \text{if } a_i = 1 \\ 
+1 - \Phi\left((I_i+S_i)\cdot K_i\right) & \text{if } a_i = -1\end{cases} \\
 a_i &\sim \mathcal{bernoulli}(p(a_i = 1)) \\
 Conf_i &\sim \mathcal{ord\beta}(\mu_{c_i},\kappa_{c_s},c_{0_s},c_{1_s})
 \end{aligned}
@@ -643,9 +809,6 @@ Next we show verification of the above formulated marginalized heuristic model, 
 In the first validation step we simulate from different combinations of noise parameters (facets).
 
 ```{r, error=F,message=F,warning=F, fig.height=10,fig.width=10}
-source(here::here("Preregistration","scripts","Simulation.R"))
-
-library(tidyverse)
 
 trials = 500000
 

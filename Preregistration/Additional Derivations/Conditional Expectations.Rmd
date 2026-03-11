@@ -72,7 +72,6 @@ $$
 \rho = \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_c^2)} \cdot \sqrt{(\sigma_e^2 + \sigma_m^2)}} \tag{5}
 $$
 
-<!-- up to this point its not entirely clear why we derived the correlation-->
 #### Truncated normal distributions
 
 To proceed, we need a general result from probability theory. Suppose we have two jointly normal random variables:
@@ -102,7 +101,7 @@ With $z_z = \frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}$
 It can then easily be shown using the same steps that when the action is -1 i.e. $(e_i-c_i) < 0$ this becomes:
 
 $$
-\mathbb{E}(r_i \mid (e_i-c_i) > 0) =  (X_iD_i - \beta) - \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \frac{\phi(-z_z)}{\Phi(-z_z)}
+\mathbb{E}(r_i \mid (e_i-c_i) < 0) =  (X_iD_i - \beta) - \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \frac{\phi(-z_z)}{\Phi(-z_z)}
 $$
 
 we might define $\lambda(x) = \frac{\phi(x)}{\Phi(x)}$, which is the inverse Mills ratio.

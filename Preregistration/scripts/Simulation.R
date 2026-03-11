@@ -645,3 +645,42 @@ sim_trials_fix = function(n = 300, seed, sigmam_beta,meta_bias_beta){
 }
 
 
+
+
+
+library(tidyverse)
+library(cowplot)
+
+Cc <- 2 / 1.7   # approximation constant linking inverse logit to probit
+
+lambda <- function(z) dnorm(z) / pnorm(z)   # inverse Mills ratio
+
+rho_fn <- function(sigma_e, sigma_c, sigma_m) {
+  sigma_e^2 / (sqrt(sigma_e^2 + sigma_c^2) * sqrt(sigma_e^2 + sigma_m^2))
+}
+
+K_fn <- function(sigma_e, sigma_m) {
+  1 / sqrt((1 + Cc^2) / (sigma_e^2 + sigma_m^2))
+}
+
+I_fn <- function(XD, beta, sigma_e, sigma_m) {
+  Cc * (XD - beta) / (sigma_e^2 + sigma_m^2)
+}
+
+# S_i for a given action
+S_fn <- function(XD, beta, sigma_e, sigma_c, sigma_m, action) {
+  rho  <- rho_fn(sigma_e, sigma_c, sigma_m)
+  z    <- (XD - beta) / (sqrt(sigma_e^2 + sigma_c^2))
+  lam  <- ifelse(action == 1, lambda(z), lambda(-z))
+  ifelse(action == 1, (rho * lam * Cc) / sqrt(sigma_e^2 + sigma_m^2), (-rho * lam * Cc) / sqrt(sigma_e^2 + sigma_m^2))
+}
+
+# Full confidence mu_c
+mu_c_fn <- function(XD, beta, sigma_e, sigma_c, sigma_m, action) {
+  K   <- K_fn(sigma_e, sigma_m)
+  I_i <- I_fn(XD, beta, sigma_e, sigma_m)
+  S_i <- S_fn(XD, beta, sigma_e, sigma_c, sigma_m, action)
+  if_else(action == 1,
+          pnorm((I_i + (S_i)) * K),   # = pnorm((I_i + S_fn_raw) * K) — see derivation
+          1 - pnorm((I_i + (S_i)) * K))
+}
