@@ -1,0 +1,52 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "Metacognitive uncertainty in correct and error trials across the post-decisional response window"
+  author:
+    - name: "Jesper Fischer Ehmsen"
+      affiliations:
+        - ref: cfin
+    - name: "Siebe Everaets"
+    - name: "Arthur S. Courtin"
+      affiliations:
+        - ref: cfin
+        - ref: ucl
+    - name: "Kelly Hoogervorst"
+      affiliations:
+        - ref: cfin
+    - name: "Micah G. Allen"
+      affiliations:
+        - ref: cfin
+        - ref: cambridge
+    - name: "Francesca Fardo"
+      affiliations:
+        - ref: cfin
+  chapters:
+    - index.qmd
+    - part1-models-data.qmd
+    - part2-current-model.qmd
+    - part3-design-methods.qmd
+    - references.qmd
+
+affiliations:
+  - id: cfin
+    name: "Center of Functionally Integrative Neuroscience (CFIN), Department of Clinical Medicine, Aarhus University"
+  - id: ucl
+    name: "Institute of NeuroScience, Université catholique de Louvain, Brussels, Belgium"
+  - id: cambridge
+    name: "Cambridge Psychiatry, University of Cambridge, United Kingdom"
+
+bibliography: "Knitting files/references.bib"
+csl: "Knitting files/chicago-author-date.csl"
+link-citations: true
+
+format:
+  html:
+    theme: flatly
+    highlight-style: tango
+    code-fold: true
+    toc: true
+    toc-depth: 3
+    number-sections: true
