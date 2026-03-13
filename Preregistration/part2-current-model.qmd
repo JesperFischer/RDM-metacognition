@@ -16,7 +16,7 @@ library(truncnorm)
 
 # Part 2: Current Model
 
-In this section, we first describe the general structure of static models of perceptual decision-making and confidence ratings. We then derive and simulate from our proposed model, demonstrating that it can produce the key patterns highlighted in the [Design considerations](Models and Data in Perceptual Decision-Making with Confidence.Rmd).
+In this section, we first describe the general structure of static models of perceptual decision-making and confidence ratings. We then derive and simulate from our proposed model, demonstrating that it can produce the key patterns highlighted in the [Design considerations](part1-models-data.qmd).
 
 ## Static models of metacognition
 
@@ -91,7 +91,7 @@ $$
 $$
 Here we assume that the rater has access to a noisy readout of the evidence: $r_i \sim \mathcal{N}(e_i, \sigma_m)$, where $\sigma_m$ is metacognitive noise.
 
-This can be shown to yield (see the full derivation in [Additional Derivations](Additional Derivations/inverselogit.Rmd)):
+This can be shown to yield (see the full derivation in the collapsible block below):
 
 ::: {.callout-note collapse="true" title="Derivation of the probability of correctness given noisy evidence"}
 
@@ -101,7 +101,7 @@ $$
 e \sim \mathcal{N}(D \cdot X_i, \sigma_e)
 $$
 
-We now assume that the agent computes the posterior probability of D given the evidence he collected. This means that for the case where D = 1 we have from bayes theorm that:
+We now assume that the agent computes the posterior probability of D given the evidence he collected. This means that for the case where D = 1 we have from Bayes' theorem that:
 
 $$
 P(D=1 \mid e) = \frac{P(e \mid D=1) \cdot P(D=1)}{P(e \mid D=1) \cdot P(D=1) + P(e \mid D=-1) \cdot P(D=-1)}
@@ -148,9 +148,9 @@ $$
 Now if one factors out the $\exp\Big(-\frac{(e - X_i)^2}{2\sigma_e^2}\Big)$ term from the numerator we get:
 
 $$
-P(D=1 \mid e) = \frac{1}{1 + \exp\Big(\frac{(e + X_i)^2 - (e - X_i)^2}{2\sigma_e^2}\Big)}
+P(D=1 \mid e) = \frac{1}{1 + \exp\Big(\frac{(e - X_i)^2 - (e + X_i)^2}{2\sigma_e^2}\Big)}
 $$
-writing out the sqaures $(e + X_i)^2 = e^2 + X_i^2 + 2\cdot e \cdot X_i$ & $(e - X_i)^2 = e^2 + X_i^2 - 2\cdot e \cdot X_i$, we end up with:
+writing out the squares $(e + X_i)^2 = e^2 + X_i^2 + 2\cdot e \cdot X_i$ & $(e - X_i)^2 = e^2 + X_i^2 - 2\cdot e \cdot X_i$, we end up with:
 
 $$
 P(D=1 \mid e) = \frac{1}{1 + \exp\Big(-\frac{2 \cdot e \cdot X_i}{\sigma_e^2}\Big)}
@@ -654,7 +654,7 @@ $$
 
 With $z_Z = \frac{\mu_Z}{\sigma_Z}$
 
-For a full derivation see; [Derivation](Derivations/Truncated Normal.Rmd).
+For a full derivation, see the [Truncated Normal derivation](Additional Derivations/Truncated Normal.Rmd).
 
 
 Now replacing Y with $r_i$ and Z with $e_i - c_i$ we get:
