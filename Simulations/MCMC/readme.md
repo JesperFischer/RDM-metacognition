@@ -1,1 +1,0 @@
-Here we keep all the simulation scripts for the MCMC model
