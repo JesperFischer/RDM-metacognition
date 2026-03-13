@@ -187,13 +187,15 @@ Below we present a plate notation schematic of the proposed model, illustrating 
 cache_file <- here("Preregistration", "cached-results", "platenotation.png")
 if (file.exists(cache_file)) {
   magick::image_read(cache_file)
-} else {
+} else if (!nzchar(Sys.getenv("CI"))) {
   invisible(tinytex::latexmk(here("Preregistration", "Figure scripts", "Platenotations", "platenotation.tex")))
   img1 <- image_read_pdf(here("Preregistration", "Figure scripts", "Platenotations", "platenotation.pdf"), density = 600)
   img1 <- image_trim(img1)
   img1 <- image_resize(img1, "1200x")
   image_write(img1, cache_file)
   img1
+} else {
+  message("Plate notation not cached. Run build-cache.R locally first.")
 }
 ```
 
@@ -314,7 +316,7 @@ Next, we examine confidence ratings as a function of the three noise parameters.
 cache_file <- here("Preregistration", "cached-results", "df_interaction_ordbeta.rds")
 if (file.exists(cache_file)) {
   df_interaction <- readRDS(cache_file)
-} else {
+} else if (!nzchar(Sys.getenv("CI"))) {
   set.seed(199742)
 
   n_trials <- 5000
@@ -359,6 +361,8 @@ if (file.exists(cache_file)) {
     mutate(data = list(simulate_interaction(sigma_m, sigma_c,sigma_e))) %>%
     unnest(data)
   saveRDS(df_interaction, cache_file)
+} else {
+  stop("Cached results not found. Run build-cache.R locally first.")
 }
 ```
 
@@ -782,7 +786,7 @@ if (all(file.exists(cache_file_grid, cache_file_A, cache_file_B))) {
   df_grid <- readRDS(cache_file_grid)
   df_A <- readRDS(cache_file_A)
   df_B <- readRDS(cache_file_B)
-} else {
+} else if (!nzchar(Sys.getenv("CI"))) {
   source(here("Preregistration", "scripts", "Simulation.R"))
 
   n_trials <- 50000
@@ -851,6 +855,8 @@ if (all(file.exists(cache_file_grid, cache_file_A, cache_file_B))) {
   saveRDS(df_grid, cache_file_grid)
   saveRDS(df_A, cache_file_A)
   saveRDS(df_B, cache_file_B)
+} else {
+  stop("Cached results not found. Run build-cache.R locally first.")
 }
 
 sigma_e_vals <- c(0.3, 0.4, 0.5)
@@ -1082,7 +1088,7 @@ if (file.exists(cache_file)) {
   df_mech <- cached$df_mech
   df_heu <- cached$df_heu
   trials <- cached$trials
-} else {
+} else if (!nzchar(Sys.getenv("CI"))) {
   source(here("Preregistration", "scripts", "Simulation.R"))
 
   trials = 500000
@@ -1135,6 +1141,8 @@ if (file.exists(cache_file)) {
            Accuracy = as.factor(ACC))
 
   saveRDS(list(df_mech = df_mech, df_heu = df_heu, trials = trials), cache_file)
+} else {
+  stop("Cached results not found. Run build-cache.R locally first.")
 }
 
 rbind(df_mech,df_heu) %>% ggplot()+
@@ -1184,7 +1192,7 @@ if (file.exists(cache_file)) {
   cached <- readRDS(cache_file)
   df_mech <- cached$df_mech
   df_heu <- cached$df_heu
-} else {
+} else if (!nzchar(Sys.getenv("CI"))) {
   source(here("Preregistration", "scripts", "Simulation.R"))
 
   # Define high/low values
@@ -1235,6 +1243,8 @@ if (file.exists(cache_file)) {
            Accuracy = as.factor(ACC))
 
   saveRDS(list(df_mech = df_mech, df_heu = df_heu), cache_file)
+} else {
+  stop("Cached results not found. Run build-cache.R locally first.")
 }
 
 rbind(df_mech) %>% ggplot()+
@@ -1430,7 +1440,7 @@ cache_effects <- here("Preregistration", "cached-results", "effect_sims.rds")
 if (all(file.exists(cache_prior, cache_effects))) {
   df_all <- readRDS(cache_prior)
   df_effects <- readRDS(cache_effects)
-} else {
+} else if (!nzchar(Sys.getenv("CI"))) {
   source(here("Simulations", "Heurestic", "scripts", "Simulate_mcmc.R"))
 
   n_sims <- 50
@@ -1460,6 +1470,8 @@ if (all(file.exists(cache_prior, cache_effects))) {
 
   saveRDS(df_all, cache_prior)
   saveRDS(df_effects, cache_effects)
+} else {
+  stop("Cached results not found. Run build-cache.R locally first.")
 }
 
 df_all %>% pivot_longer(cols = c("theta","c_mu")) %>%
