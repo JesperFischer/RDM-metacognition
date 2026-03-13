@@ -148,7 +148,7 @@ $$
 Now if one factors out the $\exp\Big(-\frac{(e - X_i)^2}{2\sigma_e^2}\Big)$ term from the numerator we get:
 
 $$
-P(D=1 \mid e) = \frac{1}{1 + \exp\Big(\frac{(e - X_i)^2 - (e + X_i)^2}{2\sigma_e^2}\Big)}
+P(D=1 \mid e) = \frac{1}{1 + \exp\Big(\frac{(e + X_i)^2 - (e - X_i)^2}{2\sigma_e^2}\Big)}
 $$
 writing out the squares $(e + X_i)^2 = e^2 + X_i^2 + 2\cdot e \cdot X_i$ & $(e - X_i)^2 = e^2 + X_i^2 - 2\cdot e \cdot X_i$, we end up with:
 
