@@ -3,7 +3,25 @@
 
 # Part 2: Current Model
 
-In this section, we first describe the general structure of ideas of static models of perceptual decision making and confidence ratings. We then describe, derive and simulate from our proposed model, demonstrating that it can produce key patterns highlighted in the [Design considerations](Models and Data in Perceptual Decision-Making with Confidence.Rmd).
+
+```{r load packages, warning = F, message = F, echo = F, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  dpi = 300,
+  fig.align = 'center'
+)
+
+set.seed(123)
+
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load("here", "knitr","yaml","cowplot", "magick",
+               "tidyverse", "flextable","ordbetareg","patchwork","truncnorm")
+```
+
+In this section, we first describe the general structure of ideas of static models of perceptual decision making and confidence ratings. We then describe, derive and simulate from our proposed model, demonstrating that it can produce key patterns of perceptual decision making with confidence judgements.
 
 ## Static models of metacognition
 
@@ -22,7 +40,7 @@ $$
 
 Within most frameworks, this criterion is thought to be static within an experimental setting for each agent.
 
-#### Confidence Ratings
+### Confidence Ratings
 
 Having made a binary choice, the agent is asked to give a confidence judgement in that choice. A prominent approach is to assume that the agent computes the probability that the action was correct. @FLEMINGSelfEvaluationDecisionMakingGeneralBayesianFrameworkMetacognitive2017 extended this framework to also account for error monitoring.<!-- this goes very fast, i feel like it needs some transition from SDT confidence (P(correct)) to fleming and daw. Feels kinda sudden now-->
 
@@ -77,11 +95,12 @@ To compute confidence ratings, we assume that the agent internally computes the 
 $$
 \text{confidence} = P(\text{correct} \mid r, a) = P(D = a \mid r)
 $$
+
 Here we assume that the rater has access to a noisy readout of the evidence: $r_i \sim \mathcal{N}(e_i, \sigma_m)$, where $\sigma_m$ is metacognitive noise.
 
-This can be shown to yield: (see the full derivation in [Additional Derivations](Additional Derivations/inverselogit.Rmd)):
+This can be shown to yield: (see the full derivation see below):
 
-```{r, child="Additional Derivations/inverselogit.Rmd", eval = knitr::is_html_output()}
+```{r, child="derivations/inverselogit.qmd", eval = knitr::is_html_output()}
 ```
 
 $$
@@ -101,17 +120,23 @@ Below we present a plate notation schematic of the proposed model, illustrating 
 
 ```{r platenotation, out.width="100%", fig.align='center', message=F, error=F, warning=F}
 
-invisible(tinytex::latexmk(here::here("Preregistration","Figure scripts","Platenotations", "platenotation.tex")))
+# plate_tex_path <- here::here("Preregistration", "Figure scripts", "Platenotations", "platenotation.tex")
+# plate_pdf_path <- here::here("Preregistration", "Figure scripts", "Platenotations", "platenotation.pdf")
+
+# invisible(tinytex::latexmk(plate_tex_path))
+
+# Clean up latex sidecar files that can appear in the project root during render.
+# invisible(file.remove(here::here("Preregistration", "platenotation.log")))
 
 # For PDF output, include the PDF directly; for HTML/Word, convert to image
 if (knitr::is_latex_output()) {
-  knitr::include_graphics(here::here("Preregistration", "Figure scripts","Platenotations", "platenotation.pdf"))
+  plate_figure_path <-  here::here("Preregistration", "Figure scripts", "Platenotations", "platenotation.pdf")
 } else {
   img1 <- image_read_pdf(here::here("Preregistration", "Figure scripts","Platenotations", "platenotation.pdf"),
                          density = 600)
   img1 <- image_trim(img1)
   img1 <- image_resize(img1, "1200x")
-  print(img1)
+  plot(img1)
 }
 ```
 
@@ -441,8 +466,7 @@ $$
 
 It can be shown that this conditional expectation equals the following equation (for a full derivation see below):
 
-
-```{r, child="Additional Derivations/Conditional Expectations.Rmd", eval = knitr::is_html_output()}
+```{r, child="derivations/conditional-expectations.qmd", eval = knitr::is_html_output()}
 ```
 
 

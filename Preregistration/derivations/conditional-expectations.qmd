@@ -1,0 +1,162 @@
+<details style="border: 2px solid #3498db; border-radius: 5px; padding: 15px; margin: 20px 0; background-color: #f8f9fa;">
+<summary style="cursor: pointer; font-size: 1.1em; font-weight: bold; color: #2c3e50; padding: 5px;"><b>Click to expand: Calculating conditional expectations.</b></summary>
+
+<div style="margin-top: 15px;">
+
+
+
+The goal here is to derive the two expectations of $r_i$ given the choice i.e. $\mathbb{E}(r_i \mid a_i = 1)$ and $\mathbb{E}(r_i \mid a_i = -1)$
+
+To derive these expectations, we need to account for the fact that the choice $a_i$ depends on the relationship between the evidence $e_i$ and the criterion $c_i$, and given that $r_i$ is a noisy readout of $e_i$ there is a dependency structure.
+
+We have the following relationships:
+
+- Evidence: $e_i \sim \mathcal{N}(X_iD_i - \beta, \sigma_e)$
+- Criterion: $c_i \sim \mathcal{N}(0, \sigma_c)$
+- Metacognitive evidence: $r_i = e_i + \epsilon_m$ where $\epsilon_m \sim \mathcal{N}(0, \sigma_m)$
+- Choice: $a_i = 1$ if $e_i > c_i$, otherwise $a_i = -1$
+
+
+we can treat the difference distribution $e_i - c_i$ as a joint bivariate normal distribution with $r_i$ and calculate the expectation of $r_i$ given that the $e_i - c_i$ random variable is above 0 (or equivalently that the choice was 1).
+
+The difference $e_i - c_i$ follows a Gaussian distribution, as both random variables are Gaussian.
+
+$$
+(e_i - c_i) \sim \mathcal{N}(X_iD_i - \beta, \sqrt{\sigma_e^2 + \sigma_c^2})
+$$
+The joint bivariate normal distribution becomes:
+
+$$
+\begin{bmatrix}
+e_i - c_i \\
+r_i
+\end{bmatrix}
+\sim \mathcal{N}\left(
+\begin{bmatrix}
+X_iD_i - \beta \\
+X_iD_i - \beta
+\end{bmatrix},
+\begin{bmatrix}
+\sigma_e^2 + \sigma_c^2 & \sigma_e^2 \\
+\sigma_e^2 & \sigma_e^2 + \sigma_m^2
+\end{bmatrix}
+\right)
+$$
+
+Intuitively this bivariate normal distribution can be argued for by realizing that both distributions of $e_i - c_i$ and $r_i$ share $e_i$, with the same mean but are otherwise independent.
+
+The key mathematical insight is that the covariance between $e_i-c_i$ and $r_i$ is $\sigma_e^2$ and not zero.
+
+Writing the full covariance and expanding it using this we get:
+
+<!-- (https://www.probabilitycourse.com/chapter5/5_3_1_covariance_correlation.php#:~:text=The%20covariance%20between%20two%20random%20variables%20X,and%20X%20and%20Y%20are%20positively%20correlated) -->
+
+
+$$
+\text{Cov}(e_i-c_i, r_i) = \text{Cov}(e_i-c_i, e_i + \epsilon_m)
+$$
+$$
+\text{Cov}(e_i-c_i, r_i) = \text{Cov}(e_i,e_i) + \text{Cov}(e_i, \epsilon_m) - \text{Cov}(c_i,e_i) - \text{Cov}(c_i, \epsilon_m)=  \text{Cov}(e_i,e_i) = \text{Var}(e) =\sigma_e^2
+$$
+As $e_i$ and $\epsilon_m$ and also $c_i$ are independent, these covariances are 0:
+
+$$
+\text{Cov}(e_i-c_i, r_i) = \text{Cov}(e_i,e_i) = \text{Var}(e) =\sigma_e^2
+$$
+
+This shared variance structure means that $e_i-c_i$ and $r_i$ are correlated with correlation coefficient.
+
+$$
+\rho = \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_c^2)} \cdot \sqrt{(\sigma_e^2 + \sigma_m^2)}} \tag{5}
+$$
+
+#### Truncated normal distributions
+
+To proceed, we need a general result from probability theory. Suppose we have two jointly normal random variables:
+
+$$
+\begin{pmatrix} Z \\ Y \end{pmatrix} \sim \mathcal{N}\left(\begin{pmatrix} \mu_Z \\ \mu_Y \end{pmatrix}, \begin{pmatrix} \sigma_Z^2 & \rho\sigma_Y\sigma_Z \\ \rho\sigma_Y\sigma_Z & \sigma_Y^2 \end{pmatrix}\right)
+$$
+It can be shown that the expectation of Y given Z>0 is:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \sigma_Y\frac{\phi(z_z)}{\Phi(z_z)}
+$$
+
+With $z_Z = \frac{\mu_Z}{\sigma_Z}$
+
+The key idea is that we want to find $\mathbb{E}(Y \mid Z > 0)$, the expected value of $Y$ conditional on $Z$ being positive (i.e. the choice was 1).
+
+From standard bivariate normal theory, the conditional distribution of $Y$ given $Z = z$ is:
+
+$$
+Y \mid Z = z \sim \mathcal{N}\left(\mu_Y + \rho\cdot\frac{\sigma_Y}{\sigma_Z}(z - \mu_Z), \sigma_Y^2(1-\rho^2)\right)
+$$
+
+(see https://uregina.ca/~kozdron/Teaching/Regina/351Fall15/Handouts/351lect24.pdf)
+
+So if we take the expectation of this conditional distribution
+$\mathbb{E}(Y \mid Z = z) = \mu_Y + \rho\cdot \frac{\sigma_Y}{\sigma_Z}(z - \mu_Z)$ (instead of conditioning on Z we want the expectation of Y when Z > 0, i.e. the expectation of $r_i$ when the choice was 1)
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \frac{\sigma_Y}{\sigma_Z}(\mathbb{E}(Z | Z >0) - \mu_Z)
+$$
+
+From here we have that the expectation of a truncated normal distribution can be written as: https://en.wikipedia.org/wiki/Truncated_normal_distribution
+
+$$
+\mathbb{E}(Z | Z > a) = \mu_Z + \sigma_Z \frac{\phi(\frac{a-\mu_Z}{\sigma_Z})}{1-\Phi(\frac{a-\mu_Z}{\sigma_Z})}
+$$
+
+which in this case reduces to when a = 0
+
+$$
+\mathbb{E}(Z | Z > 0) = \mu_Z + \sigma_Z \frac{\phi(-z_z)}{1-\Phi(-z_z)}
+$$
+
+given that $-Z_z = \frac{-\mu_Z}{\sigma_Z}$
+
+Now using that the pdf of the Gaussian is symmetrical i.e. $\phi(x) = \phi(-x)$ and also that $1-\Phi(-x) = \Phi(x)$
+
+$$
+\mathbb{E}(Z | Z > 0) = \mu_Z + \sigma_Z \frac{\phi(z_z)}{\Phi(z_z)}
+$$
+
+Finally inserting this into the equation:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \frac{\sigma_Y}{\sigma_Z}(\mathbb{E}(Z | Z >0) - \mu_Z)
+$$
+we get:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \frac{\sigma_Y}{\sigma_Z}(\mu_Z + \sigma_Z \frac{\phi(z_z)}{\Phi(z_z)} - \mu_Z)
+$$
+
+which reduces to:
+
+$$
+\mathbb{E}(Y \mid Z > 0) = \mu_Y + \rho\cdot \sigma_Y\frac{\phi(z_z)}{\Phi(z_z)}
+$$
+
+Now replacing Y with $r_i$ and Z with $e_i - c_i$ we get:
+
+$$
+\mathbb{E}(r_i \mid (e_i-c_i) > 0) =  (X_iD_i - \beta) + \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \frac{\phi(z_z)}{\Phi(z_z)}
+$$
+
+With $z_z = \frac{X_iD_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}$
+
+It can then easily be shown using the same steps that when the action is -1 i.e. $(e_i-c_i) < 0$ this becomes:
+
+$$
+\mathbb{E}(r_i \mid (e_i-c_i) < 0) =  (X_iD_i - \beta) - \rho \cdot \sqrt{\sigma_e^2 + \sigma_m^2} \cdot \frac{\phi(-z_z)}{\Phi(-z_z)}
+$$
+
+we might define $\lambda(x) = \frac{\phi(x)}{\Phi(x)}$, which is the inverse Mills ratio.
+
+
+
+</div>
+
+</details>

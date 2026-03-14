@@ -1,0 +1,9 @@
+# Preface {.unnumbered}
+
+This preregistration consists of three parts. The first two parts provide justification for the experimental design and the computational model, respectively. The third part is the main preregistration.
+
+1. **Considerations of models and empirical data from metacognitive perceptual decision-making tasks**
+2. **Outline of our computational model**
+3. **Design, methods, hypotheses, and sample size considerations of the current study**
+
+Each part is maintained in a separate document; this document includes all three.
