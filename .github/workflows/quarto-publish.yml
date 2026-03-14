@@ -39,7 +39,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libmagick++-dev libcurl4-openssl-dev \
             libxml2-dev libfontconfig1-dev libfreetype6-dev \
-            libharfbuzz-dev libfribidi-dev libpng-dev libtiff-dev libjpeg-dev
+            libharfbuzz-dev libfribidi-dev libpng-dev libtiff-dev libjpeg-dev \
+            libpoppler-cpp-dev
 
       - name: Install R packages
         run: |
