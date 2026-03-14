@@ -1,18 +1,6 @@
 
 <!-- Part 2: Current Model -->
 
-```{r packages3, warning = F, message = F, echo = F, include=FALSE}
-# Load additional packages needed for this section
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load("here", "knitr","yaml")
-
-#renv::restore(project=here::here())
-
-required_packages = c("cowplot", "magick", "tidyverse", "flextable","truncnorm")
-lapply(required_packages, library, character.only = TRUE)
-
-```
-
 # Part 2: Current Model
 
 In this section, we first describe the general structure of ideas of static models of perceptual decision making and confidence ratings. We then describe, derive and simulate from our proposed model, demonstrating that it can produce key patterns highlighted in the [Design considerations](Models and Data in Perceptual Decision-Making with Confidence.Rmd).
@@ -1111,7 +1099,7 @@ Because our sequential sampling approach uses Bayes factors for the termination 
 
 
 ```{r, fig.height=8, fig.width=12, warning=F,error=F,message=F}
-source(here::here("Simulations","Heurestic","scripts","Simulate_mcmc.R"))
+source(here::here("Preregistration","scripts","Simulation.R"))
 
 n_sims <- 50
 

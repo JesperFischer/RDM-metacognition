@@ -64,7 +64,8 @@ set.seed(123)
 
 # packages
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load("here", "knitr","yaml","cowplot", "magick", "tidyverse", "flextable")
+pacman::p_load("here", "knitr","yaml","cowplot", "magick",
+               "tidyverse", "flextable","ordbetareg","patchwork","truncnorm")
 ```
 
 
