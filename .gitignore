@@ -17,10 +17,10 @@ Pilot/Experimental analysis/Heurestic models/saved models hier/
 Pilot/Experimental analysis/Heurestic models/saved models hier/fit_hier.rds
 Pilot/Experimental analysis/MCMC/saved models hier/fit_hier.rds
 *.rds
-!Preregistration/cached-results/*.rds
 
 # Quarto build output
 Preregistration/_book/
 Preregistration/.quarto/
+Preregistration/platenotation.*
 Pilot/Experimental analysis/Heurestic models/saved models/
 Sequential sampling/Fits/Hierarchical/Hierarchical_fit.rds

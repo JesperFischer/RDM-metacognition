@@ -1,1 +1,5 @@
-Experimental scripts for running the Random Dot Motion task. The `RDM_exp` directory contains the PsychoPy experiment code. The `simulations` subdirectory contains scripts used during task development.
+Experimental scripts for running the Random Dot Motion task. 
+
+The `RDM_exp` directory contains the PsychoPy experiment code. 
+
+The `simulations` subdirectory contains scripts used during task development.
