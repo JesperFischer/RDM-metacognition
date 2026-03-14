@@ -45,7 +45,7 @@ jobs:
         run: |
           install.packages(c(
             "here", "knitr", "yaml", "rmarkdown",
-            "cowplot", "magick", "flextable", "truncnorm"
+            "cowplot", "magick", "flextable", "truncnorm", "pdftools"
           ))
           install.packages("tidyverse")
         shell: Rscript {0}

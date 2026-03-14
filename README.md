@@ -13,9 +13,3 @@ Simulations/           Simulation scripts for computational models
   MCMC/                MCMC-based model simulations
 Sequential sampling/   Sequential sampling model materials
 ```
-
-## Requirements
-
-- **Experiment:** Python with PsychoPy
-- **Analysis:** R (see `RDM-metacognition.Rproj`)
-- **Models:** Stan (called via R)
