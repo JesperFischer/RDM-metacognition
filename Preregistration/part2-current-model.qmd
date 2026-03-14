@@ -120,19 +120,19 @@ Below we present a plate notation schematic of the proposed model, illustrating 
 
 ```{r platenotation, out.width="100%", fig.align='center', message=F, error=F, warning=F}
 
-# plate_tex_path <- here::here("Preregistration", "Figure scripts", "Platenotations", "platenotation.tex")
-# plate_pdf_path <- here::here("Preregistration", "Figure scripts", "Platenotations", "platenotation.pdf")
+# plate_tex_path <- here::here("Figure scripts", "Platenotations", "platenotation.tex")
+# plate_pdf_path <- here::here("Figure scripts", "Platenotations", "platenotation.pdf")
 
 # invisible(tinytex::latexmk(plate_tex_path))
 
 # Clean up latex sidecar files that can appear in the project root during render.
-# invisible(file.remove(here::here("Preregistration", "platenotation.log")))
+# invisible(file.remove(here::here("platenotation.log")))
 
 # For PDF output, include the PDF directly; for HTML/Word, convert to image
 if (knitr::is_latex_output()) {
-  plate_figure_path <-  here::here("Preregistration", "Figure scripts", "Platenotations", "platenotation.pdf")
+  plate_figure_path <-  here::here("Figure scripts", "Platenotations", "platenotation.pdf")
 } else {
-  img1 <- image_read_pdf(here::here("Preregistration", "Figure scripts","Platenotations", "platenotation.pdf"),
+  img1 <- image_read_pdf(here::here("Figure scripts","Platenotations", "platenotation.pdf"),
                          density = 600)
   img1 <- image_trim(img1)
   img1 <- image_resize(img1, "1200x")
@@ -570,7 +570,7 @@ For completeness, we show the magnitude of these two terms as a function of sign
 
 
 ```{r, fig.height=6, fig.width=10,warning=F,message=F}
-source(here::here("Preregistration","scripts","Simulation.R"))
+source(here::here("scripts","Simulation.R"))
 
 n_trials <- 50000
 
@@ -1041,7 +1041,7 @@ Next, we investigate how this model, with metacognitive noise and metacognitive 
 ### Model comparison
 
 ```{r, echo = FALSE, message=F, error=F, warning=F}
-loocomparison <- readRDS(here::here("Preregistration","Results","loocomparison.rds"))
+loocomparison <- readRDS(here::here("Results","loocomparison.rds"))
 
 # model_with_x <- readRDS(here::here("Experimental analysis","Heurestic models",
 #                                    "saved models","saved models hier","fit_finalheu_lapse_cypertron.rds"))
@@ -1053,7 +1053,7 @@ loocomparison <- readRDS(here::here("Preregistration","Results","loocomparison.r
 # loocomparison = loo::loo_compare(list(with_x = model_with_x$loo(), with_x1 = model_with_x1$loo()))
 # 
 # 
-# saveRDS(loocomparison,here::here("Preregistration","Results","loocomparison.rds"))
+# saveRDS(loocomparison,here::here("Results","loocomparison.rds"))
 ```
 
 As a sanity check on the $X_i = 1$ assumption, we fitted both hierarchical models to our pilot data and computed approximate leave-one-out cross-validation. The two models were virtually indistinguishable, with the difference in expected log predictive density being `r round(loocomparison[2,1],2)` $\pm$ `r round(loocomparison[2,2],2)`. A difference below $-4$ or more than two standard errors from zero is generally considered evidence for one model over the other (REF); thus, at least in our pilot data, there is no difference in predictive performance. To further examine the distinction, we plot all pairwise parameter estimates below together with the identity line.
@@ -1087,9 +1087,9 @@ As a sanity check on the $X_i = 1$ assumption, we fitted both hierarchical model
 #   theme_classic()
 # 
 # 
-# ggsave(here::here("Preregistration","Figures","parameter_comparison_plot.PNG"), height = 6, width = 8, dpi = 300)
+# ggsave(here::here("Figures","parameter_comparison_plot.PNG"), height = 6, width = 8, dpi = 300)
 
-magick::image_read(here::here("Preregistration","Figures","parameter_comparison_plot.PNG"))
+magick::image_read(here::here("Figures","parameter_comparison_plot.PNG"))
 
 ```
 
@@ -1101,7 +1101,7 @@ The two models align well in their subject-level parameter estimates, further ju
 Next, we show posterior predictive checks of the hierarchical heuristic model for our pilot participants.
 
 ```{r,fig.height=12, fig.width=18, message=F,error=F,warning=F}
-magick::image_read(here::here("Preregistration","Figures","Pilot_predictive_checks.PNG"))
+magick::image_read(here::here("Figures","Pilot_predictive_checks.PNG"))
 ```
 
 
@@ -1111,7 +1111,7 @@ To further assess the robustness of our model implementation and the planned seq
 
 
 ```{r,fig.height=7, fig.width=14, message=F,error=F,warning=F}
-magick::image_read(here::here("Preregistration","Figures","parameterrecovery_hier.PNG"))
+magick::image_read(here::here("Figures","parameterrecovery_hier.PNG"))
 ```
 
 
@@ -1123,7 +1123,7 @@ Because our sequential sampling approach uses Bayes factors for the termination 
 
 
 ```{r, fig.height=8, fig.width=12, warning=F,error=F,message=F}
-source(here::here("Preregistration","scripts","Simulation.R"))
+source(here::here("scripts","Simulation.R"))
 
 n_sims <- 50
 
@@ -1190,7 +1190,7 @@ df_effects %>%
 As described above, we simulated participants from draws of the posterior informed by our pilot data. We then fitted the model to increasing numbers of participants (5, 7, 9, 12, 15, 20, 25) to demonstrate the feasibility of the sequential sampling approach. Below, we show five such trajectories of Bayes factors as a function of sample size, alongside a panel showing how the posterior distribution of the parameter of interest changes with increasing sample size.
 
 ```{r, fig.height=8, fig.width=12, warning=F,error=F,message=F}
-magick::image_read(here::here("Preregistration","Figures","sequential_samping_plot.PNG"))
+magick::image_read(here::here("Figures","sequential_samping_plot.PNG"))
 ```
 
 
