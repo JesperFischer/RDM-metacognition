@@ -3,7 +3,7 @@
 
 # Part 2: Current Model
 
-In this section, we first describe the general structure of ideas of static models of perceptual decision making and confidence ratings. We then describe, derive and simulate from our proposed model, demonstrating that it can produce key patternsof perceptual decision making with confidence judgements.
+In this section, we first describe the general structure of ideas of static models of perceptual decision making and confidence ratings. We then describe, derive and simulate from our proposed model, demonstrating that it can produce key patterns of perceptual decision making with confidence judgements.
 
 ## Static models of metacognition
 
@@ -77,9 +77,10 @@ To compute confidence ratings, we assume that the agent internally computes the 
 $$
 \text{confidence} = P(\text{correct} \mid r, a) = P(D = a \mid r)
 $$
+
 Here we assume that the rater has access to a noisy readout of the evidence: $r_i \sim \mathcal{N}(e_i, \sigma_m)$, where $\sigma_m$ is metacognitive noise.
 
-This can be shown to yield: (see the full derivation in [Additional Derivations](Additional Derivations/inverselogit.Rmd)):
+This can be shown to yield: (see the full derivation see below):
 
 ```{r, child="Additional Derivations/inverselogit.Rmd", eval = knitr::is_html_output()}
 ```
@@ -506,10 +507,8 @@ $$
 with:
 
 $$
-\begin{aligned}
-\lambda(x) &= \frac{\phi(x)}{\Phi(x)} \\
-C &= \frac{2}{1.7}
-\end{aligned}
+\lambda(x) = \frac{\phi(x)}{\Phi(x)} \\
+C = \frac{2}{1.7}
 $$
 
 
@@ -732,7 +731,7 @@ The complete set of parameters for the model is:
 
 $$
 \begin{aligned}
-\Theta_s &= \begin{bmatrix}
+\Theta_s = \begin{bmatrix}
            \beta_s \\
            \sigma_{e_s} \\
            \sigma_{c_s} \\
@@ -741,9 +740,9 @@ $$
            \kappa_{c_s} \\
            \gamma_s 
          \end{bmatrix} 
-         \sim 
+         &\sim 
          \mathcal{N}(\mu_{\Theta},\Sigma_{\Theta}) \\
-\text{where } & \beta_s  \in [-1,1], \sigma_{e_s} >0, \sigma_{c_s} >0, \sigma_{m_s} > 0, \\
+\text{where } \quad & \beta_s  \in [-1,1], \sigma_{e_s} >0, \sigma_{c_s} >0, \sigma_{m_s} > 0, \\
 & \mu_{\beta_s} \in \mathbb{R}, \kappa_{c_s} > 0, \gamma_s \in [0,0.5] \\
 & (c_{1_s} , c_{0_s}) \sim \delta([1,10,1])
 \end{aligned}
@@ -755,7 +754,7 @@ In this formulation, $\mathcal{N}$ denotes a multivariate normal distribution wi
 The priors of the model are as follows:
 
 $$
-\begin{align*}
+\begin{aligned}
 \mu_{\beta} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of threshold)} \\
 \mu_{\sigma_{e_s}} &\sim \mathcal{N}(-2, 2) & \text{(group mean of encoding uncertainty)} \\
 \mu_{\sigma_{c_s}} &\sim \mathcal{N}(-2, 2) & \text{(group mean of choice variability)} \\
@@ -763,12 +762,12 @@ $$
 \mu_{\beta_c} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of meta bias)} \\
 \mu_{\gamma_s} &\sim \mathcal{N}(2, 2) & \text{(group mean of lapse rate)} \\
 \mu_{\kappa_c} &\sim \mathcal{N}(-4, 2) & \text{(group mean of confidence precision)} \\
-\end{align*}
+\end{aligned}
 $$
 
 
 $$
-\begin{align*}
+\begin{aligned}
 \tau_{\beta} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of threshold)} \\
 \tau_{\sigma_{e_s}} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of encoding uncertainty)} \\
 \tau_{\sigma_{c_s}} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of choice variability)} \\
@@ -776,7 +775,7 @@ $$
 \tau_{\beta_c} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of meta bias)} \\
 \tau_{\gamma_s} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of lapse rate)} \\
 \tau_{\kappa_c} &\sim \mathcal{N}(1, 1) & \text{(Between subject SD of confidence precision)} \\
-\end{align*}
+\end{aligned}
 $$
 
 - $\mathbf{R} \sim \mathrm{LKJ}(\eta = 2)$ (correlation matrix for the multivariate normal distribution.)
@@ -997,13 +996,12 @@ The subject-level changes due to the post-decisional window (PDW) are drawn from
 
 
 $$
-\begin{align*}
+\begin{aligned}
 \mu_{\Delta{\sigma_{m_s}}} &\sim \mathcal{N}(0, 0.5) & \text{(group mean of effect of PDW on meta uncertainty)} \\
 \mu_{\Delta{\mu_{\beta_c}}} &\sim \mathcal{N}(0, 0.5)  & \text{(group mean of effect of PDW on meta bias)} \\
 \tau_{\Delta{\sigma_{m_s}}} &\sim \mathcal{N}(0, 0.5) & \text{(Between subject SD of effect of PDW on meta uncertainty)} \\
 \tau_{\Delta{\mu_{\beta_c}}} &\sim \mathcal{N}(0, 0.5)  & \text{(Between subject SD of effect of PDW on meta bias)} \\
-
-\end{align*}
+\end{aligned}
 $$
 
 - PDW denotes the post-decisional response window.
@@ -1036,8 +1034,7 @@ loocomparison <- readRDS(here::here("Preregistration","Results","loocomparison.r
 As a sanity check on the $X_i = 1$ assumption, we fitted both hierarchical models to our pilot data and computed approximate leave-one-out cross-validation. The two models were virtually indistinguishable, with the difference in expected log predictive density being `r round(loocomparison[2,1],2)` $\pm$ `r round(loocomparison[2,2],2)`. A difference below $-4$ or more than two standard errors from zero is generally considered evidence for one model over the other (REF); thus, at least in our pilot data, there is no difference in predictive performance. To further examine the distinction, we plot all pairwise parameter estimates below together with the identity line.
 
 
-```{r,fig.height=6, fig.width=8, message=F,error=F,warning=F}
-# parameters = c("beta","sigma_e","sigma_k","sigma_m","confprec","lapse","meta_bias","confprec","meta_bias_beta","sigmam_beta")
+```{r,fig.height=6, fig.width=8, out.width="6in", out.height="4.5in", message=F,error=F,warning=F}
 # 
 # parameter_comparison_plot = rbind(
 #     model_with_x$summary(parameters) %>% 
@@ -1066,7 +1063,7 @@ As a sanity check on the $X_i = 1$ assumption, we fitted both hierarchical model
 # 
 # ggsave(here::here("Preregistration","Figures","parameter_comparison_plot.PNG"), height = 6, width = 8, dpi = 300)
 
-magick::image_read(here::here("Preregistration","Figures","parameter_comparison_plot.PNG"))
+knitr::include_graphics(here::here("Preregistration","Figures","parameter_comparison_plot.PNG"))
 
 ```
 
@@ -1077,8 +1074,8 @@ The two models align well in their subject-level parameter estimates, further ju
 
 Next, we show posterior predictive checks of the hierarchical heuristic model for our pilot participants.
 
-```{r,fig.height=12, fig.width=18, message=F,error=F,warning=F}
-magick::image_read(here::here("Preregistration","Figures","Pilot_predictive_checks.PNG"))
+```{r,fig.height=6, fig.width=8, out.width="6in", out.height="4.5in", message=F,error=F,warning=F}
+knitr::include_graphics(here::here("Preregistration","Figures","Pilot_predictive_checks.PNG"))
 ```
 
 
@@ -1087,8 +1084,8 @@ magick::image_read(here::here("Preregistration","Figures","Pilot_predictive_chec
 To further assess the robustness of our model implementation and the planned sequential sampling procedure, we simulated new participants from the posterior distribution of the hierarchical model. We extracted a single posterior draw and simulated 25 participants from it, then fitted the model to increasing numbers of participants (5, 7, 9, 12, 15, 20, 25) to demonstrate that the sequential sampling approach is feasible. This also allowed us to perform parameter recovery on the hierarchical model without additional computational resources. Below, we show that the model adequately recovers its parameters at both the subject and group level for parameters of interest.
 
 
-```{r,fig.height=7, fig.width=14, message=F,error=F,warning=F}
-magick::image_read(here::here("Preregistration","Figures","parameterrecovery_hier.PNG"))
+```{r,fig.height=7, fig.width=14, out.width="6.5in", out.height="4.875in", message=F,error=F,warning=F}
+knitr::include_graphics(here::here("Preregistration","Figures","parameterrecovery_hier.PNG"))
 ```
 
 
@@ -1166,8 +1163,8 @@ df_effects %>%
 
 As described above, we simulated participants from draws of the posterior informed by our pilot data. We then fitted the model to increasing numbers of participants (5, 7, 9, 12, 15, 20, 25) to demonstrate the feasibility of the sequential sampling approach. Below, we show five such trajectories of Bayes factors as a function of sample size, alongside a panel showing how the posterior distribution of the parameter of interest changes with increasing sample size.
 
-```{r, fig.height=8, fig.width=12, warning=F,error=F,message=F}
-magick::image_read(here::here("Preregistration","Figures","sequential_samping_plot.PNG"))
+```{r, fig.height=8, fig.width=12, out.width="6.5in", out.height="4.333in", warning=F,error=F,message=F}
+knitr::include_graphics(here::here("Preregistration","Figures","sequential_samping_plot.PNG"))
 ```
 
 

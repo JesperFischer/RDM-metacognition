@@ -1,1 +1,0 @@
-Simulation scripts for the heuristic model. These scripts generate synthetic data and evaluate model behaviour under controlled parameter settings to validate the heuristic approach to metacognitive confidence estimation.

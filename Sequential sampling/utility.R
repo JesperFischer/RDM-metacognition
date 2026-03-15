@@ -1028,3 +1028,17 @@ pp_hier = function(fit,df,n_bins){
   
   
 }
+
+
+get_bf = function(prior,post){
+  library(logspline)
+  post_fit  <- logspline(post)
+  prior_fit <- logspline(prior)
+  
+  post_at_0  <- dlogspline(0, post_fit)
+  prior_at_0 <- dlogspline(0, prior_fit)
+  
+  BF_01 <- prior_at_0 / post_at_0
+  
+  return(BF_01)
+}

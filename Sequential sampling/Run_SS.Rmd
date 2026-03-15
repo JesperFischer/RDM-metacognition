@@ -24,7 +24,9 @@ df = load_data()
 ## plotting the behavioral data:
 
 ```{r, fig.height=6,fig.width=8, message=F,warning=F}
-plot_beh_data(df%>% filter(Trialtype == "Main", scale == "conf"), 9, F)
+plots = plot_beh_data(df%>% filter(Trialtype == "Main", scale == "conf"), 9, F)
+
+
 ```
 ## check subjects for exclusion and  fit the subject level model for each subject:
 
@@ -34,8 +36,17 @@ dd = df %>%
   filter(Trialtype == "Main", scale == "conf")
 
 exclusions_correct = dd %>% group_by(ID) %>% summarize(n = sum(Correct)/n()) %>% filter(n < 0.6)
-exclusions_ntrials = dd %>% select(interTrial.interval, interval,coherence,X,Correct,Y,RT,Confidence,ID) %>% drop_na() %>% 
-  group_by(ID) %>% summarize(n = n()) %>% filter(n < (36*7-30))
+
+exclusions_ntrials = dd %>% 
+  select(interTrial.interval, interval,coherence,X,Correct,Y,RT,Confidence,ID) %>% 
+  drop_na() %>% 
+  filter(RT > 0.150) %>% 
+  group_by(ID) %>% 
+  summarize(n = n()) %>% 
+  filter(n < (36*7-30))
+
+n_excluded_correctness = length(unique(exclusions_correct$ID))
+n_excluded_trials = length(unique(exclusions_ntrials$ID))
 
 
 dd = dd %>% filter(!ID %in% c(exclusions_correct$ID, exclusions_ntrials$ID))
@@ -70,6 +81,7 @@ if(length(list.files(here::here("Sequential sampling","Fits","Single Subject")))
 diagnoistics_ss = dia(fits, dd)
 
 diagnoistics_ss[[1]]
+
 ```
 
 
@@ -89,7 +101,19 @@ if(length(list.files(here::here("Sequential sampling","Fits","Hierarchical"))) !
 dia_hier(fit, dd)
 ```
 
+# bayes factors:
 
+```{r}
+bf8 = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[8]")) %>% .$`gm[8]`),prior = rnorm(4000,0,0.5))
+bf9 = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[9]")) %>% .$`gm[9]`),prior = rnorm(4000,0,0.5))
+
+Bayesfactor_data = data.frame(BF = bf8, subjects = length(dd_by_subj))
+
+Seq_samp = list(n_excluded_correctness,n_excluded_trials,Bayesfactor_data)
+
+saveRDS(Seq_samp, here::here("Preregistration","Results","SS",paste0("SS_",length(dd_by_subj),".rds")))
+
+```
 
 # posterior predictives:
 
@@ -121,4 +145,6 @@ combined_plot
 
 
 ```
+
+
 

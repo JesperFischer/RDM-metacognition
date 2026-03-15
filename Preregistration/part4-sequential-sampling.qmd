@@ -1,0 +1,76 @@
+# Part 4: Sequential Sampling Data Collection Progress
+
+```{r load packages, warning = F, message = F, echo = F, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  dpi = 300,
+  fig.align = 'center'
+)
+
+set.seed(123)
+
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load("here", "knitr","yaml","cowplot", "magick",
+               "tidyverse", "flextable","ordbetareg","patchwork","truncnorm")
+
+
+files = list.files(here::here("Preregistration","Results","SS"),
+                   full.names = TRUE)
+
+big_list = list()
+
+for(file in files){
+  big_list = append(big_list, list(readRDS(file)))
+}
+```
+
+
+## Overview
+
+This section provides live updates on the sequential sampling experiment data collection. As participants complete the experiment.
+
+## Data Collection Status
+
+At the moment there has been 
+
+
+## Participant Progress
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+# Placeholder: Plot of participant completion status
+# Can include: enrollment timeline, trial completion per participant, data quality metrics
+
+```
+
+## Model Fits
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+# Placeholder: Model fit visualizations from Run_SS
+# Examples:
+# - Posterior distributions of key parameters
+# - Prior vs posterior comparisons
+# - Convergence diagnostics (Rhat, n_eff)
+# - Parameter recovery (if simulations run)
+
+```
+
+## Preliminary Analyses
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+
+# Placeholder: Preliminary result plots
+# Examples:
+# - Confidence vs accuracy relationships
+# - Post-decisional window effects (if sufficient data)
+# - Between-subject parameter heterogeneity
+
+```
+
+## Data Access
+
+The raw sequential sampling data and full fitting results are stored in the [`Sequential sampling/`](../../Sequential sampling/) directory and remain private. Fitted models and diagnostic outputs are available there for reproducibility.

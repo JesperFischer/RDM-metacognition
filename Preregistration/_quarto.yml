@@ -28,6 +28,7 @@ book:
     - part1-models-data.qmd
     - part2-current-model.qmd
     - part3-design-methods.qmd
+    - part4-sequential-sampling.qmd
     - references.qmd
 
 affiliations:
