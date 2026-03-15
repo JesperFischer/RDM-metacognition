@@ -3,7 +3,7 @@ project:
   output-dir: _book
 
 book:
-  title: "Metacognitive uncertainty in correct and error trials across the post-decisional response window"
+  title: "Metacognitive uncertainty across the post-decisional response window"
   author:
     - name: "Jesper Fischer Ehmsen"
       affiliations:
