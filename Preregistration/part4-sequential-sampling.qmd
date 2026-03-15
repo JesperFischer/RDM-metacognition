@@ -34,43 +34,10 @@ This section provides live updates on the sequential sampling experiment data co
 
 ## Data Collection Status
 
-At the moment there has been 
+At the moment there has been excluded `r big_list[[length(big_list)]][[1]]`, due to poor accuracy, and `r big_list[[length(big_list)]][[2]]`, due to no-response rates above. This in total means we have excluded `r big_list[[length(big_list)]][[3]]`.
 
 
-## Participant Progress
+## Model convergence and Sequential sampling
 
-```{r, message = FALSE, warning = FALSE, echo = FALSE}
+The model 
 
-# Placeholder: Plot of participant completion status
-# Can include: enrollment timeline, trial completion per participant, data quality metrics
-
-```
-
-## Model Fits
-
-```{r, message = FALSE, warning = FALSE, echo = FALSE}
-
-# Placeholder: Model fit visualizations from Run_SS
-# Examples:
-# - Posterior distributions of key parameters
-# - Prior vs posterior comparisons
-# - Convergence diagnostics (Rhat, n_eff)
-# - Parameter recovery (if simulations run)
-
-```
-
-## Preliminary Analyses
-
-```{r, message = FALSE, warning = FALSE, echo = FALSE}
-
-# Placeholder: Preliminary result plots
-# Examples:
-# - Confidence vs accuracy relationships
-# - Post-decisional window effects (if sufficient data)
-# - Between-subject parameter heterogeneity
-
-```
-
-## Data Access
-
-The raw sequential sampling data and full fitting results are stored in the [`Sequential sampling/`](../../Sequential sampling/) directory and remain private. Fitted models and diagnostic outputs are available there for reproducibility.

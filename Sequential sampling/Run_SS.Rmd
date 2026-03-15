@@ -48,6 +48,8 @@ exclusions_ntrials = dd %>%
 n_excluded_correctness = length(unique(exclusions_correct$ID))
 n_excluded_trials = length(unique(exclusions_ntrials$ID))
 
+n_excluded = length(unique(c(exclusions_correct$ID, exclusions_ntrials$ID)))
+
 
 dd = dd %>% filter(!ID %in% c(exclusions_correct$ID, exclusions_ntrials$ID))
 
@@ -109,7 +111,7 @@ bf9 = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[9]")) %>% .$`gm[9]`),pr
 
 Bayesfactor_data = data.frame(BF = bf8, subjects = length(dd_by_subj))
 
-Seq_samp = list(n_excluded_correctness,n_excluded_trials,Bayesfactor_data)
+Seq_samp = list(n_excluded_correctness,n_excluded_trials,n_excluded,Bayesfactor_data)
 
 saveRDS(Seq_samp, here::here("Preregistration","Results","SS",paste0("SS_",length(dd_by_subj),".rds")))
 
