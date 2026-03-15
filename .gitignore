@@ -16,11 +16,12 @@ Pilot/Savedmodels/removed_models/fit1_siebe_nort_mec.rds
 Pilot/Experimental analysis/Heurestic models/saved models hier/
 Pilot/Experimental analysis/Heurestic models/saved models hier/fit_hier.rds
 Pilot/Experimental analysis/MCMC/saved models hier/fit_hier.rds
-*.rds
 
 # Quarto build output
 Preregistration/_book/
 Preregistration/.quarto/
 Preregistration/platenotation.*
 Pilot/Experimental analysis/Heurestic models/saved models/
-Sequential sampling/Fits/Hierarchical/Hierarchical_fit.rds
+Pilot/Experimental analysis/**/saved models/**/*.rds
+Pilot/Experimental analysis/archive/**/saved models/**/*.rds
+Sequential sampling/Fits/**/*.rds
