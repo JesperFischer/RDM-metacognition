@@ -1041,7 +1041,7 @@ Next, we investigate how this model, with metacognitive noise and metacognitive 
 ### Model comparison
 
 ```{r, echo = FALSE, message=F, error=F, warning=F}
-loocomparison <- readRDS(here::here("Preregistration","Results","loocomparison.rds"))
+loocomparison <- readRDS(here::here("Results","loocomparison.rds"))
 
 # model_with_x <- readRDS(here::here("Experimental analysis","Heurestic models",
 #                                    "saved models","saved models hier","fit_finalheu_lapse_cypertron.rds"))
