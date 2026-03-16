@@ -17,8 +17,16 @@ pacman::p_load("here", "knitr","yaml","cowplot", "magick",
                "tidyverse", "flextable","ordbetareg","patchwork","truncnorm")
 
 
+
 files = list.files(here::here("Results","SS"),
                    full.names = TRUE)
+
+# 
+# files = list.files(here::here("Preregistration","Results","SS"),
+#                    full.names = TRUE)
+
+
+
 
 big_list = list()
 
@@ -39,5 +47,26 @@ At the moment there has been excluded `r big_list[[length(big_list)]][[1]]`, due
 
 ## Model convergence and Sequential sampling
 
-The model 
+```{r, fig.height=6, fig.width=10,warning=F,message=F}
+big_list[[length(big_list)]][[4]]
+```
+
+
+
+```{r, fig.height=4, fig.width=7,warning=F,message=F}
+df = do.call(rbind, lapply(big_list, function(x) x[[5]]))
+
+
+df %>% 
+  ggplot()+
+  geom_line(aes(x = subjects, y =log(BF)),col = "orange")+
+  geom_point(aes(x = subjects, y = log(BF)),col = "orange")+
+  labs(y = "Log(BF)", x = "N_subjects")+
+  geom_hline(yintercept = c(log(1/30),log(30)), linetype = 2)+
+  scale_y_continuous(breaks = c(round(log(1/30),2),0,round(log(30),2)))+
+  scale_x_continuous(limits = c(0,30), breaks = seq(0,30,by = 10), labels = seq(0,30,by = 10))+
+  theme_classic()+
+  theme(legend.position = "top")
+
+```
 

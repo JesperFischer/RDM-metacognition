@@ -100,7 +100,8 @@ if(length(list.files(here::here("Sequential sampling","Fits","Hierarchical"))) !
 
 
 ```{r, fig.width=16,fig.height=12}
-dia_hier(fit, dd)
+hierarchical_diagnostics = dia_hier(fit, dd)
+hierarchical_diagnostics
 ```
 
 # bayes factors:
@@ -111,7 +112,9 @@ bf9 = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[9]")) %>% .$`gm[9]`),pr
 
 Bayesfactor_data = data.frame(BF = bf8, subjects = length(dd_by_subj))
 
-Seq_samp = list(n_excluded_correctness,n_excluded_trials,n_excluded,Bayesfactor_data)
+hierarchical_diagnostics = list(hierarchical_diagnostics[[1]],hierarchical_diagnostics[[4]])
+
+Seq_samp = list(n_excluded_correctness,n_excluded_trials,n_excluded,hierarchical_diagnostics,Bayesfactor_data)
 
 saveRDS(Seq_samp, here::here("Preregistration","Results","SS",paste0("SS_",length(dd_by_subj),".rds")))
 
