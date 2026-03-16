@@ -26,8 +26,6 @@ files = list.files(here::here("Results","SS"),
 #                    full.names = TRUE)
 
 
-
-
 big_list = list()
 
 for(file in files){
@@ -43,6 +41,11 @@ This section provides live updates on the sequential sampling experiment data co
 ## Data Collection Status
 
 At the moment there has been excluded `r big_list[[length(big_list)]][[1]]`, due to poor accuracy, and `r big_list[[length(big_list)]][[2]]`, due to no-response rates above. This in total means we have excluded `r big_list[[length(big_list)]][[3]]`.
+
+
+test 
+test
+est
 
 
 ## Model convergence and Sequential sampling

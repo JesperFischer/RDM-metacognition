@@ -112,7 +112,7 @@ bf9 = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[9]")) %>% .$`gm[9]`),pr
 
 Bayesfactor_data = data.frame(BF = bf8, subjects = length(dd_by_subj))
 
-hierarchical_diagnostics = list(hierarchical_diagnostics[[1]],hierarchical_diagnostics[[4]])
+hierarchical_diagnostics = list(hierarchical_diagnostics[[1]],hierarchical_diagnostics[[6]],hierarchical_diagnostics[[4]])
 
 Seq_samp = list(n_excluded_correctness,n_excluded_trials,n_excluded,hierarchical_diagnostics,Bayesfactor_data)
 
