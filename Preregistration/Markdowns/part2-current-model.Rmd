@@ -1163,7 +1163,7 @@ df_effects %>%
 
 As described above, we simulated participants from draws of the posterior informed by our pilot data. We then fitted the model to increasing numbers of participants (5, 7, 9, 12, 15, 20, 25) to demonstrate the feasibility of the sequential sampling approach. Below, we show five such trajectories of Bayes factors as a function of sample size, alongside a panel showing how the posterior distribution of the parameter of interest changes with increasing sample size.
 
-```{r, fig.height=8, fig.width=12, out.width="6.5in", out.height="4.333in", warning=F,error=F,message=F}
+```{r, fig.height=8, fig.width=14, warning=F,error=F,message=F}
 knitr::include_graphics(here::here("Preregistration","Figures","sequential_samping_plot.PNG"))
 ```
 
