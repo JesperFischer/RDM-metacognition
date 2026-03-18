@@ -113,7 +113,7 @@ Here $g(\cdot)$ is the inverse logit transformation, i.e., $g(x)= \frac{1}{1+exp
 
 From confidence alone, only the sum $\sigma_e^2 + \sigma_m^2$  can be identified. However, combining choices and confidence allows estimation of all three parameters: $\sigma_e$, $\sigma_c$, and $\sigma_m$. 
 
-As can be seen from equation (2), computing the probability of being correct requires access to the stimulus intensity $X_i$. Although this is assumed in some models [@FLEMINGNeuralMediatorsChangesMindPerceptualDecisions2018a], we believe the rater does not have access to the objective stimulus intensity. We return to this issue and present a final formulation without this term later. Interested readers are referred to @RAUSCHFoldedXpatternNotNecessarilyStatisticalSignature2019, where simulations are conducted with different generative processes for the stimulus intensity.
+As can be seen from equation (2), computing the probability of being correct requires access to the stimulus intensity $X_i$. Although this is assumed in some models [@FLEMINGNeuralMediatorsChangesMindPerceptualDecisions2018a], we believe the rater does not have access to the objective stimulus intensity. We return to this issue later, where note that we fix this quantity to one for the current registration. Interested readers are referred to @RAUSCHFoldedXpatternNotNecessarilyStatisticalSignature2019, where simulations are conducted with different generative processes for the stimulus intensity.
 
 
 Below we present a plate notation schematic of the proposed model, illustrating the role of each noise parameter.

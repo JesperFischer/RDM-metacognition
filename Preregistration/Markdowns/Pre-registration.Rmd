@@ -7,6 +7,14 @@ author: Jesper Fischer Ehmsen^1^,
         Francesca Fardo^1\*^,
         Micah G. Allen^1,4,\*^
 output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    toc_depth: 3
+  word_document:
+    reference_docx: Knitting files/docx_template.docx
+    toc: true
+    toc_depth: 3
   html_document:
     toc: true
     toc_float:
@@ -17,14 +25,6 @@ output:
     highlight: tango
     code_folding: hide
     number_sections: false
-  word_document:
-    reference_docx: Knitting files/docx_template.docx
-    toc: true
-    toc_depth: 3
-  pdf_document:
-    latex_engine: xelatex
-    toc: true
-    toc_depth: 3
 bibliography:
 - "Knitting files/references.bib"
 link-citations: yes
@@ -78,6 +78,8 @@ This preregistration consists of three parts. The first two parts provide justif
 3. **Design, methods, hypotheses, and sample size considerations of the current study**
 
 Each part is maintained in a separate document; this document includes all three.
+
+For a comprehensive overview of the project, experimental scripts, statistical models see the associated [Github Repository](https://github.com/JesperFischer/RDM-metacognition)
 
 _______________________________________________________
 

@@ -27,7 +27,7 @@ To test whether the post-decisional response window changes how informative conf
 2. **Hypothesis 2:** Increasing the post-decisional time window will lead to no difference in confidence bias.
 
     - **Test specification:**  
-      This hypothesis is tested by allowing the $mu_{\beta_c}$ parameter to vary by post-decisional time window. The primary test evaluates whether the group-level parameter differs from 0 (i.e., whether the 95% highest density interval includes 0). We also aim to report the Bayes factor to quantify the strength of the evidence relative to the null (i.e., there is no difference). This test will be conducted when the data collection has been terminated.
+      This hypothesis is tested by allowing the $\mu_{\beta_c}$ parameter to vary linearly on the logit scale with the post-decisional time window. The primary test evaluates whether the group-level parameter differs from 0 (i.e., whether the 95% highest density interval includes 0). We also aim to report the Bayes factor to quantify the strength of the evidence relative to the null (i.e., there is no difference). This test will be conducted when the data collection has been terminated.
 
 ### Priors and Sequential Sampling.
 

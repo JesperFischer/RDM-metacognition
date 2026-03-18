@@ -7,3 +7,5 @@ This preregistration consists of three parts. The first two parts provide justif
 3. **Design, methods, hypotheses, and sample size considerations of the current study**
 
 Each part is maintained in a separate document; this document includes all three.
+
+For a comprehensive overview of the project, experimental scripts, statistical models see the associated [Github Repository](https://github.com/JesperFischer/RDM-metacognition)
