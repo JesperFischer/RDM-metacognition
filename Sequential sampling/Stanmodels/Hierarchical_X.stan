@@ -1,9 +1,17 @@
 functions {
 
-  real lambda(real z){
-      return exp(std_normal_lpdf(z)) / Phi(z);
-  }
-
+real lambda(real z){
+    return exp(std_normal_lpdf(z)) / Phi(z);
+}
+  
+  real psycho_ACC(real x, real beta, real alpha, real lapse){
+    return (lapse + (1-2*lapse) *Phi(beta * (x-alpha)));
+   }
+   
+  real psycho_conf(real x, real beta, real alpha, real lapse){
+    return (lapse + (1-2*lapse) * Phi(beta * abs(x-alpha)));
+   }
+   
   // ordered beta function
   real ord_beta_reg_lpdf(real y, real mu, real phi, real cutzero, real cutone) {
 
@@ -69,7 +77,7 @@ data {
   vector[N] C;
   vector[N] X;
   vector[N] XD;
-  vector[N] ACC;
+  vector[N] ACC; // Vector of deltaBPM values that match the binary response
   array[N] int a;
 
 
@@ -131,10 +139,10 @@ transformed parameters{
   theta[n] = (inv_logit(lapse[S_id[n]])/2) + (1-2*inv_logit(lapse[S_id[n]])/2) * Phi( mu / sigma1[S_id[n]]);
 
   if(a[n] == 1){
-    theta_conf[n] = Phi( (((mu + exp(sigma_e[S_id[n]])^2/sigma1[S_id[n]] * lambda(mu/sigma1[S_id[n]])) * Cc*1) / sigma2) * 1/(sqrt(1 + ((Cc^2*1^2) / sigma2))));
+    theta_conf[n] = Phi( (((mu + exp(sigma_e[S_id[n]])^2/sigma1[S_id[n]] * lambda(mu/sigma1[S_id[n]])) * Cc*X[n]) / sigma2) * 1/(sqrt(1 + ((Cc^2*X[n]^2) / sigma2))));
     
   }else if(a[n] == 0){
-    theta_conf[n] =  1-Phi( (((mu - exp(sigma_e[S_id[n]])^2/sigma1[S_id[n]] * lambda(-mu/sigma1[S_id[n]])) * Cc*1) / sigma2) * 1/(sqrt(1 + ((Cc^2*1^2) / sigma2))));
+    theta_conf[n] =  1-Phi( (((mu - exp(sigma_e[S_id[n]])^2/sigma1[S_id[n]] * lambda(-mu/sigma1[S_id[n]])) * Cc*X[n]) / sigma2) * 1/(sqrt(1 + ((Cc^2*X[n]^2) / sigma2))));
   }
   
 
@@ -147,35 +155,31 @@ transformed parameters{
 model {
   
   gm[1] ~ normal(0,0.5); //global mean of threshold 
-  gm[2] ~ normal(-2,2); //global mean of sigma_e
-  gm[3] ~ normal(-2,2); //global mean of sigma_k
-  gm[4] ~ normal(-2,2); //global mean of sigma_m
+  gm[2] ~ normal(-2,2); //global mean of slope
+  gm[3] ~ normal(-2,2); //global mean of confidence precision
+  gm[4] ~ normal(-2,2); //global mean of meta uncertainty
   gm[5] ~ normal(0,0.5); //global mean of meta bias
-  gm[6] ~ normal(-4,2); //global mean of lapse rate
+  gm[6] ~ normal(-4,2); //global mean of meta bias
   
-  gm[7] ~ normal(2,2); //global mean confidence precision
-  gm[8] ~ normal(0,0.5); //global mean of difference in sigma_m from PDW
-  gm[9] ~ normal(0,0.5); //global mean of difference in meta_bias from PDW
+  gm[7] ~ normal(2,2); //global mean of meta bias
+  gm[8] ~ normal(0,0.5); //global mean of meta bias
+  gm[9] ~ normal(0,0.5); 
   
   to_vector(z_expo) ~ std_normal();
-
-  // same as above (indicies) but between subject variances
 
   tau_u[1:7] ~ normal(1 , 1);
   tau_u[8] ~ normal(0 , 0.5);
   tau_u[9] ~ normal(0 , 0.5);
   
-  // cholesky decomposition of correlation matrix
   L_u ~ lkj_corr_cholesky(2);
 
-  target += bernoulli_lpmf(a | theta);   // likelihood for the first order choices 
+  target += bernoulli_lpmf(a | theta);   // likelihood for the outcomes
 
-  // likelihood for the second order confidence judgements 
+  profile("likelihood") {
   for (n in 1:N) {
     target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]) + meta_bias[S_id[n]]+  meta_bias_beta[S_id[n]] * interval[n], exp(confprec[S_id[n]]), c0[S_id[n]], c11[S_id[n]]);   // likelihood for confidence on correct trials 
   }
-
-  // cutpoints for the ordered beta-likelihood
+  }
   for(s in 1:S){
     c0[s] ~ induced_dirichlet([1,10,1]', 0, 1, c0[s], c11[s]);
     c11[s] ~ induced_dirichlet([1,10,1]', 0, 2, c0[s], c11[s]);
@@ -183,7 +187,6 @@ model {
 
 
 }
-
 
 generated quantities {
 

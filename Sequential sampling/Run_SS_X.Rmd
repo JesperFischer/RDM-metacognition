@@ -34,7 +34,7 @@ plots
 dd = df %>% 
   mutate(subject = as.numeric(as.factor(subject))) %>% 
   filter(Trialtype == "Main", scale == "conf") %>% 
-  filter(ID != "RDM_reportz_sub001.csv" & ID != "RDM_reportz_sub0.csv")
+  filter(ID != "RDM_reportz_sub001.csv" & ID != "RDM_reportz_sub010.csv")
 
 exclusions_correct = dd %>% group_by(ID) %>% summarize(n = sum(Correct)/n()) %>% filter(n < 0.60)
 
@@ -105,7 +105,7 @@ if(length(list.files(here::here("Sequential sampling","Fits","Hierarchical"))) !
     model = list.files(here::here("Sequential sampling","Fits","Hierarchical"), full.names = T)
     fit = readRDS(model)
 }else{
-  fit = fit_model_hier(dd)
+  fit = fit_model_hier(dd, model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_X.stan")))
 }
 ```
 

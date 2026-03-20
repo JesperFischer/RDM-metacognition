@@ -27,7 +27,7 @@ load_data = function(){
     
     dd = dd %>% mutate(SR_conf = as.numeric(SR_conf)) %>%
       rename(X = stim, RT = RTdec, Correct = cor, Y = resp, Confidence = SR_conf) %>% 
-      select(X,Correct,Y,RT,Confidence,scale,D, coherence,Trialtype,
+      select(X,Correct,Y,RT,Confidence,scale,D, coherence,Trialtype,ACC,
              interval,interTrial.interval,
              subject,age,gender,ID)
     
@@ -599,7 +599,7 @@ pp = function(fit,df,n_bins){
 
 fit_model_hier = function(df,
                         model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical.stan")),
-                        samples = 1000){
+                        samples = 500){
   
   
   
