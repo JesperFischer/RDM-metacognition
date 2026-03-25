@@ -10,7 +10,7 @@ pacman::p_load(cmdstanr, tidyverse,posterior, bayesplot, tidybayes,
                brms, patchwork, cowplot,ggpubr,flextable)
 
 
-source(here::here("Sequential sampling", "utility.R"))
+source(here::here("Sequential sampling", "utility_X.R"))
 
 ```
 
@@ -34,7 +34,8 @@ plots
 dd = df %>% 
   mutate(subject = as.numeric(as.factor(subject))) %>% 
   filter(Trialtype == "Main", scale == "conf") %>% 
-  filter(ID != "RDM_reportz_sub001.csv" & ID != "RDM_reportz_sub010.csv")
+  filter(ID != "RDM_reportz_sub010.csv" & ID != "RDM_reportz_sub001.csv")
+
 
 exclusions_correct = dd %>% group_by(ID) %>% summarize(n = sum(Correct)/n()) %>% filter(n < 0.60)
 
@@ -70,9 +71,9 @@ plots
 ```{r}
 dd_by_subj <- split(dd, dd$ID)
 
-if(length(list.files(here::here("Sequential sampling","Fits","Single Subject"))) == length(dd_by_subj)){
+if(length(list.files(here::here("Sequential sampling","Fits","Single Subject_X"))) == length(dd_by_subj)){
   
-  models = list.files(here::here("Sequential sampling","Fits","Single Subject"), full.names = T)
+  models = list.files(here::here("Sequential sampling","Fits","Single Subject_X"), full.names = T)
   fits = list()
   for(model in models[1:length(models)]){
     fit = readRDS(model)
@@ -84,7 +85,7 @@ if(length(list.files(here::here("Sequential sampling","Fits","Single Subject")))
   
 }else{
   fits <- lapply(dd_by_subj, function(d) {
-  fit_model_ss(d)})
+  fit_model_ssX(d)})
 }
 
 ```
@@ -101,11 +102,11 @@ diagnoistics_ss[[1]]
 ## Fit Hierarchical model
 
 ```{r}
-if(length(list.files(here::here("Sequential sampling","Fits","Hierarchical"))) != 0){
-    model = list.files(here::here("Sequential sampling","Fits","Hierarchical"), full.names = T)
+if(length(list.files(here::here("Sequential sampling","Fits","Hierarchical_X"))) != 0){
+    model = list.files(here::here("Sequential sampling","Fits","Hierarchical_X"), full.names = T)
     fit = readRDS(model)
 }else{
-  fit = fit_model_hier(dd, model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_X.stan")))
+  fit = fit_model_hierX(dd, model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_X.stan")))
 }
 ```
 

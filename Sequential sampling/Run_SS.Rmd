@@ -24,6 +24,19 @@ df = load_data()
 ## plotting the behavioral data:
 
 ```{r, fig.height=6,fig.width=8, message=F,warning=F}
+plots = plot_beh_data(df%>% filter(Trialtype == "SC dotlife"), 7, F)
+
+plots
+```
+
+
+```{r, fig.height=6,fig.width=8, message=F,warning=F}
+plots = plot_beh_data(df%>% filter(Trialtype == "SC coherence"), 7, F)
+
+plots
+```
+
+```{r, fig.height=6,fig.width=8, message=F,warning=F}
 plots = plot_beh_data(df%>% filter(Trialtype == "Main", scale == "conf"), 7, F)
 
 plots
@@ -34,7 +47,12 @@ plots
 dd = df %>% 
   mutate(subject = as.numeric(as.factor(subject))) %>% 
   filter(Trialtype == "Main", scale == "conf") %>% 
-  filter(ID != "RDM_reportz_sub001.csv" & ID != "RDM_reportz_sub0.csv")
+    filter(
+  abs(X) < case_when(
+    ID == "RDM_reportz_sub001.csv" ~ 0.6,
+    ID == "RDM_reportz_sub010.csv" ~ 0.4,
+    TRUE ~ Inf
+  ))
 
 exclusions_correct = dd %>% group_by(ID) %>% summarize(n = sum(Correct)/n()) %>% filter(n < 0.60)
 
@@ -56,6 +74,8 @@ n_excluded = length(unique(c(exclusions_correct$ID, exclusions_ntrials$ID)))
 
 
 dd = dd %>% filter(!ID %in% c(exclusions_correct$ID, exclusions_ntrials$ID)) %>% drop_na()
+
+dd_by_subj <- split(dd, dd$ID)
 ```
 
 
@@ -68,8 +88,6 @@ plots
 
 
 ```{r}
-dd_by_subj <- split(dd, dd$ID)
-
 if(length(list.files(here::here("Sequential sampling","Fits","Single Subject"))) == length(dd_by_subj)){
   
   models = list.files(here::here("Sequential sampling","Fits","Single Subject"), full.names = T)
@@ -86,8 +104,32 @@ if(length(list.files(here::here("Sequential sampling","Fits","Single Subject")))
   fits <- lapply(dd_by_subj, function(d) {
   fit_model_ss(d)})
 }
+```
+
+
+```{r}
+if(length(list.files(here::here("Sequential sampling","Fits","Single Subject nolapse"))) == length(dd_by_subj)){
+  
+  models = list.files(here::here("Sequential sampling","Fits","Single Subject nolapse"), full.names = T)
+  fits = list()
+  for(model in models[1:length(models)]){
+    fit = readRDS(model)
+    paths = str_split(model, "/")[[1]]
+    name = paths[length(paths)]
+    
+    fits[[str_remove(str_remove(name,".rds"),"fit_")]] = fit  
+  }
+  
+}else{
+  fits <- lapply(dd_by_subj, function(d) {
+  fit_model_ss_nolapse(d)})
+}
+
 
 ```
+
+
+
 
 
 ```{r, fig.width=8,fig.height=6}
@@ -95,37 +137,53 @@ diagnoistics_ss = dia(fits, dd)
 
 diagnoistics_ss[[1]]
 
+
+map_dfr(diagnoistics_ss,4)
 ```
 
 
 ## Fit Hierarchical model
 
 ```{r}
-if(length(list.files(here::here("Sequential sampling","Fits","Hierarchical"))) != 0){
+if(file.exists(here::here("Sequential sampling","Fits","Hierarchical","Hierarchical.rds"))){
     model = list.files(here::here("Sequential sampling","Fits","Hierarchical"), full.names = T)
-    fit = readRDS(model)
+    fit = readRDS(model[grepl("Hierarchical.rds",model)])
 }else{
   fit = fit_model_hier(dd)
 }
 ```
 
+```{r, fig.width=16,fig.height=12}
+hierarchical_diagnostics = dia_hier(fit, dd,lapse = T)
+hierarchical_diagnostics
+```
+
+```{r}
+if(file.exists(here::here("Sequential sampling","Fits","Hierarchical","Hierarchical_nolapse.rds"))){
+    model = list.files(here::here("Sequential sampling","Fits","Hierarchical"), full.names = T)
+    fit = readRDS(model[grepl("Hierarchical_nolapse.rds",model)])
+}else{
+  fit = fit_model_hier_nolapse(dd)
+}
+```
+
 
 ```{r, fig.width=16,fig.height=12}
-hierarchical_diagnostics = dia_hier(fit, dd)
+hierarchical_diagnostics = dia_hier(fit, dd,lapse = F)
 hierarchical_diagnostics
 ```
 
 # bayes factors:
 
 ```{r}
-bf8 = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[8]")) %>% .$`gm[8]`),prior = rnorm(4000,0,0.5))
-bf9 = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[9]")) %>% .$`gm[9]`),prior = rnorm(4000,0,0.5))
+bf_sigmam = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[7]")) %>% .$`gm[7]`),prior = rnorm(4000,0,0.5))
+bf_metabias = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[8]")) %>% .$`gm[8]`),prior = rnorm(4000,0,0.5))
 
-Bayesfactor_data = data.frame(BF = bf8, subjects = length(dd_by_subj))
+Bayesfactor_data = data.frame(BF = bf_sigmam, subjects = length(dd_by_subj))
 
-hierarchical_diagnostics = list(hierarchical_diagnostics[[1]],hierarchical_diagnostics[[6]],hierarchical_diagnostics[[4]])
+hierarchical_diagnostics_saved = list(hierarchical_diagnostics[[1]],hierarchical_diagnostics[[4]],hierarchical_diagnostics[[6]])
 
-Seq_samp = list(n_excluded_correctness,n_excluded_trials,n_excluded,hierarchical_diagnostics,Bayesfactor_data)
+Seq_samp = list(n_excluded_correctness,n_excluded_trials,n_excluded,hierarchical_diagnostics_saved,Bayesfactor_data)
 
 saveRDS(Seq_samp, here::here("Preregistration","Results","SS",paste0("SS_",length(dd_by_subj),".rds")))
 
@@ -134,7 +192,7 @@ saveRDS(Seq_samp, here::here("Preregistration","Results","SS",paste0("SS_",lengt
 # posterior predictives:
 
 ```{r, fig.width=8,fig.height=6, error=F,message=F,warning=F}
-pps = pp_hier(fit, dd, n_bins = 10)
+pps = pp_hier_nolapse(fit, dd, n_bins = 10)
 
 pps[[1]]
 ```
@@ -150,7 +208,7 @@ library(ggplot2)
 library(patchwork)
 
 # Arrange in a 2-row × 4-column grid, collect all legends
-combined_plot <- wrap_plots(pps[[2]], ncol = 4, nrow = 2, guides = "collect", axis_titles = "collect")
+combined_plot <- wrap_plots(pps[[2]], ncol = 6, nrow = 3, guides = "collect", axis_titles = "collect")
 
 combined_plot = combined_plot+theme(axis.title = element_text(size = 14),
                        axis.text = element_text(size = 12, color = "black"),
@@ -158,8 +216,6 @@ combined_plot = combined_plot+theme(axis.title = element_text(size = 14),
 
 
 combined_plot
-
-
 ```
 
 

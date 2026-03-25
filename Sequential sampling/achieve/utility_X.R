@@ -47,7 +47,7 @@ plot_beh_data = function(df,n_bins,ACC = F, r_data = F){
   # If more than one subject → apply function per subject
   if(length(subjects) != 1){
     
-    df_split = split(df, df$ID)
+    df_split = split(df, df$subject)
     
     out = lapply(df_split, function(d){
       plot_beh_data(d, n_bins = n_bins, ACC = ACC, r_data  = r_data)
@@ -344,8 +344,8 @@ plot_beh_data_tog = function(df,n_bins,ACC = F, r_data = F){
 
 
 
-fit_model_ss = function(df,
-                        model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Single Subject.stan")),
+fit_model_ssX = function(df,
+                        model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Single Subject_X.stan")),
                         samples = 1000){
   
   
@@ -368,55 +368,17 @@ fit_model_ss = function(df,
     refresh = 100,
     iter_sampling = samples,
     iter_warmup = samples,
-    adapt_delta = 0.95,
+    adapt_delta = 0.99,
     max_treedepth = 12,
     parallel_chains = 4)
   
   if(grepl("Single Subject",model$stan_file())){
-    fit$save_object(here::here("Sequential sampling","Fits","Single Subject",paste0("fit_",unique(df$ID),".rds")))
+    fit$save_object(here::here("Sequential sampling","Fits","Single Subject_X",paste0("fit_",unique(df$ID),".rds")))
   }
   
   return(fit)
   
 }
-
-
-fit_model_ss_nolapse = function(df,
-                        model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Single Subject nolapse.stan")),
-                        samples = 1000){
-  
-  
-  datastan = list(N = nrow(df),
-                  a = df$Y,
-                  RT = df$RT,
-                  D = df$D,
-                  C = df$Confidence,
-                  X = df$X * df$D,
-                  XD = df$X,
-                  minRT = min(df$RT),
-                  ACC = df$Correct,
-                  starts = 1,
-                  ends = nrow(df),
-                  interval = df$interval)
-  
-  
-  fit <-model$sample(
-    data = datastan,
-    refresh = 100,
-    iter_sampling = samples,
-    iter_warmup = samples,
-    adapt_delta = 0.95,
-    max_treedepth = 12,
-    parallel_chains = 4)
-  
-  if(grepl("Single Subject",model$stan_file())){
-    fit$save_object(here::here("Sequential sampling","Fits","Single Subject nolapse",paste0("fit_",unique(df$ID),".rds")))
-  }
-  
-  return(fit)
-  
-}
-
 
 
 dia = function(fit,df){
@@ -431,7 +393,7 @@ dia = function(fit,df){
   }
   
   available <- names(as_draws_df(fit$draws()))
-
+  
   parameters = c("c0","c11","beta","sigma_e","sigma_k","sigma_m","confprec_p","meta_bias")
   if(length(intersect(parameters, available)) > 5){
     params <- intersect(parameters, available)
@@ -528,8 +490,8 @@ pp = function(fit,df,n_bins){
     
     
     
-    psycho = function(x,beta,sigma_e, sigma_k){
-      return(pnorm((x - (brms::inv_logit_scaled(beta)-0.5)*2) / (sqrt(exp(sigma_k)^2 + exp(sigma_e)^2))))
+    psycho = function(x,beta,sigma_e, sigma_k,lapse){
+      return((brms::inv_logit_scaled(lapse) / 2) + (1-2*brms::inv_logit_scaled(lapse) / 2) * pnorm((x - (brms::inv_logit_scaled(beta)-0.5)*2) / (sqrt(exp(sigma_k)^2 + exp(sigma_e)^2))))
     }
     
     confs = function(action,X,beta,sigma_e,sigma_k,sigma_m){
@@ -565,7 +527,7 @@ pp = function(fit,df,n_bins){
       unnest() %>% 
       mutate(interval = mean(df$interval)) %>% 
       group_by(draw) %>% 
-      mutate(p = psycho(x, beta,sigma_e,sigma_k)) %>% 
+      mutate(p = psycho(x, beta,sigma_e,sigma_k,lapse)) %>% 
       rowwise() %>% 
       mutate(action = rbinom(1,1,p)) %>% 
       unnest() %>% 
@@ -635,9 +597,9 @@ pp = function(fit,df,n_bins){
 
 
 
-fit_model_hier = function(dd,
-                        model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical.stan")),
-                        samples = 1000){
+fit_model_hierX = function(dd,
+                          model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_X.stan")),
+                          samples = 500){
   
   
   
@@ -668,67 +630,13 @@ fit_model_hier = function(dd,
     max_treedepth = 12,
     parallel_chains = 4)
   
-  fit$save_object(here::here("Sequential sampling","Fits","Hierarchical","Hierarchical.rds"))
-  
-  
   if(grepl("Hierarchical",model$stan_file())){
     
-    if(dir.exists(here::here("Sequential sampling","Fits","Hierarchical"))){
-      fit$save_object(here::here("Sequential sampling","Fits","Hierarchical","Hierarchical.rds"))
+    if(dir.exists(here::here("Sequential sampling","Fits","Hierarchical_X"))){
+      fit$save_object(here::here("Sequential sampling","Fits","Hierarchical_X","Hierarchical_fit.rds"))
     }else{
-      dir.create(here::here("Sequential sampling","Fits","Hierarchical"))
-      fit$save_object(here::here("Sequential sampling","Fits","Hierarchical","Hierarchical.rds"))
-      
-    }
-    
-  }
-  
-  return(fit)
-  
-}
-
-
-fit_model_hier_nolapse = function(dd,
-                          model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_nolapse.stan")),
-                          samples = 1000){
-  
-  
-  
-  datastan = list(N = nrow(dd),
-                  S = length(unique(dd$ID)),
-                  S_id = as.numeric(as.factor(dd$ID)),
-                  a = dd$Y,
-                  a_vec = dd$Y,
-                  RT = dd$RT,
-                  D = dd$D,
-                  C = dd$Confidence,
-                  X = dd$X * dd$D,
-                  XD = dd$X,
-                  minRT = min(dd$RT),
-                  ACC = dd$Correct,
-                  interval = dd$interval)
-  
-  pf = model$pathfinder(data = datastan, psis_resample = F, calculate_lp = F)
-  
-  
-  fit <-model$sample(
-    data = datastan,
-    refresh = 100,
-    iter_sampling = samples,
-    iter_warmup = samples,
-    adapt_delta = 0.95,
-    init = pf,
-    max_treedepth = 12,
-    parallel_chains = 4)
-  
-  
-  if(grepl("Hierarchical",model$stan_file())){
-    
-    if(dir.exists(here::here("Sequential sampling","Fits","Hierarchical"))){
-      fit$save_object(here::here("Sequential sampling","Fits","Hierarchical","Hierarchical_nolapse.rds"))
-    }else{
-      dir.create(here::here("Sequential sampling","Fits","Hierarchical"))
-      fit$save_object(here::here("Sequential sampling","Fits","Hierarchical","Hierarchical_nolapse.rds"))
+      dir.create(here::here("Sequential sampling","Fits","Hierarchical_X"))
+      fit$save_object(here::here("Sequential sampling","Fits","Hierarchical_X","Hierarchical_fit.rds"))
       
     }
     
@@ -740,18 +648,13 @@ fit_model_hier_nolapse = function(dd,
 
 
 
-dia_hier = function(fit,df,lapse){
+dia_hier = function(fit,df){
   
   
   available <- names(as_draws_df(fit$draws()))
- 
-  if(lapse){
-    parameters = c("c0[1]","c11[1]","beta[1]","sigma_e[1]","sigma_k[1]","sigma_m[1]","lapse[1]","confprec[1]","meta_bias[1]","sigmam_beta[1]","meta_bias_beta[1]")
-    
-  }else{
-    parameters = c("c0[1]","c11[1]","beta[1]","sigma_e[1]","sigma_k[1]","sigma_m[1]","confprec[1]","meta_bias[1]","sigmam_beta[1]","meta_bias_beta[1]")
-  }
   
+  
+  parameters = c("c0[1]","c11[1]","beta[1]","sigma_e[1]","sigma_k[1]","sigma_m[1]","confprec[1]","meta_bias[1]","lapse[1]","sigmam_beta[1]","meta_bias_beta[1]")
   if(length(intersect(parameters, available)) > 5){
     params <- intersect(parameters, available)
     
@@ -785,13 +688,13 @@ dia_hier = function(fit,df,lapse){
 }
 
 
-pp_hier_nolapse = function(fit,df,n_bins){
+pp_hier = function(fit,df,n_bins){
   
   
   available <- names(as_draws_df(fit$draws()))
   
   
-  parameters = c("c0[1]","c11[1]","beta[1]","sigma_e[1]","sigma_k[1]","sigma_m[1]","confprec[1]","meta_bias[1]","sigmam_beta[1]","meta_bias_beta[1]")
+  parameters = c("c0[1]","c11[1]","beta[1]","sigma_e[1]","sigma_k[1]","sigma_m[1]","confprec[1]","meta_bias[1]","lapse[1]","sigmam_beta[1]","meta_bias_beta[1]")
   if(length(intersect(parameters, available)) > 5){
     params <- intersect(parameters, available)
     
@@ -803,8 +706,8 @@ pp_hier_nolapse = function(fit,df,n_bins){
     subj_parameters = paste0(rep(subj_parameters, each = n_subj),"[",rep(seq_len(n_subj), times = length(subj_parameters)),"]")
     
     
-    psycho = function(x,beta,sigma_e, sigma_k){
-      return(pnorm((x - (brms::inv_logit_scaled(beta)-0.5)*2) / (sqrt(exp(sigma_k)^2 + exp(sigma_e)^2))))
+    psycho = function(x,beta,sigma_e, sigma_k,lapse){
+      return((brms::inv_logit_scaled(lapse) / 2) + (1-2*brms::inv_logit_scaled(lapse) / 2) * pnorm((x - (brms::inv_logit_scaled(beta)-0.5)*2) / (sqrt(exp(sigma_k)^2 + exp(sigma_e)^2))))
     }
     
     confs = function(action,X,beta,sigma_e,sigma_k,sigma_m){
@@ -842,6 +745,7 @@ pp_hier_nolapse = function(fit,df,n_bins){
                        "sigma_k",
                        "sigma_m",
                        "meta_bias",
+                       "lapse",
                        "confprec",
                        "sigmam_beta",
                        "meta_bias_beta")) %>%
@@ -851,7 +755,7 @@ pp_hier_nolapse = function(fit,df,n_bins){
       mutate(interval = mean(df$interval)) %>% 
       unnest() %>% 
       group_by(draw) %>% 
-      mutate(p = psycho(x, beta,sigma_e,sigma_k)) %>% 
+      mutate(p = psycho(x, beta,sigma_e,sigma_k,lapse)) %>% 
       # resp = rbinom(n(),1,p)) %>% 
       # mutate(ACC = ifelse(resp == 0 & x < 0,1, ifelse(resp == 1 & x > 0, 1, 0))) %>% 
       rowwise() %>% 
@@ -966,6 +870,7 @@ pp_hier_nolapse = function(fit,df,n_bins){
                                           "sigma_k",
                                           "sigma_m",
                                           "meta_bias",
+                                          "lapse",
                                           "confprec",
                                           "sigmam_beta",
                                           "meta_bias_beta"
@@ -984,7 +889,7 @@ pp_hier_nolapse = function(fit,df,n_bins){
       mutate(interval = mean(df$interval)) %>% 
       unnest() %>% 
       group_by(draw, ID) %>% 
-      mutate(p = psycho(x, beta,sigma_e,sigma_k)) %>% 
+      mutate(p = psycho(x, beta,sigma_e,sigma_k,lapse)) %>% 
       rowwise() %>% 
       mutate(action = rbinom(1,1,p)) %>% 
       unnest() %>% 
