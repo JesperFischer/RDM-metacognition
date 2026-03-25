@@ -25,5 +25,6 @@ Pilot/Experimental analysis/Heurestic models/saved models/
 Pilot/Experimental analysis/**/saved models/**/*.rds
 Pilot/Experimental analysis/archive/**/saved models/**/*.rds
 Sequential sampling/Fits/**/*.rds
+Sequential sampling/Fits/
 Sequential sampling/Data/
 Preregistration/Results/SS/
