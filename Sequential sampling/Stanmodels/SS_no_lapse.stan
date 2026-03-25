@@ -86,7 +86,7 @@ data {
 }
 
 transformed data{
-  int P = 5;
+  int P = 6;
   real Cc = 2/1.7;
 
 }
@@ -109,9 +109,9 @@ transformed parameters{
   real  sigma_e = gm[2];
   real  sigma_k = gm[3];
   real  sigma_m = gm[4];
-  // real  meta_bias = gm[5];  
-  // real  lapse = gm[5];  
-  real  confprec = gm[5];  
+  real  meta_bias = gm[5];  
+  // real  lapse = gm[6];  
+  real  confprec = gm[6];  
 
 
   real sigma1 = exp(sigma_e)^2 + exp(sigma_k)^2;  // Now squaring to get variances
@@ -150,10 +150,10 @@ model {
   gm[2] ~ normal(-2,2); //global mean of slope
   gm[3] ~ normal(-3,2); //global mean of confidence precision
   gm[4] ~ normal(-2,2); //global mean of meta uncertainty
-  // gm[5] ~ normal(0,0.5); //global mean of meta bias
-  // gm[5] ~ normal(-4,2); //global mean of meta bias
+  gm[5] ~ normal(0,0.5); //global mean of meta bias
+  // gm[6] ~ normal(-4,2); //global mean of meta bias
   
-  gm[5] ~ normal(2,2); 
+  gm[6] ~ normal(2,2); 
 
   c0 ~ induced_dirichlet([1,10,1]', 0, 1, c0, c11);
   c11 ~ induced_dirichlet([1,10,1]', 0, 2, c0, c11);
@@ -165,7 +165,7 @@ model {
     
     target += binomial_lpmf(a[n] | 1, theta[n]);   // likelihood for the outcomes
 
-    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(confprec), c0, c11);   // likelihood for confidence on correct trials
+    target += ord_beta_reg_lpdf(C[n] | logit(theta_conf[n])+ meta_bias, exp(confprec), c0, c11);   // likelihood for confidence on correct trials
 
   }
 
@@ -183,7 +183,7 @@ generated quantities {
     
     log_lik_bin[n] = binomial_lpmf(a[n] | 1, theta[n]);
     
-    log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n]), exp(confprec), c0, c11);   // likelihood for confidence on correct trials
+    log_lik_conf[n] = ord_beta_reg_lpdf(C[n] | logit(theta_conf[n])+ meta_bias, exp(confprec), c0, c11);   // likelihood for confidence on correct trials
 
     log_lik[n] = log_lik_bin[n]+log_lik_conf[n];
   }

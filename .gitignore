@@ -28,3 +28,6 @@ Sequential sampling/Fits/**/*.rds
 Sequential sampling/Fits/
 Sequential sampling/Data/
 Preregistration/Results/SS/
+Sequential sampling/visualization/VIs_data.Rmd/
+Sequential sampling/visualization/VIs_data.html/
+Sequential sampling/visualization/
