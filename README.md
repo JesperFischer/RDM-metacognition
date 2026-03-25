@@ -1,6 +1,7 @@
 # RDM-metacognition
 
-This repository contains code, data, and models for a preregistered study on metacognition in perceptual decision-making using a Random Dot Motion (RDM) task. The study investigates metacognitive uncertainty in correct and error trials across the post-decisional response window.
+This repository contains code, data, and models for a preregistered study on metacognition in perceptual decision-making using a Random Dot Motion (RDM) task.
+The study investigates metacognitive uncertainty in correct and error trials across the post-decisional response window.
 
 ## Repository structure
 
