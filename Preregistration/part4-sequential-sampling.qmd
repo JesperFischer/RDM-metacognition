@@ -46,7 +46,12 @@ At the moment there has been excluded `r big_list[[length(big_list)]][[1]]`, due
 ## Model convergence and Sequential sampling
 
 ```{r, fig.height=6, fig.width=10,warning=F,message=F}
-big_list[[length(big_list)]][[4]]
+big_list[[length(big_list)]][[4]][[1]]
+```
+
+
+```{r, fig.height=6, fig.width=10,warning=F,message=F}
+big_list[[length(big_list)]][[4]][[3]]
 ```
 
 
