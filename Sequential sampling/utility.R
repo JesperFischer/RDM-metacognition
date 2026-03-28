@@ -721,6 +721,7 @@ fit_model_hier_nolapse = function(dd,
     max_treedepth = 12,
     parallel_chains = 4)
   
+  # fit$save_object(here::here("Sequential sampling","Fits","Hierarchical","Hierarchical_nolapse_20.rds"))
   
   if(grepl("Hierarchical",model$stan_file())){
     

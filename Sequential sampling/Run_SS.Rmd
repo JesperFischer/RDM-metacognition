@@ -208,7 +208,7 @@ library(ggplot2)
 library(patchwork)
 
 # Arrange in a 2-row × 4-column grid, collect all legends
-combined_plot <- wrap_plots(pps[[2]], ncol = 6, nrow = 3, guides = "collect", axis_titles = "collect")
+combined_plot <- wrap_plots(pps[[2]], ncol = 6, nrow = 4, guides = "collect", axis_titles = "collect")
 
 combined_plot = combined_plot+theme(axis.title = element_text(size = 14),
                        axis.text = element_text(size = 12, color = "black"),
