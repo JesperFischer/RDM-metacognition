@@ -7,7 +7,9 @@ load_data = function(){
   df = data.frame()
   for(path in paths){
     print(path)
-    subjectID = strsplit(path, '/')[[1]][[7]]
+    # subjectID = strsplit(path, '/')[[1]][[7]]
+    subjectID = strsplit(path, '/')[[1]][[8]]
+    
     
     dd = read.csv(path) %>% mutate(X = NULL) %>% 
       mutate(ID = subjectID) %>% 
@@ -387,7 +389,7 @@ fit_model_ss_nolapse = function(df,
   
   
   datastan = list(N = nrow(df),
-                  a = df$Y,
+                   a = df$Y,
                   RT = df$RT,
                   D = df$D,
                   C = df$Confidence,
@@ -409,9 +411,73 @@ fit_model_ss_nolapse = function(df,
     max_treedepth = 12,
     parallel_chains = 4)
   
+  
   if(grepl("Single Subject",model$stan_file())){
     fit$save_object(here::here("Sequential sampling","Fits","Single Subject nolapse",paste0("fit_",unique(df$ID),".rds")))
   }
+  
+  return(fit)
+  
+}
+
+
+
+fit_model_ss_nolapse = function(){
+  
+  
+  
+  dyna = list()
+  # stan = list()
+  # diag = list()
+  
+  for(s in 1:length(dd_by_subj)){
+    print(s)
+    df = dd_by_subj[[s]] %>% filter(RT < 2.3)
+    
+    model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","SS_rt.stan"))
+    
+    datastan = list(N = nrow(df),
+                    a = df$Y,
+                    RT = df$RT,
+                    D = df$D,
+                    C = df$Confidence,
+                    X = df$X * df$D,
+                    XD = df$X,
+                    minRT = min(df$RT),
+                    ACC = df$Correct,
+                    starts = 1,
+                    ends = nrow(df),
+                    interval = df$interval)
+    
+    
+    # fit <-model$sample(
+    #   data = datastan,
+    #   refresh = 1000,
+    #   iter_sampling = samples,
+    #   iter_warmup = samples,
+    #   adapt_delta = 0.99,
+    #   max_treedepth = 12,
+    #   parallel_chains = 4)
+    
+    # stan[[s]] = as_draws_df(fit$draws("log_lik"))
+    # diag[[s]] = fit$diagnostic_summary()
+    # sum(stan[[1]] %>% select(-contains(".")) %>% colMeans())
+    
+    print(s)
+    
+    library(dynConfiR)
+    fitted_pars <- fitRTConfModels(df %>%
+                                     mutate(response = Y, rt = RT, rating = cut(Confidence,5)) %>%
+                                     select(response,rt,rating,D,coherence),
+                                   models=c("ddynaViTE"), stimulus="D", condition="coherence", n.cores = 4)
+    
+    dyna[[s]] = fitted_pars
+    
+    
+    
+  }
+  
+
   
   return(fit)
   

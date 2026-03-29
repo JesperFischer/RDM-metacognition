@@ -1,0 +1,25 @@
+<!-- Introduction  -->
+
+# Introduction
+
+Metacognition is most commonly studied in decision-making tasks, particularly perceptual decision making tasks. These tasks typically involve a binary first‑order decision followed by a second‑order confidence judgment that indexes metacognition. One of the earliest theoretical frameworks for explaining the performance of the first-order decisions is signal detection theory (Green & Swets, 1966). This theory assumes that a decision is based on an internal subjective representation that is derived from a noisy readout of the physical stimulus. This representation, hereafter referred to as evidence, is compared to a criterion to produce a binary choice. The theory even postulates that confidence judgements originate from the distance between the same evidence, as used for the first-order decision, and the citeria. Thus in this framework the physical stimulus generates an internal evidence that is first compared to a citerion to make the first order choice and the distance to the citerion determine the level of confidence. Such a theory implies that a pattern of metacognitive judgments that is identical to that of the binary first-order decisions, a prediction that is generally not supported by empirical findings (Lau & Passingham, 2006; ). 
+
+Two such empirical findings are dissociations between first-order performance and meta cognitive judgements and the fact that agents can monitor their own errors. The first finding have been thought to suggest the presence of meta-uncertainty or additional noise in the metacognitive readout. The second have been thought to suggest that confidence judgements are influenced by post-decisional processes, indicating that metacognition relies on information beyond the stimulus-driven evidence assumed by standard signal detection theory.
+
+
+## perceptual decision making and confidence judgements (p(correct) | self-consistency)
+
+later views on the computation of confidence judgements has emerged, here we highlight two particular views, that is confidence either reflects self-consistency in the first order choice or the subjective probability of the first order choice being correct.
+
+
+## Error monitoring and independent information
+
+
+## Theoretical accounts (SDT / EA)
+
+
+## Visability and accounts of this (X in equation for p(correct)).
+
+
+## Current formulation and mechanistic parsemonious
+

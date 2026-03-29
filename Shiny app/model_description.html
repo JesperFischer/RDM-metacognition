@@ -1,0 +1,138 @@
+<div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 900px;">
+
+<h2>The Heuristic Model of Perceptual Decision Making and Metacognition</h2>
+
+<h3>Model Overview</h3>
+
+<p>
+This simulator implements a static heuristic model of how people make perceptual decisions and rate confidence in those decisions. 
+The model is built on Signal Detection Theory but introduces <strong>choice variability</strong> to explain how people can recognize errors even
+with perfect information about the decision.
+</p>
+
+<h3>Core Components</h3>
+
+<h4>1. Perceptual Evidence</h4>
+<p>
+On each trial, a person perceives noisy evidence about a stimulus:
+</p>
+<blockquote style="background-color: #f5f5f5; padding: 10px;">
+<code>e<sub>i</sub> ~ N(D<sub>i</sub> · X<sub>i</sub> - β, σ<sub>e</sub>)</code>
+</blockquote>
+<p>
+Where:
+<ul>
+  <li><strong>D<sub>i</sub></strong>: True stimulus direction (-1 or +1)</li>
+  <li><strong>X<sub>i</sub></strong>: Stimulus strength/coherence (0 to 1)</li>
+  <li><strong>β</strong>: Bias in the evidence (can shift psychometric function)</li>
+  <li><strong>σ<sub>e</sub></strong>: Evidence noise - governs accuracy</li>
+</ul>
+</p>
+
+<h4>2. Stochastic Decision Rule</h4>
+<p>
+Unlike traditional SDT models with a fixed criterion, this model assumes a <strong>variable criterion</strong>:
+</p>
+<blockquote style="background-color: #f5f5f5; padding: 10px;">
+<code>c<sub>i</sub> ~ N(0, σ<sub>k</sub>)</code><br>
+<code>Action = 1 if e<sub>i</sub> > c<sub>i</sub>, else -1</code>
+</blockquote>
+<p>
+This means:
+<ul>
+  <li><strong>σ<sub>k</sub></strong>: Criterion variability - allows errors even with good evidence</li>
+  <li>Creates choice uncertainty independent of evidence quality</li>
+  <li>Enables <em>error monitoring</em> without assuming independent information sources</li>
+</ul>
+</p>
+
+<h4>3. Confidence Ratings</h4>
+<p>
+Confidence is computed as the person's subjective probability of being correct:
+</p>
+<blockquote style="background-color: #f5f5f5; padding: 10px;">
+<code>r<sub>i</sub> ~ N(e<sub>i</sub>, σ<sub>m</sub>)</code><br>
+<code>Confidence = P(Correct | r<sub>i</sub>, action)</code>
+</blockquote>
+<p>
+Where:
+<ul>
+  <li><strong>r<sub>i</sub></strong>: Noisy readout of internal evidence</li>
+  <li><strong>σ<sub>m</sub></strong>: Metacognitive noise - degree of introspective access</li>
+  <li>Implemented using logistic (inverse logit) function to map evidence to probability</li>
+</ul>
+</p>
+
+<h3>Key Model Parameters</h3>
+
+<table style="border-collapse: collapse; width: 100%;">
+  <tr style="background-color: #e8f4f8;">
+    <th style="border: 1px solid #ccc; padding: 8px; text-align: left;"><strong>Parameter</strong></th>
+    <th style="border: 1px solid #ccc; padding: 8px; text-align: left;"><strong>Symbol</strong></th>
+    <th style="border: 1px solid #ccc; padding: 8px; text-align: left;"><strong>Meaning</strong></th>
+    <th style="border: 1px solid #ccc; padding: 8px; text-align: left;"><strong>Effect</strong></th>
+  </tr>
+  <tr>
+    <td style="border: 1px solid #ccc; padding: 8px;">Evidence Noise</td>
+    <td style="border: 1px solid #ccc; padding: 8px;">σ<sub>e</sub></td>
+    <td style="border: 1px solid #ccc; padding: 8px;">Perceptual noise</td>
+    <td style="border: 1px solid #ccc; padding: 8px;">↑ noise = flatter psychometric, lower accuracy</td>
+  </tr>
+  <tr style="background-color: #f9f9f9;">
+    <td style="border: 1px solid #ccc; padding: 8px;">Choice Noise</td>
+    <td style="border: 1px solid #ccc; padding: 8px;">σ<sub>k</sub></td>
+    <td style="border: 1px solid #ccc; padding: 8px;">Criterion variability</td>
+    <td style="border: 1px solid #ccc; padding: 8px;">↑ noise = more random choices, enables error monitoring</td>
+  </tr>
+  <tr>
+    <td style="border: 1px solid #ccc; padding: 8px;">Metacognitive Noise</td>
+    <td style="border: 1px solid #ccc; padding: 8px;">σ<sub>m</sub></td>
+    <td style="border: 1px solid #ccc; padding: 8px;">Introspection accuracy</td>
+    <td style="border: 1px solid #ccc; padding: 8px;">↑ noise = weaker confidence-accuracy relationship</td>
+  </tr>
+  <tr style="background-color: #f9f9f9;">
+    <td style="border: 1px solid #ccc; padding: 8px;">Bias</td>
+    <td style="border: 1px solid #ccc; padding: 8px;">β</td>
+    <td style="border: 1px solid #ccc; padding: 8px;">Evidence bias</td>
+    <td style="border: 1px solid #ccc; padding: 8px;">↑ bias = shifts psychometric & confidence curves</td>
+  </tr>
+</table>
+
+<h3>What the Plots Show</h3>
+
+<h4>Psychometric Function</h4>
+<p>
+Shows how the probability of saying "choice = 1" changes with stimulus strength.
+This reveals:
+<ul>
+  <li><strong>Slope</strong>: Governed by both σ<sub>e</sub> and σ<sub>k</sub> - steeper = better discrimination</li>
+  <li><strong>Threshold</strong>: Where 50% choice is made - affected by bias β</li>
+</ul>
+</p>
+
+<h4>Confidence by Accuracy</h4>
+<p>
+Shows mean confidence ratings as a function of stimulus strength, separately for correct and incorrect responses.
+This reveals:
+<ul>
+  <li><strong>Error monitoring</strong>: Low confidence on error trials (especially at extreme stimuli)</li>
+  <li><strong>Confidence calibration</strong>: Proper rise of confidence with stimulus strength</li>
+  <li><strong>Metacognitive sensitivity</strong>: Gap between correct and error confidence</li>
+</ul>
+</p>
+
+
+<h3>References</h3>
+
+<p>
+For more details on this model and its derivation, see the pre-registration document in this
+<a href="https://jesperfischer.github.io/RDM-metacognition/part2-current-model.html">project</a>.
+The model builds on Signal Detection Theory and error monitoring literature, combining:
+<ul>
+  <li>Choice stochasticity (variability in the decision process)</li>
+  <li>Metacognitive access through noisy evidence readout</li>
+  <li>Ordered beta regression for confidence on discrete scales</li>
+</ul>
+</p>
+
+</div>

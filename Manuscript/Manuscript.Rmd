@@ -1,0 +1,107 @@
+---
+title: "Metacognitive uncertainty across the post-decisional response window"
+author: Jesper Fischer Ehmsen^1^,
+        Siebe Everaets^2,
+        Arthur S. Courtin^1,3,
+        Kelly Hoogervorst^1^,
+        Francesca Fardo^1\*^,
+        Micah G. Allen^1,4,\*^
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    toc_depth: 3
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+    number_sections: false
+  word_document:
+    reference_docx: Knitting files/docx_template.docx
+    toc: true
+    toc_depth: 3
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    toc_depth: 3
+bibliography:
+- "Knitting files/references.bib"
+link-citations: yes
+linkcolor: blue
+number_sections: true
+csl: Knitting files/chicago-author-date.csl
+always_allow_html: yes
+---
+
+::: {custom-style="Title text"}
+^1^Center of Functionally Integrative Neuroscience (CFIN), Department of Clinical Medicine, Aarhus University
+
+^2^KU Leuven; Faculty of Psychology and Educational Sciences; Leuven; Belgium
+
+^3^Institute of NeuroScience, Université catholique de Louvain, Brussels (Belgium)
+
+^4^Cambridge Psychiatry, University of Cambridge, United Kingdom
+
+^\*^Equal contributions
+
+Corresponding author: Jesper Fischer Ehmsen (jesperfischer@outlook.dk)
+
+:::
+
+_______________________________________________________
+
+```{r load packages, warning = F, message = F, echo = F, include=FALSE}
+# Global chunk options
+knitr::opts_chunk$set(
+  echo = FALSE,        # Hide code by default
+  warning = FALSE,     # Hide warnings
+  message = FALSE,     # Hide messages
+  dpi = 300,          # High quality figures
+  fig.align = 'center' # Center figures
+)
+
+# seed
+set.seed(123)
+
+# packages
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load("here", "knitr","yaml","cowplot", "magick",
+               "tidyverse", "flextable","ordbetareg","patchwork","truncnorm")
+```
+
+# Abstract
+
+_______________________________________________________
+
+
+```{r child1, child="Abstract.Rmd"}
+```
+
+_______________________________________________________
+
+
+```{r child2, child="Introduction.Rmd"}
+```
+
+_______________________________________________________
+
+```{r child3, child="Methods.Rmd"}
+```
+
+_______________________________________________________
+
+```{r child4, child="Results.Rmd"}
+```
+
+_______________________________________________________
+
+```{r child5, child="Discussion.Rmd"}
+```
+
+_______________________________________________________
+
+# References
+
+::: {#refs}
+:::

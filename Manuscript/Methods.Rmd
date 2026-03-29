@@ -1,0 +1,19 @@
+<!-- Design, Methods  -->
+
+# Methods
+
+## Participants
+
+
+## Stimuli
+
+
+## Experimental procedure
+
+
+## Statistical and computational modeling
+
+
+## Autonomic signal processing
+
+## Pre-registration and sequential sampling
