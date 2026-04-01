@@ -52,7 +52,22 @@ dd = df %>%
     ID == "RDM_reportz_sub001.csv" ~ 0.6,
     ID == "RDM_reportz_sub010.csv" ~ 0.4,
     TRUE ~ Inf
-  ))
+  )) %>% 
+  group_by(subject) %>% 
+  mutate(
+    trial_n = 1:n(), n_trials = n()
+  ) %>% 
+  ungroup() %>% 
+  mutate(
+    across(-c("ID","subject"),
+      ~ ifelse(
+        ID == "RDM_reportz_sub030.csv" & trial_n > (n_trials - 36),
+        NA,
+        .
+      )
+    )
+  ) 
+
 
 exclusions_correct = dd %>% group_by(ID) %>% summarize(n = sum(Correct)/n()) %>% filter(n < 0.60)
 
@@ -65,7 +80,7 @@ exclusions_ntrials = dd %>%
                   RT < 0.150) %>% 
   group_by(ID) %>%
   summarize(noresp_rate = mean(no_response)) %>%
-  filter(noresp_rate > 0.30)
+  filter(noresp_rate > 0.3)
 
 n_excluded_correctness = length(unique(exclusions_correct$ID))
 n_excluded_trials = length(unique(exclusions_ntrials$ID))
