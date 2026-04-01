@@ -23,7 +23,7 @@ files = list.files(here::here("Results","SS"),
 
 
 # files = list.files(here::here("Preregistration","Results","SS"),
-#                    full.names = TRUE)
+                   # full.names = TRUE)
 
 big_list = list()
 
@@ -53,8 +53,6 @@ big_list[[length(big_list)]][[4]][[1]]
 ```{r, fig.height=6, fig.width=10,warning=F,message=F}
 big_list[[length(big_list)]][[4]][[3]]
 ```
-
-
 
 ```{r, fig.height=4, fig.width=7,warning=F,message=F}
 df = do.call(rbind, lapply(big_list, function(x) x[[5]]))
