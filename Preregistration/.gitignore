@@ -1,1 +1,35 @@
-/.quarto/
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+Pilot/Data/pilots/Siebe_2025_03_12/Siebe02122025_biopack.txt
+Pilot/Data/pilots/Siebe_2025_03_12/full_siebe_data.csv
+Pilot/Data/pilots/Kelly_2025_17_12/kellydone.txt
+Pilot/Data/pilots/Jesper_2025_17_12/JesperDONE.txt
+Pilot/Data/Pilots/Jesper_2025_17_12/RDM_reportz_eyetrack_5.asc
+Pilot/Data/Pilots/Siebe_2025_03_12/RDM_reportz_eyetrack_0.asc
+Pilot/Data/Pilots/Kelly_2025_17_12/RDM_reportz_eyetrack_3.asc
+Pilot/Data/Pilots/Jesper_2025_17_12/full_jespere_data.csv
+Pilot/Savedmodels/removed_models/fit1_jespere_nort_mec.rds
+Pilot/Savedmodels/removed_models/fit1_siebe_nort_mec.rds
+
+Pilot/Experimental analysis/Heurestic models/saved models hier/
+Pilot/Experimental analysis/Heurestic models/saved models hier/fit_hier.rds
+Pilot/Experimental analysis/MCMC/saved models hier/fit_hier.rds
+
+Sequential sampling/Data
+
+# Quarto build output
+Preregistration/_book/
+Preregistration/.quarto/
+Preregistration/platenotation.*
+Pilot/Experimental analysis/Heurestic models/saved models/
+Pilot/Experimental analysis/**/saved models/**/*.rds
+Pilot/Experimental analysis/archive/**/saved models/**/*.rds
+Sequential sampling/Fits/**/*.rds
+Sequential sampling/Fits/
+Sequential sampling/Data/
+Sequential sampling/visualization/VIs_data.Rmd/
+Sequential sampling/visualization/VIs_data.html/
+Sequential sampling/visualization/
+noRDM.md
