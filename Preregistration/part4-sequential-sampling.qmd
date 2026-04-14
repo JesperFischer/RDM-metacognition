@@ -22,7 +22,7 @@ files = list.files(here::here("Results","SS"),
                    full.names = TRUE)
 
 # files = list.files(here::here("Preregistration","Results","SS"),
-                   # full.names = TRUE)
+# full.names = TRUE)
 
 
 
@@ -66,7 +66,7 @@ rbind(data.frame(BF = 1, subjects = 0), df) %>%
   labs(y = "Log(BF)", x = "N_subjects")+
   geom_hline(yintercept = c(log(1/30),log(30)), linetype = 2)+
   scale_y_continuous(breaks = c(round(log(1/30),2),0,round(log(30),2)))+
-  scale_x_continuous(limits = c(0,30), breaks = seq(0,30,by = 10), labels = seq(0,30,by = 10))+
+  scale_x_continuous(limits = c(0,50), breaks = seq(0,50,by = 10), labels = seq(0,50,by = 10))+
   theme_classic()+
   theme(legend.position = "top")
 
