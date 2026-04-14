@@ -4,15 +4,74 @@
 
 ## Participants
 
-
 ## Stimuli
-
 
 ## Experimental procedure
 
-
 ## Statistical and computational modeling
 
+Here we provide an overview of our computational model and refer interested readers to the pre-registration for a full model derivation. For simplicity we assume that an actor makes a binary choice on each trial $i$, $a_i \in \{-1,+1\}$ based on internal evidence $e_i$. The action reflects the actor's inference about the true state of the stimulus $D_i \in \{-1,+1\}$. 
+
+Evidence is drawn from a normal distribution, reflecting the noisy nature of perception. The mean of this distribution reflects the true state and scales with stimulus intensity $X_i$. 
+
+$$
+e_i \sim \mathcal{N}(X_iD_i,\sigma_e)
+$$
+Now perception is not always centered on the physical stimulus distribution and a bias is included:
+
+$$
+e_i \sim \mathcal{N}(X_iD_i- \beta,\sigma_e)
+$$
+
+The actor then produces an action by comparing the internal evidence to a criterion $c$:
+
+$$
+a_i = \begin{cases}+1 & \text{if } e_i > c \\ -1 & \text{if } e_i \le c\end{cases}
+$$
+
+Within most frameworks, this criterion is thought to be static within an experimental setting for each agent, here we assume it to vary on a trial by trial basis, by following a normal distribution $c_i \sim \mathcal{N}(0,\sigma_c)$. 
+
+$$
+a_i = \begin{cases}+1 & \text{if } e_i > c_i \\ -1 & \text{if } e_i \le c_i\end{cases}
+$$
+
+Because both $e_i$ and $c_i$ are normally distributed, their difference is also normally distributed and can be marginalized to obtain the probability of the action:
+
+$$
+P(a = 1 \mid D_i, X_i) = \Phi\left(\frac{X_iD_i- \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)\tag{1}
+$$
+
+
+### Confidence Ratings
+
+Having made a binary choice, the agent is asked to give a confidence judgement in that choice. A prominent approach is to assume that the agent computes the probability that the action was correct.
+
+
+### Confidence ratings
+
+To compute confidence ratings, we assume that the agent internally computes the subjective probability that the choice was correct. To compute this assume that the rater has access to a noisy readout of the evidence: $r_i \sim \mathcal{N}(e_i, \sigma_m)$, where $\sigma_m$ is metacognitive noise.
+
+$$
+\text{confidence} = P(\text{correct} \mid r, a) = P(D = a \mid r)
+$$
+This can be shown to yield (for a full derivation see the pre-registration):
+
+$$
+P(\text{correct} \mid r_i, a, X_i) = \begin{cases}g\left(\frac{2 \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - g\left(\frac{2 \cdot r_i \cdot X_i}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases} \tag{2}
+$$
+Here we assume a uniform prior on $D$, i.e., $P(D_i = 1) = P(D_i = -1) = 0.5$, representing the true state of the world i.e. no prefered direction of the stimulus presented. Here $g(\cdot)$ is the inverse logit transformation, i.e., $g(x)= \frac{1}{1+exp(-x)}$. 
+
+### Estimation
+
+From binary choices alone only the sum $\sigma_e^2 + \sigma_c^2$ can be identified, whereas from confidence judgements alone only the sum $\sigma_e^2 + \sigma_m^2$ can be identified. By combining choices and confidence judgements in estimation allows estimation of all three parameters: $\sigma_e$, $\sigma_c$, and $\sigma_m$. 
+
+As the estimation of the probability of being correct 
+
+
+
+
+
+* Make argument to compare with Hellmann and rausch's Conf-DDM model (needs to be part of the introduction), so need to also have an RT component. This we do with the entropy and argue perhaps based on Hick and Hymann or even Stone (2014, 2021). By doing so we have a set of comparisons: Firstly there is just the choice - RT models of the DDM and the Stan model. This will compare this entropy model vs the DDM and set the stage for how much the DDM might be better without the confidence ratings. Then there is the full comparison with Hellman and Rausch which is on choice - RT - Confidence. Here a choice needs to be made in order to make our continous confidence ratings into discrete bins. 
 
 ## Autonomic signal processing
 

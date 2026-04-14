@@ -2,24 +2,27 @@
 
 # Introduction
 
-Metacognition is most commonly studied in decision-making tasks, particularly perceptual decision making tasks. These tasks typically involve a binary first‑order decision followed by a second‑order confidence judgment that indexes metacognition. One of the earliest theoretical frameworks for explaining the performance of the first-order decisions is signal detection theory (Green & Swets, 1966). This theory assumes that a decision is based on an internal subjective representation that is derived from a noisy readout of the physical stimulus. This representation, hereafter referred to as evidence, is compared to a criterion to produce a binary choice. The theory even postulates that confidence judgements originate from the distance between the same evidence, as used for the first-order decision, and the citeria. Thus in this framework the physical stimulus generates an internal evidence that is first compared to a citerion to make the first order choice and the distance to the citerion determine the level of confidence. Such a theory implies that a pattern of metacognitive judgments that is identical to that of the binary first-order decisions, a prediction that is generally not supported by empirical findings (Lau & Passingham, 2006; ). 
-
-Two such empirical findings are dissociations between first-order performance and meta cognitive judgements and the fact that agents can monitor their own errors. The first finding have been thought to suggest the presence of meta-uncertainty or additional noise in the metacognitive readout. The second have been thought to suggest that confidence judgements are influenced by post-decisional processes, indicating that metacognition relies on information beyond the stimulus-driven evidence assumed by standard signal detection theory.
-
-
-## perceptual decision making and confidence judgements (p(correct) | self-consistency)
-
-later views on the computation of confidence judgements has emerged, here we highlight two particular views, that is confidence either reflects self-consistency in the first order choice or the subjective probability of the first order choice being correct.
-
-
-## Error monitoring and independent information
-
+The ability to judge the quality of our own decisions is a prime example of meta cognition, the ability to reflect on and evaluate mental functions. Perceptual decision making tasks, where subjects are asked to index a first order choice of the physical stimulus property, has been heavily investigated. Such studies typically involve a first order decision (is the stimulus moving up or down) followed by a second order judgement usually framed as the subjects' confidence in the first order decision. Various ways have been proposed in what this second order judgement reflects from the objective probability of the choice being correct, to an estimate of self-consistency. Here We adopt a framework for investigating metacognition as propositional confidence, where confidence judgments reflect perceived accuracy of one's own decisions [@FLEMINGMetacognitionConfidenceReviewSynthesis2024]. From such a formalization several empirical findings can be explained, such as (a bias psychometric function biases confidence ratings as well), (confidence ratings are conditional on the first order decision).
 
 ## Theoretical accounts (SDT / EA)
 
+Two main theoretical frameworks exists to describe the process of first and second order responses. The first is signal detection theory (SDT) that posits that when physical stimulus is presented, internal evidence is sampled and used for both responses. From the SDT framework the processing locus for the first and second order response is left unspecified. In contrast evidence accumulation frameworks make explicit processing assumptions of both first and second order responses. Here, when physical stimulus is presented internal evidence is accumulated proportional to the strength of said physical stimulus. When the accumulated internal evidence reaches a threshold a first order choice is made. Succeeding the first order choice additional (post decisional) evidence is accumulated and a second order judgement is made [@PLESKACTwostageDynamicSignalDetectionTheoryChoice2010]. 
+
+## Emperical patterns (meta uncertainty, error monitoring and action dependence)
+
+Several accounts of first and second order responses have been identified. Firstly, second order judgements are generally worse than what would be expected if the judgement was made on the same un-corrupted internal evidence as the first order choice. This is accounted for in the SDT framework by introducing metacognitive noise which corrupts the internal evidence for second order judgements. In the EA framework such degradation of second order judgements is explained by the stochastic nature of accumulation and the conditioning imposed by the decision boundary. the post-decisional signal is a less diagnostic proxy for correctness, leading to reduced discriminability of second-order judgements relative to first-order performance. Secondly, second order judgements can sometimes (especially under stressed first order choice conditions) index that the first order choice was incorrect. This observation of error awareness necessitates a mechanism of error monitoring that might be related to that of propositional confidence. To explain such observation SDT models generally opt to assume (partial) independent evidence for the second order judgement compared to first order choice. Within evidence accumulation frameworks, however, this ability can be explained from the dynamics of the same accumulation process, incorrect decisions tend to arise from noisy boundary crossings that are followed by reversing post-decisional trajectories, leading to low or opposite second order judgements compared to the choice.
+
+## Current formulation and mechanistic parsemonious
+
+In the current work we propose a computational model that can be thought to operate as a combination of the two frameworks or a single coherent SDT framework. For this framework we assume that a decision maker gathers evidence from the physical stimulus either through a static SDT approach or a dynamic evidence accumulation framework. After a certain time (when enough evidence for a choice in the evidence accumulation framework is reached) a decisional signal is sent for execution. A copy of this efferent decisional signal is generated and used for the computation of confidence together with the observed action. Due to noise in the decisional signal these two information sources can diverge, depending of the amount of noise in the motor system, giving the illusion that independent information is accessible for the second order judgement. 
+
+Counter to the Evidence accumulation framework for second order judgements this framework assumes that no post-decisional evidence accumulation takes place, but instead an evaluation of the first order choice is made.
+
+## Predictions and implications
+
+Our theoretical approach expects that under speed stress conditions subjects generally make more errors (motor errors) that they are subsequently aware of. 
 
 ## Visability and accounts of this (X in equation for p(correct)).
 
 
-## Current formulation and mechanistic parsemonious
 
