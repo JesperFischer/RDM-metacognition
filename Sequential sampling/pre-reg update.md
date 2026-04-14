@@ -16,4 +16,3 @@ Third, we were unable to achieve convergence of our hierarchical Bayesian model 
 To proceed with evaluating our stopping criteria, we removed the lapse-rate parameter from the model.
 The main issue appeared to be a strong trade-off between the lapse-rate and the noise parameters governing choice ($sigma_e$ and $sigma_k$), which prevented stable estimation.
 Removing the lapse-rate resolved the convergence issues. Therefore, we add removal of the lapse-rate as an explicit contingency step for achieving convergence in our future testing.
-

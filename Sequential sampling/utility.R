@@ -422,68 +422,6 @@ fit_model_ss_nolapse = function(df,
 
 
 
-fit_model_ss_nolapse = function(){
-  
-  
-  
-  dyna = list()
-  # stan = list()
-  # diag = list()
-  
-  for(s in 1:length(dd_by_subj)){
-    print(s)
-    df = dd_by_subj[[s]] %>% filter(RT < 2.3)
-    
-    model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","SS_rt.stan"))
-    
-    datastan = list(N = nrow(df),
-                    a = df$Y,
-                    RT = df$RT,
-                    D = df$D,
-                    C = df$Confidence,
-                    X = df$X * df$D,
-                    XD = df$X,
-                    minRT = min(df$RT),
-                    ACC = df$Correct,
-                    starts = 1,
-                    ends = nrow(df),
-                    interval = df$interval)
-    
-    
-    # fit <-model$sample(
-    #   data = datastan,
-    #   refresh = 1000,
-    #   iter_sampling = samples,
-    #   iter_warmup = samples,
-    #   adapt_delta = 0.99,
-    #   max_treedepth = 12,
-    #   parallel_chains = 4)
-    
-    # stan[[s]] = as_draws_df(fit$draws("log_lik"))
-    # diag[[s]] = fit$diagnostic_summary()
-    # sum(stan[[1]] %>% select(-contains(".")) %>% colMeans())
-    
-    print(s)
-    
-    library(dynConfiR)
-    fitted_pars <- fitRTConfModels(df %>%
-                                     mutate(response = Y, rt = RT, rating = cut(Confidence,5)) %>%
-                                     select(response,rt,rating,D,coherence),
-                                   models=c("ddynaViTE"), stimulus="D", condition="coherence", n.cores = 4)
-    
-    dyna[[s]] = fitted_pars
-    
-    
-    
-  }
-  
-
-  
-  return(fit)
-  
-}
-
-
 
 dia = function(fit,df){
   

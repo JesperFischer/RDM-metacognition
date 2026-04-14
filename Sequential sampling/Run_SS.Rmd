@@ -41,6 +41,8 @@ plots = plot_beh_data(df%>% filter(Trialtype == "Main", scale == "conf"), 7, F)
 
 plots
 ```
+
+
 ## check subjects for exclusion and  fit the subject level model for each subject:
 
 ```{r}
@@ -94,12 +96,13 @@ dd_by_subj <- split(dd, dd$ID)
 ```
 
 
-```{r}
-plots = plot_beh_data(dd, 7, F)
+```{r, message=F, error=F, warning=F}
+plots = plot_beh_data(dd, 12, F)
 
 plots
 
 ```
+
 
 
 ```{r}

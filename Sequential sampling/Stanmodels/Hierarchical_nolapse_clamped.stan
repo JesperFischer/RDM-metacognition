@@ -1,7 +1,7 @@
 functions {
 
   real lambda(real z){
-      return exp(std_normal_lpdf(z)) / exp(std_normal_lcdf(z));
+      return exp(std_normal_lpdf(z)) / Phi(z);
   }
 
   // ordered beta function
@@ -118,8 +118,9 @@ transformed parameters{
 
 
  
-  vector[N] theta;
-  vector[N] theta_conf;
+  vector<lower=0, upper=1>[N] theta;
+  vector<lower=0, upper=1>[N] theta_conf;
+  vector<lower=0>[N] mills;
 
   for (n in 1:N) {
     
@@ -127,13 +128,23 @@ transformed parameters{
   
   real mu = (XD[n] - (inv_logit(beta[S_id[n]])-0.5)*2);
 
-  theta[n] = exp(std_normal_lcdf( mu / sigma1[S_id[n]]));
+  theta[n] = exp(std_normal_lcdf(( mu / sigma1[S_id[n]])));
 
   if(a[n] == 1){
-    theta_conf[n] = exp(std_normal_lcdf( (((mu + exp(sigma_e[S_id[n]])^2/sigma1[S_id[n]] * lambda(mu/sigma1[S_id[n]])) * Cc*1) / sigma2) * 1/(sqrt(1 + ((Cc^2*1^2) / sigma2)))));
+    mills[n] = lambda(mu/sigma1[S_id[n]]);
+    theta_conf[n] = Phi(( (((mu + exp(sigma_e[S_id[n]])^2/sigma1[S_id[n]] * mills[n]) * Cc*1) / sigma2) * 1/(sqrt(1 + ((Cc^2*1^2) / sigma2)))));
+
     
   }else if(a[n] == 0){
-    theta_conf[n] =  1- exp(std_normal_lcdf( (((mu - exp(sigma_e[S_id[n]])^2/sigma1[S_id[n]] * lambda(-mu/sigma1[S_id[n]])) * Cc*1) / sigma2) * 1/(sqrt(1 + ((Cc^2*1^2) / sigma2)))));
+    mills[n] = lambda(-mu/sigma1[S_id[n]]);
+    theta_conf[n] =  1-Phi(( (((mu - exp(sigma_e[S_id[n]])^2/sigma1[S_id[n]] * mills[n] ) * Cc*1) / sigma2) * 1/(sqrt(1 + ((Cc^2*1^2) / sigma2)))));
+  }
+  
+  
+  if(theta_conf[n] > 0.999){
+    theta_conf[n] = 0.999;
+  }else if(theta_conf[n] < 0.001){
+    theta_conf[n] = 0.001;
   }
   
 
