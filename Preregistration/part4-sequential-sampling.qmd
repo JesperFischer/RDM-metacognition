@@ -21,6 +21,8 @@ pacman::p_load("here", "knitr","yaml","cowplot", "magick",
 files = list.files(here::here("Results","SS"),
                    full.names = TRUE)
 
+
+
 # files = list.files(here::here("Preregistration","Results","SS"),
 # full.names = TRUE)
 
