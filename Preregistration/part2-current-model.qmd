@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 set.seed(123)
 
 
+
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load("here", "knitr","yaml","cowplot", "magick",
                "tidyverse", "flextable","ordbetareg","patchwork","truncnorm")
