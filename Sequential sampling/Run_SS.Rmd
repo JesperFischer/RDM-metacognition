@@ -194,8 +194,8 @@ hierarchical_diagnostics
 # bayes factors:
 
 ```{r}
-bf_sigmam = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[7]")) %>% .$`gm[7]`),prior = rnorm(4000,0,0.5))
-bf_metabias = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[8]")) %>% .$`gm[8]`),prior = rnorm(4000,0,0.5))
+bf_sigmam = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[6]")) %>% .$`gm[6]`),prior = rnorm(8000,0,0.5))
+bf_metabias = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[7]")) %>% .$`gm[7]`),prior = rnorm(8000,0,0.5))
 
 Bayesfactor_data = data.frame(BF = bf_sigmam, subjects = length(dd_by_subj))
 
@@ -210,9 +210,17 @@ saveRDS(Seq_samp, here::here("Preregistration","Results","SS",paste0("SS_",lengt
 # posterior predictives:
 
 ```{r, fig.width=8,fig.height=6, error=F,message=F,warning=F}
-pps = pp_hier_nolapse(fit, dd, n_bins = 10)
+pps_bin10 = pp_hier_nolapse_centbeta(fit, dd, n_bins = 10)
+pps_mobin = pp_hier_nolapse_centbeta(fit, dd, n_bins = NULL)
 
-pps[[1]]
+pps_bin10[[1]]
+pps_bin10[[3]]
+pps_mobin[[1]]
+pps_mobin[[3]]
+
+pps = pps_mobin
+
+ggsave(here::here("Sequential sampling" , "figures","group_level_pred.png"),pps_bin10[[3]], dpi = 300, width = 8, height = 6)
 ```
 
 
@@ -221,20 +229,110 @@ pps[[2]]
 ```
 
 
-```{r,fig.height=12, fig.width=18}
+```{r,fig.height=11, fig.width=18, warning=F, }
 library(ggplot2)
 library(patchwork)
 
 # Arrange in a 2-row × 4-column grid, collect all legends
-combined_plot <- wrap_plots(pps[[2]], ncol = 6, nrow = 4, guides = "collect", axis_titles = "collect")
+combined_plot <- wrap_plots(pps[[2]][1:9], ncol = 3, nrow = 3, guides = "collect", axis_titles = "collect")
 
 combined_plot = combined_plot+theme(axis.title = element_text(size = 14),
                        axis.text = element_text(size = 12, color = "black"),
                        axis.ticks.length = unit(0.2, "cm"))
 
 
+combined_plot2 <- wrap_plots(pps[[2]][10:18], ncol = 3, nrow = 3, guides = "collect", axis_titles = "collect")
+
+combined_plot2 = combined_plot2+theme(axis.title = element_text(size = 14),
+                       axis.text = element_text(size = 12, color = "black"),
+                       axis.ticks.length = unit(0.2, "cm"))
+
+combined_plot3 <- wrap_plots(pps[[2]][19:27], ncol = 3, nrow = 3, guides = "collect", axis_titles = "collect")
+
+combined_plot3 = combined_plot3+theme(axis.title = element_text(size = 14),
+                       axis.text = element_text(size = 12, color = "black"),
+                       axis.ticks.length = unit(0.2, "cm"))
+
+
+combined_plot4 <- wrap_plots(pps[[2]][28:36], ncol = 3, nrow = 3, guides = "collect", axis_titles = "collect")
+
+combined_plot4 = combined_plot4+theme(axis.title = element_text(size = 14),
+                       axis.text = element_text(size = 12, color = "black"),
+                       axis.ticks.length = unit(0.2, "cm"))
+
+combined_plot5 <- wrap_plots(pps[[2]][37:45], ncol = 3, nrow = 3, guides = "collect", axis_titles = "collect")
+
+combined_plot5 = combined_plot5+theme(axis.title = element_text(size = 14),
+                       axis.text = element_text(size = 12, color = "black"),
+                       axis.ticks.length = unit(0.2, "cm"))
+
+combined_plot6 <- wrap_plots(pps[[2]][46:50], ncol = 3, nrow = 3, guides = "collect", axis_titles = "collect")
+
+combined_plot6 = combined_plot6+theme(axis.title = element_text(size = 14),
+                       axis.text = element_text(size = 12, color = "black"),
+                       axis.ticks.length = unit(0.2, "cm"))
+
+
 combined_plot
+combined_plot2
+combined_plot3
+combined_plot4
+combined_plot5
+combined_plot6
+
+ggsave(here::here("Sequential sampling" , "figures","subj1_pred.png"),combined_plot, dpi = 300, width = 12, height = 12)
+ggsave(here::here("Sequential sampling" , "figures","subj2_pred.png"),combined_plot2, dpi = 300, width = 12, height = 12)
+ggsave(here::here("Sequential sampling" , "figures","subj3_pred.png"),combined_plot3, dpi = 300, width = 12, height = 12)
+ggsave(here::here("Sequential sampling" , "figures","subj4_pred.png"),combined_plot4, dpi = 300, width = 12, height = 12)
+ggsave(here::here("Sequential sampling" , "figures","subj5_pred.png"),combined_plot5, dpi = 300, width = 12, height = 12)
+ggsave(here::here("Sequential sampling" , "figures","subj6_pred.png"),combined_plot6, dpi = 300, width = 12, height = 12)
+
 ```
 
 
+
+
+
+```{r,fig.height=12, fig.width=18}
+models = list.files(here::here("Sequential sampling","Fits","Hierarchical"), full.names = T)
+
+df  = data.frame()
+
+for (model in models[1:7]){
+  print(model)
+  fit = readRDS(model)
+  
+  groupmeans = fit$summary("gm") %>% 
+    mutate(variable = c("beta","sigma_e","sigma_k","sigma_m","meta_bias","conf_prec","sigmam_beta","metabias_beta"),
+           subs = as.numeric(sub(".*_(\\d+)\\.rds$", "\\1", model)))
+
+  df = rbind(df,groupmeans)  
+}
+fit <- readRDS("~/RDM-metacognition/Sequential sampling/Fits/Hierarchical/Hierarchical_nolapse_clamped_50.rds")
+  
+groupmeans = fit$summary(c("gm_beta","gm")) %>% 
+  mutate(variable = c("beta","sigma_e","sigma_k","sigma_m","meta_bias","conf_prec","sigmam_beta","metabias_beta"),
+         subs = 50)
+
+df = rbind(df,groupmeans)  
+
+
+
+```
+
+
+```{r,fig.height=8, fig.width=12}
+estimates = df %>% filter(variable %in% c("sigmam_beta","metabias_beta")) %>% 
+  ggplot(aes(x = subs, y = mean, ymin = q5, ymax = q95, col = variable))+
+  geom_pointrange(position = position_dodge(width = 2))+
+  theme_classic(base_size = 16)
+
+ggsave(here::here("Sequential sampling" , "figures","estimates.png"),estimates, dpi = 300, width = 8, height = 6)
+
+```
+
+
+```{r}
+
+```
 

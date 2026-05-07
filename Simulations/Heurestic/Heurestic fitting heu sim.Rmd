@@ -1,0 +1,191 @@
+---
+title: "Heurestic fitting heu sim"
+author: ""
+date: "`r Sys.Date()`"
+bibliography: 
+    - "Knitting files/references.bib"
+link-citations: yes
+linkcolor: blue
+csl: Knitting files/chicago-author-date.csl
+always_allow_html: yes
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+---
+
+```{r}
+pacman::p_load(tidyverse,posterior,bayesplot,cmdstanr,patchwork,ordbetareg,shiny,statConfR,truncnorm,furrr,purrr,hmetad)
+source("~/RDM-metacognition/Simulations/Heurestic/scripts/Simulate_mcmc.R")
+
+```
+
+## P(correct) With X
+
+
+```{r, fig.height=12,fig.width=8}
+
+fit = function(){
+  qq = rnorm(1,1,1)
+  
+  # df = simulate_data_mcmc_x1(n = 300)
+  df = simulate_data_heu_x1(n = 1000)
+
+  # df = simulate_data_mcmc(n = 300)
+  modx1 = cmdstanr::cmdstan_model(here::here("Simulations","Heurestic","stanmodels","Heurestic_X1.stan"))
+
+  datastan = list(a = df$a_gauss,
+                ACC = df$ACC,
+                C = df$C,
+                # uniqueX = unique(df$X),
+                N = nrow(df),
+                XD = df$X * df$D,
+                X = df$X)
+# 
+#   df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,8)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss)) %>%
+#     ggplot(aes(x = as.factor(XD),y= mean))+
+#     geom_point()+scale_y_continuous(limits = c(0,1))
+# 
+#   df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,8)) %>% group_by(XD,ACC) %>% summarize(mean = mean(C)) %>%
+#     ggplot(aes(x = as.factor(XD),y= mean, col = as.factor(ACC)))+
+#     geom_point()+scale_y_continuous(limits = c(0,1))
+# 
+
+  fita = modx1$sample(data = datastan,
+                   iter_warmup = 500,
+                   refresh = 0,
+                   iter_sampling = 500,
+             parallel_chains = 4)
+
+  diva = data.frame(fita$diagnostic_summary())%>% mutate(sim = qq,
+                                                        time = fita$time()$total)
+
+    
+  simulated = data.frame(c0 = unique(df$c0),
+                         c1 = unique(df$c1),
+                         sigma_k = unique(df$sigma_k),
+                         sigma_e =unique(df$sigma_e),
+                         sigma_m =unique(df$sigma_m),
+                         beta = unique(df$bias),
+                         confprec_p =unique(df$conf_prec)) %>% 
+    mutate(sim_n = qq,
+           mratio = sqrt(exp(unique(sigma_e))^2 +  exp(unique(sigma_k))^2) / sqrt( exp(unique(df$sigma_e))^2 +  exp(unique(sigma_m))^2)
+           )
+
+  
+  estimateda = fita$summary(c("beta","sigma_e","sigma_k","sigma_m","confprec_p","mratio")) %>%
+    mutate(div = max(diva$num_divergent)) %>%
+    mutate(simulated = c(simulated$beta,
+                         simulated$sigma_e,
+                         simulated$sigma_k,
+                         simulated$sigma_m,
+                         simulated$confprec_p,
+                         simulated$mratio
+                         # simulated$mdp1,
+                         # simulated$mdp1
+                         ))
+  
+
+  fit_mratio = function(df, NC = 2){
+    
+    
+    data = df %>% mutate(conf_bin = cut(C,NC),
+                        stimulus  = as.factor(D),
+                        participant = 1,
+                        rating = as.numeric(as.factor(conf_bin)),
+                        correct = ACC) %>% drop_na()
+  
+  
+    if(sum(data$ACC) / nrow(data) > 0.55){
+    mratio = fitMetaDprime(data)
+    }else{
+      mratio = data.frame()
+    }
+    
+    # brms metad'
+    databrms = data %>% mutate(trial = 1:n()) %>%
+      mutate(confidence =  as.numeric(as.factor(conf_bin)),
+             response = a_gauss) %>% 
+      select(trial,stimulus,response,correct, confidence) %>% mutate(stimulus = as.numeric(stimulus)-1)
+    
+    
+    if(NC == 2){
+      modmetad = cmdstanr::cmdstan_model(here::here("Simulations","Heurestic","stanmodels","metad_k2.stan"))
+    }else if(NC == 4){
+      modmetad = cmdstanr::cmdstan_model(here::here("Simulations","Heurestic","stanmodels","metad_k4.stan"))
+    }else if(NC == 6){
+      modmetad = cmdstanr::cmdstan_model(here::here("Simulations","Heurestic","stanmodels","metad_k6.stan"))
+
+    }else{
+      break
+    }
+
+  
+    Y <- as.matrix(aggregate_metad(databrms, K = NC))
+    
+    datastan = make_standata(bf(N~1), data = aggregate_metad(databrms, K = NC))
+  
+    datastan$ncat = ncol(datastan$Y)
+    
+    fit = modmetad$sample(data = datastan,
+                     iter_warmup = 500,
+                     refresh = 0,
+                     iter_sampling = 500,
+               parallel_chains = 4)
+    
+    fit$summary(c("dp","mdp","mratio","c"))
+    
+    divs = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq,
+                                                          time = fita$time()$total)
+    
+    estimated_mratio =   fit$summary(c("dp","mdp","mratio","c")) %>% 
+      mutate(div = max(divs$num_divergent),
+             N = NC)
+    
+    mratio = mratio %>% mutate(N = NC)
+    
+    return(list(estimated_mratio,mratio))
+      
+  }
+
+  
+  mratio2 = fit_mratio(df, NC = 2)
+  mratio4 = fit_mratio(df, NC = 4)
+  mratio6 = fit_mratio(df, NC = 6)
+
+  bayes = bind_rows(mratio2[[1]],mratio4[[1]],mratio6[[1]]) %>% mutate(ID = qq)
+  pure = bind_rows(mratio2[[2]],mratio4[[2]],mratio6[[2]])%>% mutate(ID = qq)
+
+  # bayes = bind_rows(mratio4[[1]]) %>% mutate(ID = qq)
+  # pure = bind_rows(mratio4[[2]])%>% mutate(ID = qq)
+
+
+  result = list(bayes,pure,estimateda%>% mutate(ID = qq))
+
+  return(result)
+}
+
+qq = fit()
+
+qq
+plan(multisession, workers = 3)
+
+safe_function <- possibly(fit, otherwise = "Error")
+
+# Run 20 times in parallel
+results_list <- future_map(1:50, ~ safe_function(), .progress = T)
+
+saveRDS(results_list,here::here("Simulations","Heurestic","50_sim_mcmc_300trials_finalHeu_X1_compressed.RData"))
+
+# results_list = readRDS("~/RDM-metacognition/Simulations/Heurestic/50_sim_mcmc_300trials_finalHeu_X1_compressed.RData")
+
+results_list = results_list[-which(results_list == "Error")]
+```

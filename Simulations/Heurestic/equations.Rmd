@@ -1,0 +1,225 @@
+---
+title: "equations"
+output: html_document
+---
+
+$$
+P(\text{correct} \mid r_t, a, X_t) = \begin{cases}g\left(\frac{2 \cdot e_t \cdot X_t}{\sigma_e^2}\right) & \text{if } a = 1 \\ 1 - g\left(\frac{2 \cdot e_t \cdot X_t}{\sigma_e^2}\right) & \text{if } a = -1\end{cases}
+$$
+
+
+$$
+conf \propto \frac{|e_t - 0|}{\sigma_e}
+$$
+
+
+
+$$
+conf = P(\text{correct} \mid \hat{e_t}, a, X_t) = \begin{cases}g\left(\frac{2 \cdot \hat{e_t} \cdot X_t}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = 1 \\ 1 - g\left(\frac{2 \cdot \hat{e_t} \cdot X_t}{\sigma_e^2 + \sigma_m^2}\right) & \text{if } a = -1\end{cases}
+$$
+
+
+
+$$
+conf \propto \frac{|\hat{e_t} - 0|}{\sqrt{\sigma_e^2 + \sigma_m^2}}
+$$
+
+
+
+$$
+\begin{bmatrix}
+e_t \\
+\hat{e_t}
+\end{bmatrix}
+\sim \mathcal{N}\left(
+\begin{bmatrix}
+X_tD_t\\
+X_tD_t
+\end{bmatrix},
+\begin{bmatrix}
+\sigma_e^2 & \sigma_e^2 \\
+\sigma_e^2 & \sigma_e^2 + \sigma_m^2
+\end{bmatrix}
+\right)
+$$
+
+$$
+\rho = \frac{\sigma_e}{\sqrt{(\sigma_e^2 + \sigma_m^2)}}
+$$
+$$
+e_t \sim \mathcal{N}(X_tD_t, \sigma_e)
+$$
+$$
+\hat{e_t} \sim \mathcal{N}(e_t, \sigma_m)
+$$
+
+$$
+r_t \sim \mathcal{N}(X_tD_t, \sigma_m)
+$$
+
+
+$$
+\begin{bmatrix}
+e_t \\
+r_t
+\end{bmatrix}
+\sim \mathcal{N}\left(
+\begin{bmatrix}
+X_tD_t\\
+X_tD_t
+\end{bmatrix},
+\begin{bmatrix}
+\sigma_e^2 & \rho\sigma_e\sigma_m \\
+\rho\sigma_e\sigma_m &  \sigma_m^2
+\end{bmatrix}
+\right)
+$$
+
+$$
+\rho = 1
+$$
+
+$$
+\rho = 0
+$$
+
+$$
+\sigma_m = \sigma_e
+$$
+
+
+
+$$
+\begin{bmatrix}
+e_t \\
+r_t
+\end{bmatrix}
+\sim \mathcal{N}\left(
+\begin{bmatrix}
+X_tD_t\\
+X_tD_t
+\end{bmatrix},
+\begin{bmatrix}
+\sigma_e^2 & \rho\sigma_e\sigma_m \\
+\rho\sigma_e\sigma_m &  \sigma_m^2
+\end{bmatrix}
+\right)
+$$
+
+
+
+
+$$
+\begin{bmatrix}
+e_t - c_t \\
+\hat{e_t}
+\end{bmatrix}
+\sim \mathcal{N}\left(
+\begin{bmatrix}
+X_tD_t\\
+X_tD_t
+\end{bmatrix},
+\begin{bmatrix}
+\sigma_e^2 + \sigma_c^2 & \sigma_e^2 \\
+\sigma_e^2 &  \sigma_e^2+\sigma_m^2
+\end{bmatrix}
+\right)
+$$
+
+
+$$
+\rho = \frac{\sigma_e^2}{\sqrt{(\sigma_e^2 + \sigma_c^2)} \cdot \sqrt{(\sigma_e^2 + \sigma_m^2)}}
+$$
+
+
+$$
+\rho = \frac{1}{\sqrt{1 +\frac{\sigma_c^2}{\sigma_e^2}} \cdot \sqrt{1 + \frac{\sigma_m^2}{\sigma_e^2}}}
+$$
+
+
+$$
+\sigma_c = 0
+$$
+
+$$
+\sigma_c = \sigma_e = 0.4
+$$
+
+$$
+\sigma_c = \sigma_m = 0.6
+$$
+
+$$
+\sigma_c = 1
+$$
+
+
+$$
+\sigma_c = 3
+$$
+
+
+
+```{r}
+
+library(tidyverse)
+X = seq(0,5,by = 1)
+D = 1
+sigmae = 0.5
+
+data.frame(X = X, D = D, sigmae = sigmae) %>% rowwise() %>% mutate(draws = list(rnorm(10000,X*D,sigmae))) %>% unnest() %>% 
+  ggplot(aes(x = draws,fill = as.factor(X)))+geom_histogram(position = "identity")
+
+
+```
+
+
+
+```{r}
+library(tidyverse)
+X = seq(0,5,by = 0.01)
+
+sigmae = c(0.2,0.5,0.8)
+sigmam = c(0.2,0.5,0.8)
+
+
+
+data.frame(X = X) %>% 
+  mutate(sigmae = list(sigmae)) %>% 
+  unnest() %>% 
+  mutate(sigmam = list(sigmam)) %>% 
+  unnest() %>% 
+  group_by(sigmae, sigmam,X) %>% 
+  summarize(rho = sigmae^2 / (sqrt(sigmae^2 + X^2) * sqrt(sigmae^2 + sigmam^2))) %>% 
+  mutate(sigmae = as.factor(sigmae),
+         sigmam = as.factor(sigmam)) %>% 
+  ggplot(aes(x = X, y = rho, group = interaction(sigmae,sigmam), col = sigmam))+
+  geom_line(linewidth = 1.2)+
+  theme_classic(base_size = 14)+
+  labs(x = "Sigma_k", y = "Correlation coefficient (Rho)")+
+  facet_wrap(~sigmae, labeller = label_both)
+
+```
+
+
+
+$$
+d' = \frac{\mu}{\sigma_e}
+$$
+
+$$
+metad' = \frac{\mu}{\sqrt{\sigma_e^2 + \sigma_m^2}}
+$$
+
+$$
+Mratio = \frac{metad'}{d'} = \frac{\frac{\mu}{\sqrt{\sigma_e^2 + \sigma_m^2}}}{\frac{\mu}{\sigma_e}} = \frac{\sigma_e}{\sqrt{\sigma_e^2 + \sigma_m^2}}
+$$
+
+$$
+Mratio = \frac{metad'}{d'} = \frac{\frac{\mu}{\sqrt{\sigma_e^2 + \sigma_m^2}}}{\frac{\mu}{\sqrt{\sigma_e^2 + \sigma_c^2}}} = \frac{\sqrt{\sigma_e^2 + \sigma_c^2}}{\sqrt{\sigma_e^2 + \sigma_m^2}}
+$$
+
+
+$$
+d' = \frac{\mu}{\sqrt{\sigma_e^2 + \sigma_c^2}}
+$$

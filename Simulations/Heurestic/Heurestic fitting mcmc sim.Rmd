@@ -1,0 +1,314 @@
+---
+title: "Heurestic simulation"
+author: ""
+date: "`r Sys.Date()`"
+bibliography: 
+    - "Knitting files/references.bib"
+link-citations: yes
+linkcolor: blue
+csl: Knitting files/chicago-author-date.csl
+always_allow_html: yes
+output: 
+  html_document:
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    number_sections: true
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+---
+
+```{r}
+pacman::p_load(tidyverse,posterior,bayesplot,cmdstanr,patchwork,ordbetareg,shiny,statConfR,truncnorm,furrr,purrr,hmetad)
+source("~/RDM-metacognition/Simulations/Heurestic/scripts/Simulate_mcmc.R")
+
+```
+
+## P(correct) With X
+
+
+```{r, fig.height=12,fig.width=8}
+
+fit = function(){
+  qq = rnorm(1,1,1)
+  
+  df = simulate_data_mcmc_x1(n = 300)
+  # df = simulate_data_heu_x1(n = 1000)
+
+  # df = simulate_data_mcmc(n = 300)
+  modx1 = cmdstanr::cmdstan_model(here::here("Simulations","Heurestic","stanmodels","Heurestic_X1.stan"))
+
+  datastan = list(a = df$a_gauss,
+                ACC = df$ACC,
+                C = df$C,
+                # uniqueX = unique(df$X),
+                N = nrow(df),
+                XD = df$X * df$D,
+                X = df$X)
+# 
+#   df %>% mutate(XD = X*D) %>% mutate(XD = cut(XD,8)) %>% group_by(XD) %>% summarize(mean = mean(a_gauss)) %>%
+#     ggplot(aes(x = as.factor(XD),y= mean))+
+#     geom_point()+scale_y_continuous(limits = c(0,1))
+# 
+#   df %>% mutate(XD = X*D)%>% mutate(XD = cut(XD,8)) %>% group_by(XD,ACC) %>% summarize(mean = mean(C)) %>%
+#     ggplot(aes(x = as.factor(XD),y= mean, col = as.factor(ACC)))+
+#     geom_point()+scale_y_continuous(limits = c(0,1))
+# 
+
+  fita = modx1$sample(data = datastan,
+                   iter_warmup = 500,
+                   refresh = 0,
+                   iter_sampling = 500,
+             parallel_chains = 4)
+
+  diva = data.frame(fita$diagnostic_summary())%>% mutate(sim = qq,
+                                                        time = fita$time()$total)
+
+    
+  simulated = data.frame(c0 = unique(df$c0),
+                         c1 = unique(df$c1),
+                         sigma_k = unique(df$sigma_k),
+                         sigma_e =unique(df$sigma_e),
+                         sigma_m =unique(df$sigma_m),
+                         beta = unique(df$bias),
+                         confprec_p =unique(df$conf_prec)) %>% 
+    mutate(sim_n = qq,
+           mratio = sqrt(exp(unique(sigma_e))^2 +  exp(unique(sigma_k))^2) / sqrt( exp(unique(df$sigma_e))^2 +  exp(unique(sigma_m))^2)
+           )
+
+  
+  estimateda = fita$summary(c("beta","sigma_e","sigma_k","sigma_m","confprec_p","mratio")) %>%
+    mutate(div = max(diva$num_divergent)) %>%
+    mutate(simulated = c(simulated$beta,
+                         simulated$sigma_e,
+                         simulated$sigma_k,
+                         simulated$sigma_m,
+                         simulated$confprec_p,
+                         simulated$mratio
+                         # simulated$mdp1,
+                         # simulated$mdp1
+                         ))
+  
+
+  fit_mratio = function(df, NC = 2){
+    
+    
+    data = df %>% mutate(conf_bin = cut(C,NC),
+                        stimulus  = as.factor(D),
+                        participant = 1,
+                        rating = as.numeric(as.factor(conf_bin)),
+                        correct = ACC) %>% drop_na()
+  
+  
+    if(sum(data$ACC) / nrow(data) > 0.55){
+    mratio = fitMetaDprime(data)
+    }else{
+      mratio = data.frame()
+    }
+    
+    # brms metad'
+    databrms = data %>% mutate(trial = 1:n()) %>%
+      mutate(confidence =  as.numeric(as.factor(conf_bin)),
+             response = a_gauss) %>% 
+      select(trial,stimulus,response,correct, confidence) %>% mutate(stimulus = as.numeric(stimulus)-1)
+    
+    
+    if(NC == 2){
+      modmetad = cmdstanr::cmdstan_model(here::here("Simulations","Heurestic","stanmodels","metad_k2.stan"))
+    }else if(NC == 4){
+      modmetad = cmdstanr::cmdstan_model(here::here("Simulations","Heurestic","stanmodels","metad_k4.stan"))
+    }else if(NC == 6){
+      modmetad = cmdstanr::cmdstan_model(here::here("Simulations","Heurestic","stanmodels","metad_k6.stan"))
+
+    }else{
+      break
+    }
+
+  
+    Y <- as.matrix(aggregate_metad(databrms, K = NC))
+    
+    datastan = make_standata(bf(N~1), data = aggregate_metad(databrms, K = NC))
+  
+    datastan$ncat = ncol(datastan$Y)
+    
+    fit = modmetad$sample(data = datastan,
+                     iter_warmup = 500,
+                     refresh = 0,
+                     iter_sampling = 500,
+               parallel_chains = 4)
+    
+    fit$summary(c("dp","mdp","mratio","c"))
+    
+    divs = data.frame(fit$diagnostic_summary())%>% mutate(sim = qq,
+                                                          time = fita$time()$total)
+    
+    estimated_mratio =   fit$summary(c("dp","mdp","mratio","c")) %>% 
+      mutate(div = max(divs$num_divergent),
+             N = NC)
+    
+    mratio = mratio %>% mutate(N = NC)
+    
+    return(list(estimated_mratio,mratio))
+      
+  }
+
+  
+  mratio2 = fit_mratio(df, NC = 2)
+  mratio4 = fit_mratio(df, NC = 4)
+  mratio6 = fit_mratio(df, NC = 6)
+
+  bayes = bind_rows(mratio2[[1]],mratio4[[1]],mratio6[[1]]) %>% mutate(ID = qq)
+  pure = bind_rows(mratio2[[2]],mratio4[[2]],mratio6[[2]])%>% mutate(ID = qq)
+
+  # bayes = bind_rows(mratio4[[1]]) %>% mutate(ID = qq)
+  # pure = bind_rows(mratio4[[2]])%>% mutate(ID = qq)
+
+
+  result = list(bayes,pure,estimateda%>% mutate(ID = qq))
+
+  return(result)
+}
+
+qq = fit()
+
+qq
+plan(multisession, workers = 3)
+
+safe_function <- possibly(fit, otherwise = "Error")
+
+# Run 20 times in parallel
+results_list <- future_map(1:50, ~ safe_function(), .progress = T)
+
+saveRDS(results_list,here::here("Simulations","Heurestic","50_sim_mcmc_300trials_finalHeu_X1_compressed.RData"))
+
+# results_list = readRDS("~/RDM-metacognition/Simulations/Heurestic/50_sim_mcmc_300trials_finalHeu_X1_compressed.RData")
+
+results_list = results_list[-which(results_list == "Error")]
+```
+
+
+```{r}
+map_dfr(results_list,1) %>% filter(div == 0) %>% ggplot(aes(x = as.factor(N), y = mean))+geom_boxplot()+facet_wrap(~variable, scales = "free")+
+  ggtitle("BRMS_Matio (N_bins)")
+
+map_dfr(results_list,2)%>% pivot_longer(cols = c("dprime","c","metaD","Ratio"), values_to = "mean",names_to = "variable")%>% 
+  ggplot(aes(x = as.factor(N), y = mean))+geom_boxplot()+facet_wrap(~variable, scales = "free")+
+  ggtitle("FREQ_Matio (N_bins)")
+```
+
+## BRMS vs frequenstic
+```{r,fig.height=8,fig.width=12}
+inner_join(map_dfr(results_list,1) %>% filter(div == 0),
+           map_dfr(results_list,2)%>% 
+             rename(dp = dprime,c = c, mdp = metaD,mratio = Ratio) %>% 
+             pivot_longer(cols = c("dp","c","mdp","mratio"), values_to = "frq_mean",names_to = "variable")) %>% 
+  ggplot(aes(x = mean, y = frq_mean))+geom_point()+xlab("BRMS-estimate")+geom_abline()+
+  ggtitle("Freq vs BRMS")+
+  facet_wrap(~variable, scales = "free")+
+  theme_classic(base_size = 14)
+```
+
+
+
+## BRMS vs heuretstic and simulations:
+
+```{r,fig.height=8,fig.width=12}
+rbind(map_dfr(results_list,1) %>% filter(div == 0 & N == 4) %>% filter(variable %in% c("mratio"))%>% mutate(simulated = NA) %>%  
+        select(variable,simulated, mean,q5,q95,ID) %>% mutate(model = "BRMS"),
+           map_dfr(results_list,3) %>% filter(div == 0) %>% select(variable,simulated,mean,q5,q95,ID) %>% 
+             filter(variable %in% c("mratio")) %>% mutate(model = "heu", variable = ifelse(variable == "beta","c",variable)) 
+           ) %>% select(-simulated)%>% pivot_wider(names_from = "model",values_from = c("mean","q5","q95")) %>% 
+  ggplot(aes(x = mean_BRMS, y = mean_heu))+geom_pointrange(aes(xmin = q5_BRMS,xmax = q95_BRMS))+
+  ggtitle("Heurestic vs BRMS_Mratio")+
+  geom_pointrange(aes(ymin = q5_heu,ymax = q95_heu))+
+  geom_abline()+
+  facet_wrap(~variable, scales = "free")+
+  theme_classic(base_size = 14)
+    # scale_x_continuous(limits = c(0,10))+
+    # scale_y_continuous(limits = c(0,10))
+
+gg = rbind(map_dfr(results_list,1) %>% filter(div == 0 & N == 4) %>% filter(variable %in% c("mratio"))%>% mutate(simulated = NA) %>%  
+        select(variable,simulated, mean,q5,q95,ID) %>% mutate(model = "BRMS"),
+           map_dfr(results_list,3) %>% filter(div == 0) %>% select(variable,simulated,mean,q5,q95,ID) %>% 
+             filter(variable %in% c("mratio")) %>% mutate(model = "heu", variable = ifelse(variable == "beta","c",variable)) 
+           ) %>% select(-simulated)%>% pivot_wider(names_from = "model",values_from = c("mean","q5","q95")) 
+
+cor.test(gg$mean_BRMS,gg$mean_heu)
+
+bb = inner_join(map_dfr(results_list,1) %>% filter(div == 0 & N == 4) %>% filter(variable %in% c("mratio"))%>%
+        select(variable, mean,q5,q95,ID),
+           map_dfr(results_list,3) %>% filter(div == 0) %>% filter(variable %in% c("mratio")) %>% select(simulated,ID) 
+           )
+
+bb %>%   ggplot(aes(x = simulated, y = mean, ymin = q5, ymax = q95))+geom_pointrange()+geom_abline()+
+  ggtitle("Simulated vs BRMS_Mratio")+
+  facet_wrap(~variable, scales = "free")+
+  theme_classic(base_size = 14)
+
+cor.test(bb$mean,bb$simulated)
+
+```
+
+
+
+
+## FREQ vs heuretstic and simulations:
+
+```{r}
+rbind(
+  map_dfr(results_list,2) %>% filter(N == 4)%>% mutate(mratio = Ratio) %>% select("mratio","c","ID","model") %>%  
+    pivot_longer(cols = c("mratio","c"), names_to = "variable",values_to  = "mean") %>% mutate(simulated = NA, q5 = NA, q95 = NA) %>% 
+        select(variable,simulated, mean,q5,q95,ID,model),
+      map_dfr(results_list,3) %>% filter(div == 0) %>% select(variable,simulated,mean,q5,q95,ID) %>% 
+             filter(variable %in% c("mratio","beta")) %>% mutate(model = "heu", variable = ifelse(variable == "beta","c",variable)) 
+           ) %>% 
+  select(-simulated)%>% pivot_wider(names_from = "model",values_from = c("mean","q5","q95")) %>% 
+  ggplot(aes(x = mean_ML, y = mean_heu))+
+  ggtitle("Heurestic vs Freq_Mratio")+
+  geom_pointrange(aes(ymin = q5_heu,ymax = q95_heu))+
+  geom_abline()+
+  facet_wrap(~variable, scales = "free")
+    # scale_x_continuous(limits = c(0,10))+
+    # scale_y_continuous(limits = c(0,10))
+
+
+
+inner_join( map_dfr(results_list,2) %>% filter(N == 4)%>% mutate(mratio = Ratio) %>% select("mratio","c","ID","model") %>%  
+    pivot_longer(cols = c("mratio","c"), names_to = "variable",values_to  = "mean") %>% filter(variable == "mratio") %>% 
+        select(variable, mean,ID),
+           map_dfr(results_list,3) %>% filter(div == 0) %>% filter(variable %in% c("mratio")) %>% select(simulated,ID) 
+           ) %>%  
+  ggplot(aes(x = simulated, y = mean))+geom_point()+geom_abline()+
+  ggtitle("Simulated vs Freq_Mratio")+
+  facet_wrap(~variable, scales = "free")
+
+```
+
+## heuretstic vs  simulations:
+
+
+```{r,fig.height=8,fig.width=12}
+map_dfr(results_list,3) %>% filter(div == 0) %>% select(variable,simulated,mean,q5,q95,ID) %>% 
+  ggplot(aes(x = simulated, y = mean))+
+  ggtitle("Heurestic vs Simulated")+
+  geom_pointrange(aes(ymin = q5,ymax = q95))+
+  geom_abline()+
+  facet_wrap(~variable, scales = "free")
+
+hh = map_dfr(results_list,3) %>% filter(div == 0 & ess_tail > 400& ess_bulk > 400 & variable == "mratio") %>% 
+  select(variable,simulated,mean,q5,q95,ID) 
+hh %>% ggplot(aes(x = simulated, y = mean))+
+  ggtitle("Heurestic vs Simulated")+
+  geom_pointrange(aes(ymin = q5,ymax = q95))+
+  geom_abline()+
+  theme_classic(base_size = 14)
+
+
+cor.test(hh$mean,hh$simulated)
+
+```
+

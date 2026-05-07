@@ -553,6 +553,8 @@ slope_prior = slope_prior / slope_prior.sum()
 SC = QuestPlusHandler(nTrials=n_SC2,intensityVals=np.arange(0, 1, 0.02),thresholdVals=np.arange(0, 1, 0.02),slopeVals=np.arange(0.5, 10.1, 0.5),lowerAsymptoteVals=0.5,lapseRateVals=0,
     responseVals=[1, 0],prior={"threshold": threshold_prior, "slope": slope_prior},psychometricFunc="weibull",startIntensity=0.3,stimScale="linear",stimSelectionMethod="minEntropy",paramEstimationMethod="mean")
 
+
+
 # ---------------------------------------------------------------
 # Run SC coherence staircase trials
 # ---------------------------------------------------------------

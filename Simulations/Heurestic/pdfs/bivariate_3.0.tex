@@ -1,0 +1,82 @@
+% Source - https://tex.stackexchange.com/a/31715
+% Posted by Jake, modified by community. See post 'Timeline' for change history
+% Retrieved 2026-04-23, License - CC BY-SA 3.0
+
+\documentclass{standalone}
+
+\usepackage{pgfplots}
+
+\begin{document}
+
+\pgfplotsset{
+colormap={whitered}{color(0cm)=(white); color(1cm)=(orange!75!red)}
+}
+
+\begin{tikzpicture}[
+    declare function={mu1=1;},
+    declare function={mu2=1;},
+    declare function={sigma1=0.4;},
+    declare function={sigma2=0.6;},
+    declare function={sigma3=3;}, 
+    declare function={rho=sigma1^2 / (sqrt(sigma1^2+sigma3^2) * sqrt(sigma1^2+sigma2^2));},
+    declare function={normal(\m,\s)=1/(2*\s*sqrt(pi))*exp(-(x-\m)^2/(2*\s^2));},
+    %declare function={bivar(\ma,\sa,\mb,\sb)=
+    %    1/(2*pi*\sa*\sb) * exp(-((x-\ma)^2/\sa^2 + (y-\mb)^2/\sb^2))/2;}]
+    declare function={bivar(\ma,\sa,\mb,\sb,\r)=
+        1/(2*pi*\sa*\sb*sqrt(1-\r^2)) *
+        exp(
+            -1/(2*(1-\r^2)) * (
+                (x-\ma)^2/(\sa^2)
+                + (y-\mb)^2/(\sb^2)
+                - 2*\r*(x-\ma)*(y-\mb)/(\sa*\sb)
+            )
+        );}]
+\begin{axis}[
+    colormap name=whitered,
+    width=15cm,
+    view={45}{90},
+    enlargelimits=false,
+    grid=major,
+    domain=-0.5:2.5,
+    y domain=-0.5:2.5,
+    samples=35,
+    xtick={0,1,2},
+    ytick={0,1,2},
+    xlabel=$e_t$,
+    ylabel=$\hat{e_t}$,
+    zlabel={$density$},
+%    colorbar,
+%    colorbar style={
+%        at={(1,0)},
+%        anchor=south west,
+%        height=0.25*\pgfkeysvalueof{/pgfplots/parent axis height},
+%        title={$P(e_t,\hat{e_t})$}
+%    }
+]
+\addplot3 [surf] {bivar(mu1,sigma1,mu2,sigma2, rho)};
+%\addplot3 [domain=-1:3,samples=31, samples y=0, thick, smooth] (x,3,%{normal(mu1,sigma1)});
+%\addplot3 [domain=-1:3,samples=31, samples y=0, thick, smooth] (-1,x,%{normal(mu2,sigma2)});
+
+%\draw [black!50] (axis cs:-1,0,0) -- (axis cs:3,0,0);
+%\draw [black!50] (axis cs:0,-1,0) -- (axis cs:0,3,0);
+
+
+
+\addplot3[
+    domain=0:360,
+    samples=100,
+    thick,
+    black,
+] (
+    {mu1 + sqrt(1.5)*sigma1*cos(x)},
+    {mu2 + sqrt(1.5)*(rho*sigma2*cos(x) + sigma2*sqrt(1-rho^2)*sin(x))},
+    {0}
+);
+
+
+
+\node at (axis cs:-1,1,0.18) [pin=165:$P(\hat{e_t})$] {};
+\node at (axis cs:1.5,3,0.32) [pin=-15:$P(e_t)$] {};
+\end{axis}
+\end{tikzpicture}
+\end{document}

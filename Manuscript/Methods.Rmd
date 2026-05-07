@@ -65,6 +65,11 @@ Here we assume a uniform prior on $D$, i.e., $P(D_i = 1) = P(D_i = -1) = 0.5$, r
 
 From binary choices alone only the sum $\sigma_e^2 + \sigma_c^2$ can be identified, whereas from confidence judgements alone only the sum $\sigma_e^2 + \sigma_m^2$ can be identified. By combining choices and confidence judgements in estimation allows estimation of all three parameters: $\sigma_e$, $\sigma_c$, and $\sigma_m$. 
 
+Now following the logic of (Bang Sekhar & Rahnev (2018) sensory noise increase metacognitive efficiency), one can show that 
+
+
+
+
 As the estimation of the probability of being correct 
 
 

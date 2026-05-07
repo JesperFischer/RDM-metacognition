@@ -16,19 +16,12 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load("here", "knitr","yaml","cowplot", "magick",
                "tidyverse", "flextable","ordbetareg","patchwork","truncnorm")
 
-
-
+  
 files = list.files(here::here("Results","SS"),
                    full.names = TRUE)
 
-
-
-
-
 # files = list.files(here::here("Preregistration","Results","SS"),
 # full.names = TRUE)
-
-
 
 
 
@@ -65,7 +58,7 @@ big_list[[length(big_list)]][[4]][[3]]
 df = do.call(rbind, lapply(big_list, function(x) x[[5]]))
 
 
-rbind(data.frame(BF = 1, subjects = 0), df) %>% 
+BFplot = rbind(data.frame(BF = 1, subjects = 0), df) %>% 
   ggplot()+
   geom_line(aes(x = subjects, y =log(BF)),col = "orange")+
   geom_point(aes(x = subjects, y = log(BF)),col = "orange")+
@@ -75,6 +68,7 @@ rbind(data.frame(BF = 1, subjects = 0), df) %>%
   scale_x_continuous(limits = c(0,50), breaks = seq(0,50,by = 10), labels = seq(0,50,by = 10))+
   theme_classic()+
   theme(legend.position = "top")
+BFplot
 
 ```
 

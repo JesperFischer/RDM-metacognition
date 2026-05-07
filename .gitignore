@@ -27,6 +27,9 @@ Pilot/Experimental analysis/archive/**/saved models/**/*.rds
 Sequential sampling/Fits/**/*.rds
 Sequential sampling/Fits/
 Sequential sampling/Data/
+Sequential sampling/DDM/
+Sequential sampling/achieve/
+Sequential sampling/Staircase/
 Sequential sampling/visualization/VIs_data.Rmd/
 Sequential sampling/visualization/VIs_data.html/
 Sequential sampling/visualization/
