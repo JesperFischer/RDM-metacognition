@@ -458,13 +458,25 @@ dfall %>%
 # aggregated across the first 3s after the action:
 
 ```{r, fig.height=6, fig.width=8}
-group_conf2 %>% filter(time < 3000) %>% 
-  ggplot(aes(x = time, y = pupil_ref, col = as.factor(ACC), fill = as.factor(ACC))) +
-  geom_line(aes(col = as.factor(ACC))) +
-  geom_ribbon(aes(ymin = pupil_ref-2*pupil_se,ymax = pupil_ref+2*pupil_se), alpha = 0.2, col = "white")+
+pp2 = group_conf2 %>% filter(time < 2700) %>% 
+  filter(cohernece %in% c("Highest","Middle","Next Lowest")) %>% 
+  mutate(cohernece = ifelse(cohernece == "Highest","Easy",ifelse(cohernece == "Next Lowest","Hard","Medium"))) %>% 
+  mutate(cohernece = factor(cohernece, levels = c("Easy","Medium","Hard"))) %>% 
+  mutate(ACC = ifelse(ACC == 0, "Incorrect","Correct")) %>% 
+  mutate(Accuracy = as.factor(ACC)) %>% 
+  ggplot(aes(x = time, y = pupil_ref, col = Accuracy, fill = Accuracy)) +
+  geom_line(aes(col = Accuracy)) +
+  geom_ribbon(aes(ymin = pupil_ref-2*pupil_se,ymax = pupil_ref+2*pupil_se), col = "grey", alpha = 0.2)+
   facet_wrap(~cohernece) +
+  scale_color_manual(values = c("darkgreen","darkred"))+
+  scale_fill_manual(values = c("darkgreen","darkred"))+
+  labs(x = "Time (ms)",y = "Pupil size (A.U)")+
+  scale_x_continuous(labels = c("0","750","1500","2250"), breaks = c(0,750,1500,2250))+
   theme_minimal(base_size = 14)+
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        legend.title = element_blank())
+pp2
+ggsave(here::here("pupil.tiff"),pp2,height = 6,width = 8, dpi = 300)
 ```
 
 

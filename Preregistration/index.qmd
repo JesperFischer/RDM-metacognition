@@ -1,3 +1,5 @@
+^* Equal contribution
+
 # Preface {.unnumbered}
 
 This preregistration consists of three parts. The first two parts provide justification for the experimental design and the computational model, respectively. The third part is the main preregistration.
