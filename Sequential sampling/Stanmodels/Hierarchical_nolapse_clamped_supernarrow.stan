@@ -163,8 +163,8 @@ model {
   gm[5] ~ normal(0,0.5); //global mean of meta bias
   
   gm[6] ~ normal(2,2); //global mean confidence precision
-  gm[7] ~ normal(0,0.5); //global mean of difference in sigma_m from PDW
-  gm[8] ~ normal(0,0.5); //global mean of difference in meta_bias from PDW
+  gm[7] ~ normal(0,0.05); //global mean of difference in sigma_m from PDW
+  gm[8] ~ normal(0,0.05); //global mean of difference in meta_bias from PDW
   
   to_vector(z_expo) ~ std_normal();
 

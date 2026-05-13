@@ -89,7 +89,6 @@ n_excluded_trials = length(unique(exclusions_ntrials$ID))
 
 n_excluded = length(unique(c(exclusions_correct$ID, exclusions_ntrials$ID)))
 
-
 dd = dd %>% filter(!ID %in% c(exclusions_correct$ID, exclusions_ntrials$ID)) %>% drop_na()
 
 dd_by_subj <- split(dd, dd$ID)
@@ -187,6 +186,8 @@ if(file.exists(here::here("Sequential sampling","Fits","Hierarchical","Hierarchi
 
 
 ```{r, fig.width=16,fig.height=12}
+fit <- readRDS(here::here("~/RDM-metacognition/Sequential sampling/Fits/allmodels/Hierarchical_nolapse_50_clamped_standard.rds"))
+
 hierarchical_diagnostics = dia_hier(fit, dd,lapse = F)
 hierarchical_diagnostics
 ```
@@ -194,8 +195,8 @@ hierarchical_diagnostics
 # bayes factors:
 
 ```{r}
-bf_sigmam = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[6]")) %>% .$`gm[6]`),prior = rnorm(8000,0,0.5))
-bf_metabias = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[7]")) %>% .$`gm[7]`),prior = rnorm(8000,0,0.5))
+bf_sigmam = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[7]")) %>% .$`gm[7]`),prior = rnorm(4000,0,0.5))
+bf_metabias = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[8]")) %>% .$`gm[8]`),prior = rnorm(4000,0,0.5))
 
 Bayesfactor_data = data.frame(BF = bf_sigmam, subjects = length(dd_by_subj))
 
@@ -205,6 +206,23 @@ Seq_samp = list(n_excluded_correctness,n_excluded_trials,n_excluded,hierarchical
 
 saveRDS(Seq_samp, here::here("Preregistration","Results","SS",paste0("SS_",length(dd_by_subj),".rds")))
 
+```
+
+
+# posterior predictives:
+
+```{r, fig.width=8,fig.height=6, error=F,message=F,warning=F}
+pps_bin10 = pp_hier_nolapse_centbeta(fit, dd, n_bins = 10)
+pps_mobin = pp_hier_nolapse_centbeta(fit, dd, n_bins = NULL)
+
+pps_bin10[[1]]
+pps_bin10[[3]]
+pps_mobin[[1]]
+pps_mobin[[3]]
+
+pps = pps_mobin
+
+ggsave(here::here("Sequential sampling" , "figures","group_level_pred.png"),pps_bin10[[3]], dpi = 300, width = 8, height = 6)
 ```
 
 # posterior predictives:
@@ -293,46 +311,79 @@ ggsave(here::here("Sequential sampling" , "figures","subj6_pred.png"),combined_p
 
 
 
+
 ```{r,fig.height=12, fig.width=18}
-models = list.files(here::here("Sequential sampling","Fits","Hierarchical"), full.names = T)
+models = list.files(here::here("Sequential sampling","Fits","allmodels"), full.names = T)
 
 df  = data.frame()
 
-for (model in models[1:7]){
+for (model in models){
   print(model)
   fit = readRDS(model)
+
+  type = str_extract(model, "standard|narrow|super_narrow|wide")
+  subs = str_extract(model, "(?<=nolapse_)\\d+")
+  
+  if(type == "standard"){
+    bf_sigmam = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[7]")) %>% .$`gm[7]`),prior = rnorm(4000,0,0.5))
+    bf_metabias = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[8]")) %>% .$`gm[8]`),prior = rnorm(4000,0,0.5))
+    
+    Bayesfactor_data = data.frame(variable = c("sigmam_beta","metabias_beta"),BF = c(bf_sigmam,bf_metabias), subs = subs)
+
+  }else if(type == "narrow"){
+    bf_sigmam = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[7]")) %>% .$`gm[7]`),prior = rnorm(4000,0,0.25))
+    bf_metabias = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[8]")) %>% .$`gm[8]`),prior = rnorm(4000,0,0.25))
+    
+    Bayesfactor_data = data.frame(variable = c("sigmam_beta","metabias_beta"),BF = c(bf_sigmam,bf_metabias), subs = subs)
+
+  }else if(type == "super_narrow"){
+    bf_sigmam = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[7]")) %>% .$`gm[7]`),prior = rnorm(4000,0,0.05))
+    bf_metabias = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[8]")) %>% .$`gm[8]`),prior = rnorm(4000,0,0.05))
+    
+    Bayesfactor_data = data.frame(variable = c("sigmam_beta","metabias_beta"),BF = c(bf_sigmam,bf_metabias), subs = subs)
+
+  }else if(type == "wide"){
+    bf_sigmam = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[7]")) %>% .$`gm[7]`),prior = rnorm(4000,0,1))
+    bf_metabias = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[8]")) %>% .$`gm[8]`),prior = rnorm(4000,0,1))
+    
+    Bayesfactor_data = data.frame(variable = c("sigmam_beta","metabias_beta"),BF = c(bf_sigmam,bf_metabias), subs = subs)
+
+  }
   
   groupmeans = fit$summary("gm") %>% 
     mutate(variable = c("beta","sigma_e","sigma_k","sigma_m","meta_bias","conf_prec","sigmam_beta","metabias_beta"),
-           subs = as.numeric(sub(".*_(\\d+)\\.rds$", "\\1", model)))
+           subs = subs) %>% mutate(type = type)
 
-  df = rbind(df,groupmeans)  
-}
-fit <- readRDS("~/RDM-metacognition/Sequential sampling/Fits/Hierarchical/Hierarchical_nolapse_clamped_50.rds")
+  groupmeans = full_join(groupmeans,Bayesfactor_data)
   
-groupmeans = fit$summary(c("gm_beta","gm")) %>% 
-  mutate(variable = c("beta","sigma_e","sigma_k","sigma_m","meta_bias","conf_prec","sigmam_beta","metabias_beta"),
-         subs = 50)
-
-df = rbind(df,groupmeans)  
+  df = rbind(df,groupmeans)  
+  
+}
 
 
-
-```
-
-
-```{r,fig.height=8, fig.width=12}
 estimates = df %>% filter(variable %in% c("sigmam_beta","metabias_beta")) %>% 
-  ggplot(aes(x = subs, y = mean, ymin = q5, ymax = q95, col = variable))+
-  geom_pointrange(position = position_dodge(width = 2))+
-  theme_classic(base_size = 16)
+  ggplot(aes(x = as.numeric(subs), y = mean, ymin = q5, ymax = q95, col = type))+
+  geom_pointrange(position = position_dodge(width = 1))+
+  theme_classic(base_size = 16)+
+  facet_wrap(~variable)
 
-ggsave(here::here("Sequential sampling" , "figures","estimates.png"),estimates, dpi = 300, width = 8, height = 6)
+ggsave(here::here("Sequential sampling" , "figures","estimates_v2.png"),estimates, dpi = 300, width = 14, height = 10)
+
+Bayesfactors =  df %>% filter(variable %in% c("sigmam_beta","metabias_beta")) %>% 
+  select(subs,BF,type, variable) %>% 
+    group_by(type, variable) %>%
+  group_modify(~ add_row(.x, subs = "0", BF = 1)) %>%
+  ungroup() %>% 
+  ggplot(aes(x = as.numeric(subs), y = log(BF), col = type))+
+  geom_line()+
+  geom_point()+
+  theme_classic(base_size = 16)+
+   labs(y = "Log(BF)", x = "N_subjects")+
+  geom_hline(yintercept = c(log(1/30),log(30)), linetype = 2)+
+  scale_y_continuous(breaks = c(round(log(1/30),2),0,round(log(30),2)))+
+  scale_x_continuous(limits = c(0,50), breaks = seq(0,50,by = 10), labels = seq(0,50,by = 10))+
+  facet_wrap(~variable)
+
+ggsave(here::here("Sequential sampling" , "figures","Bayesfactors_v2.png"),Bayesfactors, dpi = 300, width = 14, height = 10)
 
 ```
-
-
-```{r}
-
-```
-

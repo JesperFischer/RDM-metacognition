@@ -1,0 +1,236 @@
+---
+title: "Figure 1"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(cmdstanr, tidyverse,posterior, bayesplot, tidybayes,
+               brms, patchwork, cowplot,ggpubr,flextable,truncnorm)
+
+```
+
+
+
+```{r}
+simulate_data_margin_bias = function(n = 1100, sigma_e,sigma_m,sigma_k,bias = 0){
+  
+  n_trials = n
+  
+  # set.seed(seed)
+
+    # Coherence level (stimulus intensity)
+  X <- rep(seq(0,1, length.out = 10), n_trials / 10)
+  
+  # stimuli (left or right)
+  D <- sample(c(-1, 1), n_trials, replace = TRUE)  # true stimulus
+  
+  
+  p_gauss = pnorm((D * X - bias) / sqrt(exp(sigma_k)^2 + exp(sigma_e)^2))      #  probability of response on trial t given the citerion
+  
+  
+  # lapse = 0.01
+  
+  # p_gauss = (1 - lapse) * p_gauss + lapse * 0.5
+
+  
+  # After observing the choice
+  a_gauss = rbinom(n_trials, 1, p_gauss)
+  
+  # Compute evidence conditional on choice (Mills ratio)
+  mu_e = D * X - bias
+  sigma_total = sqrt(exp(sigma_k)^2 + exp(sigma_e)^2)
+  z = mu_e / sigma_total
+  
+  # Correction factor
+  correction_factor = exp(sigma_e)^2 / sigma_total
+  
+  # Conditional expectation (different Mills ratios for each choice)
+  action_correction = ifelse(a_gauss == 1,
+                             correction_factor * dnorm(z) / pnorm(z),
+                             correction_factor * dnorm(z) / pnorm(-z))  # Note: pnorm(-z) here!
+  
+  # Now use e_cond in the confidence formula
+  Cc = 2/1.7
+  sigma2 = exp(sigma_m)^2 + exp(sigma_e)^2
+  
+  marginalization_correction = (1/(sqrt(1 + (Cc^2) / sigma2)))
+  
+  
+  c_mu = ifelse(a_gauss == 1,
+                pnorm(((((mu_e + action_correction)) * Cc) / sigma2) * marginalization_correction),
+                1-pnorm(((((mu_e - action_correction)) * Cc) / sigma2) * marginalization_correction))
+  
+  
+  
+  
+  
+  
+  # Dataframe
+  df = data.frame(
+    p_gauss = p_gauss,
+    D = D,
+    X =X,
+    ACC = ifelse(a_gauss == 0 & D == -1, 1, ifelse(a_gauss == 1 & D == 1, 1,0)),
+    c_mu = c_mu,
+    a_gauss = a_gauss) %>% 
+    mutate(    
+      sigma_k = sigma_k,
+      sigma_e = sigma_e,
+      sigma_m = sigma_m,
+      bias = bias,
+    )
+}
+
+
+simulate_data_p_bias = function(n = 1000, sigma_e,sigma_m,sigma_k,bias){
+  
+  # set.seed(seed)
+  # -----------------------------
+  # Set parameters
+  # -----------------------------
+  n_trials <- n        # number of trials
+
+  
+  # Coherence level (stimulus intensity)
+  X <- rep(seq(0,1, length.out = 10), n_trials / 10)
+  
+  # stimuli (left or right)
+  D <- sample(c(-1, 1), n_trials, replace = TRUE)  # true stimulus
+  
+  # Simulate evidence
+  e <- rnorm(n_trials, mean = D * X- bias, sd = exp(sigma_e))
+  
+  
+  ehat = rnorm(n_trials,e,(exp(sigma_m)))
+  
+  p_gauss = pnorm((e) / exp(sigma_k))                  #  probability of response on trial t given the citerion
+
+  
+  # lapse = 0.01  
+  # p_gauss = (1 - lapse) * p_gauss + lapse * 0.5
+
+  
+  a_gauss = rbinom(n_trials,1,p_gauss)               # binary response
+  
+  c_mu = ifelse(a_gauss == 1, brms::inv_logit_scaled(2*ehat / (exp(sigma_e)^2 + exp(sigma_m)^2)),
+                1-brms::inv_logit_scaled(2*ehat / (exp(sigma_e)^2 + exp(sigma_m)^2)))
+  
+  # Dataframe
+  df = data.frame(
+    p_gauss = p_gauss,
+    D = D,
+    X =X,
+    ACC = ifelse(a_gauss == 0 & D == -1, 1, ifelse(a_gauss == 1 & D == 1, 1,0)),
+    c_mu = c_mu,
+    a_gauss = a_gauss
+  ) %>% mutate(   sigma_k = sigma_k,
+                  sigma_e = sigma_e,
+                  sigma_m = sigma_m,
+                  bias = bias)
+  
+  
+  
+}
+
+
+
+```
+
+```{r}
+
+df = rbind(simulate_data_margin_bias(110000,-2,-1,-2,0,1997),
+           simulate_data_margin_bias(110000,-1,-1,-2,0,1997),
+           # simulate_data_margin_bias(110000,-1,-1,-1,0,1997),
+           simulate_data_margin_bias(110000,-1,-1,-1,0,1997))
+
+df %>% mutate(XD = X*D) %>% 
+  group_by(XD,sigma_e,sigma_k) %>% 
+  summarize(mean = mean(a_gauss))%>% 
+  ggplot(aes(x = XD, y = mean, col = as.factor(sigma_e), shape = as.factor(sigma_k)))+
+  geom_point()
+  # facet_wrap(~sigma_k)
+
+df %>% mutate(XD = X*D) %>% 
+  group_by(XD,sigma_e,sigma_k,ACC) %>% 
+  summarize(mean = mean(c_mu))%>% 
+  ggplot(aes(x = XD, y = mean, col = as.factor(sigma_e), shape = as.factor(sigma_k)))+
+  geom_point()+
+  facet_wrap(~ACC)
+
+
+```
+
+
+```{r}
+sigma_e = c(-1, -3,-6)
+sigma_k = c(-1, -3,-6)
+sigma_m = c(-2)
+bias = 0
+
+# All combinations
+param_grid = expand.grid(
+  sigma_e = sigma_e,
+  sigma_k = sigma_k,
+  sigma_m = sigma_m
+)
+
+# Apply simulation over rows
+df_list = lapply(1:nrow(param_grid), function(i){
+  
+  simulate_data_margin_bias(
+    n = 500000,
+    sigma_e = param_grid$sigma_e[i],
+    sigma_m = param_grid$sigma_m[i],
+    sigma_k = param_grid$sigma_k[i],
+    bias = bias
+    # seed = 1997 + i
+  )
+})
+
+# Combine into one dataframe
+df = do.call(rbind, df_list)
+
+bin = df %>% mutate(XD = X*D) %>% 
+  group_by(XD,sigma_e,sigma_k, sigma_m) %>% 
+  summarize(mean = mean(a_gauss)) %>% 
+  mutate(A = "P(A = 1)")
+
+Conf = df %>% mutate(XD = X*D) %>% 
+  filter(a_gauss == 1) %>% 
+  group_by(XD,sigma_e,sigma_k, sigma_m,a_gauss) %>% 
+  summarize(mean = mean(c_mu)) %>% 
+  mutate(A = "Conf | A = 1")
+
+
+rbind(bin,Conf) %>% 
+  ggplot(aes(x = XD, y = mean, col = as.factor(A)))+
+  geom_point()+
+  facet_wrap(sigma_m~sigma_e+sigma_k, labeller = label_both,nrow = 3)
+```
+
+
+```{r, fig.width=12,fig.height=10}
+bin = df %>% mutate(XD = X*D) %>% 
+  group_by(XD,sigma_e,sigma_k, sigma_m) %>% 
+  summarize(mean = mean(a_gauss)) %>% 
+  mutate(A = "P(A = 1)",
+         ACC = NA)
+
+Conf = df %>% mutate(XD = X*D) %>% 
+  # filter(a_gauss == 1) %>% 
+  group_by(XD,sigma_e,sigma_k, sigma_m,ACC) %>% 
+  summarize(mean = mean(c_mu)) %>% 
+  mutate(A = "Conf | ACC",ACC = ACC) 
+  
+
+
+rbind(bin,Conf) %>% 
+  ggplot(aes(x = XD, y = mean, col = interaction(as.factor(ACC),as.factor(A))))+
+  geom_point()+
+  facet_wrap(sigma_k~sigma_e, labeller = label_both)+
+  theme(legend.position = "top")
+
+
+```

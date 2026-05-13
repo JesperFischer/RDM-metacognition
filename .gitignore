@@ -27,6 +27,7 @@ Pilot/Experimental analysis/archive/**/saved models/**/*.rds
 Sequential sampling/Fits/**/*.rds
 Sequential sampling/Fits/
 Sequential sampling/Data/
+Sequential sampling/Physio/
 Sequential sampling/DDM/
 Sequential sampling/achieve/
 Sequential sampling/Staircase/

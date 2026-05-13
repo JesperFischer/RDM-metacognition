@@ -171,8 +171,8 @@ model {
   // same as above (indicies) but between subject variances
 
   tau_u[1:6] ~ normal(1 , 1);
-  tau_u[7] ~ normal(0 , 1);
-  tau_u[8] ~ normal(0 , 1);
+  tau_u[7] ~ normal(0 , 0.5);
+  tau_u[8] ~ normal(0 , 0.5);
   
   // cholesky decomposition of correlation matrix
   L_u ~ lkj_corr_cholesky(2);

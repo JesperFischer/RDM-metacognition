@@ -1119,7 +1119,7 @@ for eachTrial in range(n_trials * n_blocks):
     
     # send message to tracker
     tracker.sendMessage("end_stimulus")  
-
+    
     # -----------------------------------------------------------
     # Record reaction time
     # -----------------------------------------------------------

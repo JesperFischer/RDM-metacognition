@@ -1,0 +1,545 @@
+---
+title: "Run_model"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(cmdstanr, tidyverse,posterior, bayesplot, tidybayes,
+               brms, patchwork, cowplot,ggpubr,flextable)
+
+
+source(here::here("Sequential sampling", "utility.R"))
+source(here::here("Sequential sampling","Physio","scripts", "utility.R"))
+source(here::here("Sequential sampling","Physio","scripts", "blink_re.R"))
+
+```
+
+# preprocess pupil data
+
+```{r}
+#convert_edf(here::here("Sequential sampling","Physio", "Eyetrack_raw"),
+#            here::here("Sequential sampling","Physio", "Eyetrack_asc"))
+
+# lapply(list.files(here::here("Sequential sampling","Physio", "Eyetrack_asc"), 
+                  # pattern = "\\.asc$", full.names = TRUE), Load_and_plot_eyetrack)
+
+# combine_pngs_to_pdf()
+
+# combine_subject_pdfs()
+
+# load_pupils()
+
+```
+
+# data wrangling:
+
+```{r, fig.width = 10, fig.height=8}
+dfall = read.csv(here::here("Sequential sampling", "Physio", "pupil_data_all.csv")) %>% 
+  filter(!((subject == 15 & trial >= 181 & trial <= 217) |(subject == 16 & trial > 109))) %>% 
+  filter(RTdec < 2.5)
+
+## procentage of trial that is a blink for the trial to be excluded.
+blink_threshold <- 0.30
+# minimum number of trials for a subject to be in the analysis
+n_subjs = 50
+
+
+dfall %>%
+  group_by(ID, trial) %>%
+  summarise(blink_prop = mean(blink_mask == 1, na.rm = TRUE),
+            .groups = "drop") %>%
+  filter(blink_prop > blink_threshold) %>% group_by(ID) %>% summarize(n = n()) %>% 
+  ggplot(aes(x = ID, y = n))+geom_point()+
+  labs(x = "ID",y = "number of excluded trials")+
+  theme_minimal(base_size = 14)
+
+dfall <- dfall %>%
+  group_by(ID, trial) %>%
+  mutate(blink_prop = mean(blink_mask == 1, na.rm = TRUE)) %>%
+  ungroup() %>%
+  filter(blink_prop <= blink_threshold) %>%
+  select(-blink_prop)
+
+
+
+ntrials = dfall %>% select(ID,trial) %>% distinct() %>% 
+  group_by(ID) %>% 
+  summarize(n = n()) %>% 
+  filter(n > n_subjs)
+
+dfall %>% select(ID,trial) %>% distinct() %>% group_by(ID) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = ID, y = n))+geom_point()+
+  labs(x = "ID",y = "number of trials")+
+  theme_minimal(base_size = 14)
+
+  
+
+dfall = dfall %>% filter(ID %in% ntrials$ID)
+```
+
+# blinks
+
+```{r, fig.height=10, fig.width=14}
+#########################################################
+################## blink probabilities:##################
+#########################################################
+
+blink_prob <- dfall %>%
+  group_by(subject, time) %>%
+  summarise(
+    meanRT = median(RTdec),
+    meanconfRT = median(RTrating),
+    meaninterval = median(interval),
+    blink_prob = mean(blink_mask, na.rm = TRUE),
+    n_trials = n_distinct(trial),
+    .groups = "drop"
+  )
+
+label_df <- blink_prob %>%
+  group_by(subject) %>%
+  summarise(
+    meanRT = round(first(meanRT),2),
+    meaninterval = round(first(meaninterval),2),
+    meanconfRT = round(first(meanconfRT),2),
+    .groups = "drop"
+  )
+
+blink_prob %>% ggplot(aes(x = time, y = blink_prob))+
+  geom_point()+
+  geom_text(data = label_df, aes(x = 4000, y = 0.75, label = paste0("DecRT = ",meanRT,"\n ConfRT = ", meanconfRT)), col = "red", size = 2)+
+  geom_vline(data = label_df, aes(xintercept = meanRT*1000), col = "green",linetype = 2)+
+  geom_vline(data = label_df, aes(xintercept = meanRT*1000+meaninterval*1000+meanconfRT*1000), col = "blue",linetype = 2)+
+  facet_wrap(~subject)+
+  theme_minimal(base_size = 14)
+```
+
+
+# group level blinks
+```{r}
+################################################################
+################## blink probabilities group :##################
+################################################################
+
+blink_prob <- dfall %>%
+  group_by(time) %>%
+  summarise(
+    meanRT = median(RTdec),
+    meanconfRT = median(RTrating),
+    meaninterval = median(interval),
+    blink_prob = mean(blink_mask, na.rm = TRUE),
+    n_trials = n_distinct(trial),
+    .groups = "drop"
+  )
+
+label_df <- blink_prob %>%
+  summarise(
+    meanRT = round(first(meanRT),2),
+    meaninterval = round(first(meaninterval),2),
+    meanconfRT = round(first(meanconfRT),2),
+    .groups = "drop"
+  )
+
+blink_prob %>% ggplot(aes(x = time, y = blink_prob))+
+  geom_point()+
+  geom_text(data = label_df, aes(x = 4000, y = 0.75, label = paste0("DecRT = ",meanRT,"\n ConfRT = ", meanconfRT)), col = "red", size = 2)+
+  geom_vline(data = label_df, aes(xintercept = meanRT*1000), col = "green",linetype = 2)+
+  geom_vline(data = label_df, aes(xintercept = meanRT*1000+meaninterval*1000+meanconfRT*1000), col = "blue",linetype = 2)+
+  theme_minimal(base_size = 14)
+
+
+
+```
+
+# pupil after stimulus onset!
+
+```{r, fig.height=10, fig.width=14}
+group_stim =  dfall %>%     
+  filter(phase == "stimulus") %>% 
+  group_by(time,subject) %>% 
+  summarize(pupil_ref = mean(interp- mean_baseline_pupil,na.rm =T)) %>% 
+  mutate(trial = NA)
+
+dfall%>%    
+  filter(phase == "stimulus") %>% 
+  group_by(time,subject,trial) %>% 
+  summarize(pupil_ref = mean(interp- mean_baseline_pupil,na.rm =T)) %>% 
+  ggplot(aes(x = time, y = pupil_ref,group = interaction(subject,trial)))+
+  geom_line(alpha = 0.1)+
+  geom_line(data = group_stim, aes(x = time, y = pupil_ref, group = interaction(subject,trial)),col = "red")+
+  facet_wrap(~subject, scales = "free")+
+  theme_minimal(base_size = 14)
+```
+
+# group level
+```{r, fig.height=6, fig.width=8}
+group_stim2 =  dfall %>%     
+  filter(phase == "stimulus") %>% 
+  group_by(time) %>% 
+  summarize(pupil_ref = mean(interp- mean_baseline_pupil,na.rm =T),
+            pupil_se = sd(interp- mean_baseline_pupil,na.rm =T)/sqrt(n())) %>% 
+  mutate(trial = NA, subject = NA)
+
+dfall%>%    
+  filter(phase == "stimulus") %>% 
+  group_by(time,subject) %>% 
+  summarize(pupil_ref = mean(interp- mean_baseline_pupil,na.rm =T)) %>% 
+  ggplot(aes(x = time, y = pupil_ref,group = (subject)))+
+  geom_line(alpha = 0.1)+
+  geom_line(data = group_stim2, aes(x = time, y = pupil_ref, group = interaction(subject,trial)),col = "red")+
+  geom_ribbon(data = group_stim2, aes(x = time, y = pupil_ref, ymin = pupil_ref - 2*pupil_se, ymax = pupil_ref + 2*pupil_se, group = interaction(subject,trial)),fill = "red", alpha = 0.3)+
+    theme_minimal(base_size = 14)
+```
+
+
+```{r, fig.height=10, fig.width=14}
+group_conf =  dfall %>%     
+  filter(phase == "conf_wait") %>% 
+  group_by(trial,subject) %>% 
+  mutate(time = 1:n()) %>% 
+  ungroup() %>% 
+  group_by(time,subject) %>% 
+  summarize(pupil_ref = mean(interp- mean_stim_pupil,na.rm =T)) %>% 
+  mutate(trial = NA)
+
+
+dfall%>%    
+  filter(phase == "conf_wait") %>% 
+  group_by(trial,subject) %>% 
+  mutate(time = 1:n()) %>% 
+  ungroup() %>% 
+  group_by(time,subject,trial) %>% 
+  summarize(pupil_ref = mean(interp- mean_stim_pupil,na.rm =T)) %>% 
+  ggplot(aes(x = time, y = pupil_ref,group = interaction(subject,trial)))+
+  geom_line(alpha = 0.1)+
+  geom_line(data = group_conf, aes(x = time, y = pupil_ref, group = interaction(subject,trial)),col = "red")+
+  facet_wrap(~subject, scales = "free")+
+  theme_minimal(base_size = 14)
+```
+
+
+```{r, fig.height=6, fig.width=12}
+group_conf2 =  dfall %>%     
+  filter(phase == "conf_wait") %>% 
+  group_by(trial,subject) %>% 
+  mutate(time = (1:n())*50) %>% 
+  ungroup() %>% 
+  group_by(time,scale) %>% 
+  summarize(pupil_ref = mean(interp- mean_stim_pupil,na.rm =T),
+            pupil_se = sd(interp- mean_stim_pupil,na.rm =T)/sqrt(n()),
+            n = n()) %>% 
+  mutate(trial = NA, subject = NA)
+
+dfall%>%    
+  filter(phase == "conf_wait") %>% 
+  group_by(trial,subject) %>% 
+  mutate(time = (1:n())*50) %>% 
+  ungroup() %>% 
+  group_by(time,subject,scale) %>% 
+  summarize(pupil_ref = mean(interp- mean_stim_pupil,na.rm =T)) %>% 
+  ggplot(aes(x = time, y = pupil_ref,group = (subject)))+
+  geom_line(alpha = 0.1)+
+  geom_line(data = group_conf2, aes(x = time, y = pupil_ref, group = interaction(subject,trial)),col = "red")+
+  geom_ribbon(data = group_conf2, aes(x = time, y = pupil_ref, ymin = pupil_ref - 2 * pupil_se, ymax = pupil_ref + 2 * pupil_se, group = interaction(subject,trial)),fill = "red", alpha = 0.1)+
+  facet_wrap(~scale)+
+  theme_minimal(base_size = 14)
+```
+
+
+```{r, fig.height=6, fig.width=12}
+group_conf2 =  dfall %>%     
+  # filter(time < 3000) %>% 
+  filter(phase == "conf_wait") %>% 
+  group_by(trial,subject) %>% 
+  mutate(time = (1:n())*50) %>% 
+  ungroup() %>% 
+  group_by(time,ACC,scale) %>% 
+  summarize(pupil_ref = mean(interp- mean_stim_pupil,na.rm =T),
+            pupil_se = sd(interp- mean_stim_pupil,na.rm =T)/sqrt(n()),
+            n = n()) %>% 
+  # filter(n > 10) %>% 
+  mutate(trial = NA, subject = NA)
+
+dfall%>%    
+  # filter(time < 3000) %>% 
+  filter(phase == "conf_wait") %>% 
+  group_by(trial,subject) %>% 
+  mutate(time = (1:n())*50) %>% 
+  ungroup() %>% 
+  group_by(time,subject,ACC,scale) %>% 
+  summarize(pupil_ref = mean(interp- mean_stim_pupil,na.rm =T)) %>% 
+  ggplot(aes(x = time, y = pupil_ref))+
+  geom_line(aes(group = interaction(subject,as.factor(ACC)), col = as.factor(ACC)), alpha = 0.1)+
+  geom_line(data = group_conf2, aes(x = time, y = pupil_ref, col = as.factor(ACC)))+
+  geom_ribbon(data = group_conf2, aes(x = time, y = pupil_ref, ymin = pupil_ref - 2 * pupil_se, ymax = pupil_ref + 2 * pupil_se,
+                                      fill = as.factor(ACC)), alpha = 0.4)+
+  facet_wrap(~scale)+
+  theme_minimal(base_size = 14)
+```
+
+
+```{r, fig.height=6, fig.width=12}
+group_conf2 = dfall %>%     
+  filter(scale == "conf") %>% 
+  filter(phase == "conf_wait") %>% 
+  group_by(subject, trial) %>% 
+  mutate(time = (1:n()) * 50) %>% 
+  ungroup() %>% 
+  group_by(subject) %>%
+  mutate(
+    cohernece = case_when(
+      coherence == min(coherence, na.rm = TRUE) ~ "lowest",
+      coherence == max(coherence, na.rm = TRUE) ~ "highest",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(cohernece)) %>%
+  ungroup() %>%
+  group_by(time, ACC, cohernece) %>% 
+  summarize(pupil_ref = mean(interp- mean_stim_pupil,na.rm =T),
+            pupil_se = sd(interp- mean_stim_pupil,na.rm =T)/sqrt(n()),
+            n = n()) 
+
+dfall %>%    
+  filter(scale == "conf") %>% 
+  filter(phase == "conf_wait") %>% 
+  group_by(subject, trial) %>% 
+  mutate(time = (1:n()) * 50) %>% 
+  ungroup() %>% 
+  group_by(subject) %>%
+  mutate(
+    cohernece = case_when(
+      coherence == min(coherence, na.rm = TRUE) ~ "lowest",
+      coherence == max(coherence, na.rm = TRUE) ~ "highest",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(cohernece)) %>%
+  ungroup() %>%
+  group_by(time, subject, ACC, cohernece) %>% 
+  summarize(
+    pupil_ref = mean(interp - mean_stim_pupil, na.rm = TRUE),
+    .groups = "drop"
+  ) %>% 
+  ggplot(aes(x = time, y = pupil_ref)) +
+  geom_line(aes(group = interaction(subject, ACC), col = as.factor(ACC)), alpha = 0.1) +
+    geom_ribbon(data = group_conf2, aes(x = time, y = pupil_ref, ymin = pupil_ref - 2 * pupil_se, ymax = pupil_ref + 2 * pupil_se,
+                                      fill = as.factor(ACC)), alpha = 0.4)+
+  geom_line(data = group_conf2, aes(col = as.factor(ACC))) +
+  facet_wrap(~cohernece, labeller = label_both) +
+  theme_minimal(base_size = 14)+
+  ggtitle("Confidence scale.")
+```
+
+
+
+```{r, fig.height=6, fig.width=12}
+group_conf2 = dfall %>%     
+  filter(scale == "control") %>% 
+  filter(phase == "conf_wait") %>% 
+  group_by(subject, trial) %>% 
+  mutate(time = (1:n()) * 50) %>% 
+  ungroup() %>% 
+  group_by(subject) %>%
+  mutate(
+    cohernece = case_when(
+      coherence == min(coherence, na.rm = TRUE) ~ "lowest",
+      coherence == max(coherence, na.rm = TRUE) ~ "highest",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(cohernece)) %>%
+  ungroup() %>%
+  group_by(time, ACC, cohernece) %>% 
+  summarize(pupil_ref = mean(interp- mean_stim_pupil,na.rm =T),
+            pupil_se = sd(interp- mean_stim_pupil,na.rm =T)/sqrt(n()),
+            n = n()) 
+
+dfall %>%    
+  filter(scale == "control") %>% 
+  filter(phase == "conf_wait") %>% 
+  group_by(subject, trial) %>% 
+  mutate(time = (1:n()) * 50) %>% 
+  ungroup() %>% 
+  group_by(subject) %>%
+  mutate(
+    cohernece = case_when(
+      coherence == min(coherence, na.rm = TRUE) ~ "lowest",
+      coherence == max(coherence, na.rm = TRUE) ~ "highest",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(cohernece)) %>%
+  ungroup() %>%
+  group_by(time, subject, ACC, cohernece) %>% 
+  summarize(
+    pupil_ref = mean(interp - mean_stim_pupil, na.rm = TRUE),
+    .groups = "drop"
+  ) %>% 
+  ggplot(aes(x = time, y = pupil_ref)) +
+  geom_line(aes(group = interaction(subject, ACC), col = as.factor(ACC)), alpha = 0.1) +
+    geom_ribbon(data = group_conf2, aes(x = time, y = pupil_ref, ymin = pupil_ref - 2 * pupil_se, ymax = pupil_ref + 2 * pupil_se,
+                                      fill = as.factor(ACC)), alpha = 0.4)+
+  geom_line(data = group_conf2, aes(col = as.factor(ACC))) +
+  facet_wrap(~cohernece, labeller = label_both) +
+  theme_minimal(base_size = 14)+
+  ggtitle("Control scale.")
+```
+
+```{r, fig.height=8, fig.width=8}
+group_conf2 = dfall %>%     
+  filter(phase == "conf_wait") %>% 
+  group_by(subject, trial) %>% 
+  mutate(time = (1:n()) * 50) %>% 
+  ungroup() %>% 
+  group_by(subject) %>%
+  mutate(
+    cohernece = dense_rank(desc(coherence)),
+        cohernece = factor(
+      cohernece,
+      levels = 1:5,
+      labels = c(
+        "Highest",
+        "Next Highest",
+        "Middle",
+        "Next Lowest",
+        "Lowest"
+      )
+    )
+  )%>%
+  ungroup() %>%
+  group_by(time, ACC, cohernece) %>% 
+  summarize(
+    pupil_ref = mean(interp - mean_stim_pupil, na.rm = TRUE),
+    pupil_se = sd(interp - mean_stim_pupil, na.rm = TRUE)/sqrt(n()),
+    .groups = "drop"
+  )
+
+dfall %>%    
+  filter(phase == "conf_wait") %>% 
+  group_by(subject, trial) %>% 
+  mutate(time = (1:n()) * 50) %>% 
+  ungroup() %>% 
+  group_by(subject) %>%
+  mutate(
+    cohernece = dense_rank(desc(coherence)),
+        cohernece = factor(
+      cohernece,
+      levels = 1:5,
+      labels = c(
+        "Highest",
+        "Next Highest",
+        "Middle",
+        "Next Lowest",
+        "Lowest"
+      )
+    )
+  )%>%
+  ungroup() %>%
+  group_by(time, subject, ACC, cohernece) %>% 
+  summarize(
+    pupil_ref = mean(interp - mean_stim_pupil, na.rm = TRUE),
+    .groups = "drop"
+  ) %>% 
+  ggplot(aes(x = time, y = pupil_ref)) +
+  geom_line(aes(group = interaction(subject, ACC),col = as.factor(ACC)), alpha = 0.1) +
+  geom_line(data = group_conf2, aes(col = as.factor(ACC))) +
+      geom_ribbon(data = group_conf2, aes(x = time, y = pupil_ref, ymin = pupil_ref - 2 * pupil_se, ymax = pupil_ref + 2 * pupil_se,
+                                      fill = as.factor(ACC)), alpha = 0.4)+
+  facet_wrap(~cohernece, labeller = label_both, ncol = 3) +
+  theme_minimal(base_size = 14)+
+  ggtitle("Confidence scale.")  +
+  theme_minimal(base_size = 14)+
+  theme(legend.position = "bottom")
+```
+
+# aggregated across the first 3s after the action:
+
+```{r, fig.height=6, fig.width=8}
+group_conf2 %>% filter(time < 3000) %>% 
+  ggplot(aes(x = time, y = pupil_ref, col = as.factor(ACC), fill = as.factor(ACC))) +
+  geom_line(aes(col = as.factor(ACC))) +
+  geom_ribbon(aes(ymin = pupil_ref-2*pupil_se,ymax = pupil_ref+2*pupil_se), alpha = 0.2, col = "white")+
+  facet_wrap(~cohernece) +
+  theme_minimal(base_size = 14)+
+  theme(legend.position = "bottom")
+```
+
+
+
+```{r, fig.height=6, fig.width=8}
+group_conf2 %>% filter(time < 3000) %>% 
+  ggplot(aes(x = time, y = pupil_ref, col = as.factor(cohernece), fill = as.factor(cohernece))) +
+  geom_line(aes(col = as.factor(cohernece))) +
+  geom_ribbon(aes(ymin = pupil_ref-2*pupil_se,ymax = pupil_ref+2*pupil_se), alpha = 0.2, col = "white")+
+  facet_wrap(~ACC, labeller = label_both, scales = "free") +
+  theme_minimal(base_size = 14)+
+  theme(legend.position = "bottom")
+
+```
+
+# look at differences in the signals difference of accuracy across coherence
+
+```{r, fig.height=6, fig.width=8}
+group_conf2 %>% filter(time < 3000) %>% mutate(pupil_se = NULL) %>% 
+  pivot_wider(names_from = "ACC", values_from = "pupil_ref") %>% 
+  ggplot(aes(x = time, y = `0`-`1`, col = as.factor(cohernece))) +
+  geom_line() +
+  theme_minimal(base_size = 14)
+```
+
+# at confidence presentation
+
+
+```{r, fig.height=10, fig.width=14}
+group_conf =  dfall %>%     
+  filter(phase == "conf_start") %>% 
+  group_by(trial,subject) %>% 
+  mutate(time = (1:n())*50) %>% 
+  ungroup() %>% 
+  group_by(time,subject) %>% 
+  summarize(pupil_ref = mean(interp- mean_conf_pupil,na.rm =T)) %>% 
+  mutate(trial = NA)
+
+dfall%>%    
+  filter(phase == "conf_start") %>% 
+  group_by(trial,subject) %>% 
+  mutate(time = (1:n())*50) %>% 
+  ungroup() %>% 
+  group_by(time,subject,trial) %>% 
+  summarize(pupil_ref = mean(interp- mean_conf_pupil,na.rm =T)) %>% 
+  ggplot(aes(x = time, y = pupil_ref,group = interaction(subject,trial)))+
+  geom_line(alpha = 0.1)+
+  geom_line(data = group_conf, aes(x = time, y = pupil_ref, group = interaction(subject,trial)),col = "red")+
+  facet_wrap(~subject, scales = "free")+
+  theme_minimal(base_size = 14)
+```
+
+
+```{r, fig.height=6, fig.width=8}
+
+group_conf2 =  dfall %>%     
+  filter(phase == "conf_start") %>% 
+  group_by(trial,subject) %>% 
+  mutate(time = (1:n())*50) %>% 
+  ungroup() %>% 
+  group_by(time) %>% 
+  summarize(pupil_ref = mean(interp- mean_conf_pupil,na.rm =T)) %>% 
+  mutate(trial = NA, subject = NA)
+
+dfall%>%    
+  filter(phase == "conf_start") %>% 
+  group_by(trial,subject) %>% 
+  mutate(time = (1:n())*50) %>% 
+  ungroup() %>% 
+  group_by(time,subject) %>% 
+  summarize(pupil_ref = mean(interp- mean_conf_pupil,na.rm =T)) %>% 
+  ggplot(aes(x = time, y = pupil_ref,group = (subject)))+
+  geom_line(alpha = 0.1)+
+  geom_line(data = group_conf2, aes(x = time, y = pupil_ref, group = interaction(subject,trial)),col = "red")+
+  theme_minimal(base_size = 14)
+
+```
+
