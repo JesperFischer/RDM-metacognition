@@ -212,8 +212,8 @@ saveRDS(Seq_samp, here::here("Preregistration","Results","SS",paste0("SS_",lengt
 # posterior predictives:
 
 ```{r, fig.width=8,fig.height=6, error=F,message=F,warning=F}
-pps_bin10 = pp_hier_nolapse_centbeta(fit, dd, n_bins = 10)
-pps_mobin = pp_hier_nolapse_centbeta(fit, dd, n_bins = NULL)
+pps_bin10 = pp_hier_nolapse(fit, dd, n_bins = 10)
+pps_mobin = pp_hier_nolapse(fit, dd, n_bins = NULL)
 
 pps_bin10[[1]]
 pps_bin10[[3]]
@@ -225,20 +225,20 @@ pps = pps_mobin
 ggsave(here::here("Sequential sampling" , "figures","group_level_pred.png"),pps_bin10[[3]], dpi = 300, width = 8, height = 6)
 ```
 
-# posterior predictives:
+# posterior predictives for centered beta
 
 ```{r, fig.width=8,fig.height=6, error=F,message=F,warning=F}
-pps_bin10 = pp_hier_nolapse_centbeta(fit, dd, n_bins = 10)
-pps_mobin = pp_hier_nolapse_centbeta(fit, dd, n_bins = NULL)
+# pps_bin10 = pp_hier_nolapse_centbeta(fit, dd, n_bins = 10)
+# pps_mobin = pp_hier_nolapse_centbeta(fit, dd, n_bins = NULL)
 
-pps_bin10[[1]]
-pps_bin10[[3]]
-pps_mobin[[1]]
-pps_mobin[[3]]
+# pps_bin10[[1]]
+# pps_bin10[[3]]
+# pps_mobin[[1]]
+# pps_mobin[[3]]
+# 
+# pps = pps_mobin
 
-pps = pps_mobin
-
-ggsave(here::here("Sequential sampling" , "figures","group_level_pred.png"),pps_bin10[[3]], dpi = 300, width = 8, height = 6)
+# ggsave(here::here("Sequential sampling" , "figures","group_level_pred.png"),pps_bin10[[3]], dpi = 300, width = 8, height = 6)
 ```
 
 

@@ -920,6 +920,8 @@ pp_hier_nolapse = function(fit,df,n_bins){
         ) %>%
         ungroup() %>%
         select(-X_bin)
+    }else{
+      df_g = df
     }
     
     
@@ -951,30 +953,34 @@ pp_hier_nolapse = function(fit,df,n_bins){
     ) 
     
     
-    group_plot = behplot %>% filter(name != "RT") %>% 
+    group_plot = behplot%>% 
+      rename(variable = name) %>% 
+      #filter(name != "RT") %>% 
       ggplot() +
-      geom_pointrange(data = behplot%>% filter(name != "RT"), aes(x = X, y = mean, ymin = q5, ymax = q95, fill = action),
+      geom_pointrange(aes(x = X, y = mean, ymin = q5, ymax = q95, fill = action),
                       shape = 21, color = "black", alpha = 0.5) +
-      facet_wrap(~name, scales = "free_y", ncol = 1) +
+      geom_vline(xintercept = 0, linetype = 2) +
+      scale_y_continuous(limits = c(0,1), breaks = scales::pretty_breaks(n = 5))+
+      geom_line(data = df1%>% rename(variable = name), aes(x = x, y = mean, col = action))+
+      geom_ribbon(data = df1%>% rename(variable = name), aes(x = x, y = mean, ymin = q5, ymax = q95, fill = action), alpha = 0.5)+
+      facet_wrap(~variable, ncol = 1, scales = "free")+
       scale_y_continuous(breaks = scales::pretty_breaks(n = 4))+
       theme_classic(base_size = 14) +
       labs(color = "action", fill = "action",
-           y = "Value") +
-      geom_vline(xintercept = 0, linetype = 2) +
-      scale_y_continuous(limits = c(0,1), breaks = scales::pretty_breaks(n = 5))+
-      geom_line(data = df1, aes(x = x, y = mean, col = action))+
-      geom_ribbon(data = df1, aes(x = x, y = mean, ymin = q5, ymax = q95, fill = action), alpha = 0.5)
+           y = "Value")
+    
+    bounds=df %>% group_by(ID) %>% summarize(min = min(X)-0.05, max = max(X)+0.05, by = ((max-min) / 20))
     
     
     
-    pred_subj = as_draws_df(fit$draws(c(  "beta",
-                                          "sigma_e",
-                                          "sigma_k",
-                                          "sigma_m",
-                                          "meta_bias",
-                                          "confprec",
-                                          "sigmam_beta",
-                                          "meta_bias_beta"
+    pred_subj = inner_join(as_draws_df(fit$draws(c(  "beta",
+                                                     "sigma_e",
+                                                     "sigma_k",
+                                                     "sigma_m",
+                                                     "meta_bias",
+                                                     "confprec",
+                                                     "sigmam_beta",
+                                                     "meta_bias_beta"
     ))) %>% select(-contains(".")) %>% 
       mutate(draw = 1:n()) %>% 
       pivot_longer(-draw) %>% 
@@ -983,10 +989,12 @@ pp_hier_nolapse = function(fit,df,n_bins){
         param   = str_remove(name, "\\[\\d+\\]"),
         ID  = subs[sub_idx],
         name = NULL
-      ) %>% 
+      ),bounds) %>% 
       pivot_wider(names_from = "param", values_from = "value") %>% 
-      mutate(x = list(seq(-1,1,by = 0.1))) %>% 
+      group_by(ID) %>% 
+      mutate(x = list(seq(unique(min),unique(max),by = unique(by)))) %>% 
       unnest() %>% 
+      ungroup() %>% 
       mutate(interval = mean(df$interval)) %>% 
       unnest() %>% 
       group_by(draw, ID) %>% 
@@ -1000,6 +1008,7 @@ pp_hier_nolapse = function(fit,df,n_bins){
                               confs(0,x,beta, sigma_e, sigma_k,sigma_m+ interval * sigmam_beta ))) %>% 
       mutate(conf_mu = brms::inv_logit_scaled(brms::logit_scaled(conf_mu) + meta_bias + interval * meta_bias_beta)) %>% 
       ungroup()
+    
     
     
     df1_sub = bind_rows(
@@ -1051,6 +1060,8 @@ pp_hier_nolapse = function(fit,df,n_bins){
         ) %>%
         ungroup() %>%
         select(-X_bin)
+    }else{
+      df_s = df
     }
     
     
@@ -1080,12 +1091,18 @@ pp_hier_nolapse = function(fit,df,n_bins){
                   q95 = mean(Confidence, na.rm = T) + 2 * (sd(Confidence, na.rm = T) / sqrt(n())),
                   .groups = "drop")
     ) %>% mutate(variable = name, name = NULL)
+  
+    
+    
     
     sub_plots = list()
     qq = 0
     for(name in unique(df1_sub$ID)){
       
-      parameters = pred_subj %>% filter(ID == name) %>% 
+      xmin = min(behplot%>% filter(ID == name) %>% .$X) - 0.1
+      xmax = max(behplot%>% filter(ID == name) %>% .$X) + 0.1
+      
+      parameters = pred_subj %>% filter(ID == name) %>% filter(x > xmin & x < xmax) %>% 
         pivot_longer(cols = c("sigma_e","sigma_m","sigma_k")) %>%
         select(ID,name,value) %>% distinct() %>% 
         mutate(name = ifelse(name == "sigma_e","S_e",ifelse(name == "sigma_m","S_m",ifelse(name == "sigma_k","S_c",name)))) %>% 
@@ -1096,8 +1113,10 @@ pp_hier_nolapse = function(fit,df,n_bins){
         mutate(variable = "Confidence") %>% mutate(param = c(0,0.15,0.3))
       
       qq = qq+1
+      
+      
       sub_plot = behplot  %>% 
-        filter(variable != "RT" & ID == name) %>% 
+        filter(variable != "RT" & ID == name)  %>% filter(X > xmin & X < xmax) %>% 
         ggplot() +
         geom_pointrange(data = behplot%>% filter(variable != "RT"& ID == name), aes(x = X, y = mean, ymin = q5, ymax = q95, fill = action),
                         shape = 21, color = "black", alpha = 0.5) +
@@ -1109,7 +1128,9 @@ pp_hier_nolapse = function(fit,df,n_bins){
         geom_vline(xintercept = 0, linetype = 2) +
         # labs(subtitle = name)+
         labs(subtitle = paste0("ID =", qq))+
-        scale_y_continuous(limits = c(0,1), breaks = scales::pretty_breaks(n = 5))+
+        # scale_y_continuous(limits = c(0,1), breaks = scales::pretty_breaks(n = 5))+
+        # scale_x_continuous(limits = c(xmin,xmax), breaks = scales::pretty_breaks(n = 5))+
+        
         # geom_text(data = parameters, aes(x = 0, y = param,label = label), size = 4)+
         geom_line(data = df1_sub %>% filter(ID == name), aes(x = x, y = mean, col = action))+
         geom_ribbon(data = df1_sub%>% filter(ID == name), aes(x = x, y = mean, ymin = q5, ymax = q95, fill = action), alpha = 0.5)
@@ -1120,10 +1141,143 @@ pp_hier_nolapse = function(fit,df,n_bins){
     }
     
     
+    n_bins = 10
+    # Prepare observed data
+    if (!is.null(n_bins)) {
+      # Create common bin boundaries based on the range of both datasets
+      df_g <- df %>%
+        mutate(
+          X_bin = cut(
+            X,
+            breaks = seq(min(X, na.rm = TRUE),
+                         max(X, na.rm = TRUE),
+                         length.out = n_bins + 1),
+            labels = FALSE,
+            include.lowest = TRUE
+          ),
+          # compute bin centers per subject
+          X = {
+            breaks_i <- seq(min(X, na.rm = TRUE),
+                            max(X, na.rm = TRUE),
+                            length.out = n_bins + 1)
+            centers_i <- (breaks_i[-1] + breaks_i[-length(breaks_i)]) / 2
+            centers_i[X_bin]
+          }
+        ) %>%
+        ungroup() %>%
+        select(-X_bin)
+    }else{
+      df_g = df
+    }
+    
+    
+    behplot = rbind(
+      bin = df_g %>%
+        # mutate(action = ifelse(Y == 1, "up", "down")) %>%
+        mutate(action = NA) %>%
+        group_by(X,action) %>%
+        summarize(
+          name = "Type-1",
+          k = sum(Y),
+          n = n(),
+          mean = k / n,
+          
+          a_post = k + 1,
+          b_post = (n - k) + 1,
+          
+          q5 = qbeta(0.025, a_post, b_post),
+          q95 = qbeta(0.975, a_post, b_post),
+          .groups = "drop") %>% mutate(k = NULL, n = NULL, a_post = NULL, b_post = NULL),
+      df_g %>%
+        mutate(action = ifelse(Y == 1, "up", "down")) %>%
+        group_by(X, action) %>%
+        summarize(name = "Confidence",
+                  mean = mean(Confidence, na.rm = T),
+                  q5 = mean(Confidence, na.rm = T) - 2 * (sd(Confidence, na.rm = T) / sqrt(n())),
+                  q95 = mean(Confidence, na.rm = T) + 2 * (sd(Confidence, na.rm = T) / sqrt(n())),
+                  .groups = "drop")
+    ) 
     
     
     
-    return(list(group_plot,sub_plots))
+    
+    pred_subj = inner_join(as_draws_df(fit$draws(c(  "beta",
+                                                     "sigma_e",
+                                                     "sigma_k",
+                                                     "sigma_m",
+                                                     "meta_bias",
+                                                     "confprec",
+                                                     "sigmam_beta",
+                                                     "meta_bias_beta"
+    ))) %>% select(-contains(".")) %>% 
+      mutate(draw = 1:n()) %>% 
+      pivot_longer(-draw) %>% 
+      mutate(
+        sub_idx = str_extract(name, "(?<=\\[)\\d+(?=\\])") %>% as.integer(),
+        param   = str_remove(name, "\\[\\d+\\]"),
+        ID  = subs[sub_idx],
+        name = NULL
+      ),bounds) %>% 
+      pivot_wider(names_from = "param", values_from = "value") %>% 
+      group_by(ID) %>% 
+      mutate(x = list(seq(-1,1,by = 0.05))) %>% 
+      unnest() %>% 
+      ungroup() %>% 
+      mutate(interval = mean(df$interval)) %>% 
+      unnest() %>% 
+      group_by(draw, ID) %>% 
+      mutate(p = psycho(x, beta,sigma_e,sigma_k)) %>% 
+      rowwise() %>% 
+      mutate(action = rbinom(1,1,p)) %>% 
+      unnest() %>% 
+      rowwise() %>% 
+      mutate(conf_mu = ifelse(action == 1,
+                              confs(1,x,beta, sigma_e, sigma_k,sigma_m + interval * sigmam_beta ),
+                              confs(0,x,beta, sigma_e, sigma_k,sigma_m+ interval * sigmam_beta ))) %>% 
+      mutate(conf_mu = brms::inv_logit_scaled(brms::logit_scaled(conf_mu) + meta_bias + interval * meta_bias_beta)) %>% 
+      ungroup()
+    
+    
+    df1_sub = bind_rows(
+      pred_subj %>%
+        mutate(action = ifelse(action == 1, "up", "down")) %>%
+        group_by(ID,x) %>%
+        summarize(
+          name = "Type-1",
+          mean = mean(p, na.rm = T),
+          q5 = quantile(p, 0.05),
+          q95 = quantile(p, 0.95),
+          .groups = "drop"
+        ),
+      pred_subj %>%
+        mutate(action = ifelse(action == 1, "up", "down")) %>%
+        group_by(ID,x, action) %>%
+        summarize(name = "Confidence",
+                  mean = mean(conf_mu, na.rm = T),
+                  q5 = quantile(conf_mu, 0.05),
+                  q95 = quantile(conf_mu, 0.95),
+                  .groups = "drop")
+    )  %>% mutate(variable = name, name = NULL)
+    
+    
+    
+    
+    average_sub_average_group = df1_sub %>% group_by(x,variable,action) %>% summarize(mean = mean(mean), q5 = mean(q5),q95 = mean(q95)) %>% 
+      ggplot(aes(x = x, y = mean, col = action))+geom_line()+geom_ribbon(aes(ymin  = q5, ymax = q95, fill = action), alpha = 0.5)+
+      geom_pointrange(data = behplot%>% filter(name != "RT") %>% rename(variable = name), aes(x = X, y = mean, ymin = q5, ymax = q95, fill = action),
+                      shape = 21, color = "black", alpha = 0.5)+
+      theme_classic(base_size = 14) +
+      labs(color = "action", fill = "action",
+           y = "P(a=1) Or P(a=D)", x = "Signed Stimulus (XD)") +
+      geom_vline(xintercept = 0, linetype = 2) +
+      # labs(subtitle = name)+
+      facet_wrap(~variable, ncol = 1, scales = "free")
+    
+    
+    
+    
+    return(list(group_plot,sub_plots,average_sub_average_group))
+    
     
   }
   
