@@ -3,14 +3,14 @@ project:
   output-dir: _book
 
 book:
-  title: "Metacognitive uncertainty across the post-decisional response window"
+  title: "Metacognitive Uncertainty across the Post-Decisional Response Window"
   author:
-    - name: "Jesper Fischer Ehmsen"
+    - name: "Jesper Fischer Ehmsen^[*Equal contribution]"
       affiliations:
         - ref: cfin
-    - name: "Siebe Everaets"
+    - name: "Siebe Everaerts^[*Equal contribution]"
       affiliations:
-        - ref: luven
+        - ref: leuven
     - name: "Arthur S. Courtin"
       affiliations:
         - ref: cfin
@@ -36,7 +36,7 @@ book:
 affiliations:
   - id: cfin
     name: "Center of Functionally Integrative Neuroscience (CFIN), Department of Clinical Medicine, Aarhus University"
-  - id: luven
+  - id: leuven
     name: "KU Leuven; Faculty of Psychology and Educational Sciences; Leuven; Belgium"
   - id: ucl
     name: "Institute of NeuroScience, Université catholique de Louvain, Brussels, Belgium"

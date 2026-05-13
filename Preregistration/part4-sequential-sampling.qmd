@@ -35,7 +35,7 @@ for(file in files){
 
 ## Overview
 
-This section provides live updates on the sequential sampling experiment data collection. As participants complete the experiment.
+This section provides live updates on the sequential sampling experiment data collection. As participants complete the experiment. 
 
 ## Data Collection Status
 
