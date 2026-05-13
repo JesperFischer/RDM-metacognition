@@ -4,11 +4,13 @@ project:
 
 book:
   title: "Metacognitive Uncertainty across the Post-Decisional Response Window"
+  footnotes:
+    equal-contrib: "Equal contribution"
   author:
-    - name: "Jesper Fischer Ehmsen^[*Equal contribution]"
+    - name: "Jesper Fischer Ehmsen^*"
       affiliations:
         - ref: cfin
-    - name: "Siebe Everaerts^[*Equal contribution]"
+    - name: "Siebe Everaerts^*"
       affiliations:
         - ref: leuven
     - name: "Arthur S. Courtin"
