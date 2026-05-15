@@ -140,10 +140,10 @@ simulate_data_p_bias = function(n = 1000, sigma_e,sigma_m,sigma_k,bias){
 
 ```{r}
 
-df = rbind(simulate_data_margin_bias(110000,-2,-1,-2,0,1997),
-           simulate_data_margin_bias(110000,-1,-1,-2,0,1997),
+df = rbind(simulate_data_margin_bias(110000,-2,-1,-2,0),
+           simulate_data_margin_bias(110000,-1,-1,-2,0),
            # simulate_data_margin_bias(110000,-1,-1,-1,0,1997),
-           simulate_data_margin_bias(110000,-1,-1,-1,0,1997))
+           simulate_data_margin_bias(110000,-1,-1,-1,0))
 
 df %>% mutate(XD = X*D) %>% 
   group_by(XD,sigma_e,sigma_k) %>% 
