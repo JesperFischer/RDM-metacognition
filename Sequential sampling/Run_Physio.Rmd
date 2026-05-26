@@ -22,8 +22,8 @@ source(here::here("Sequential sampling","Physio","scripts", "blink_re.R"))
 #convert_edf(here::here("Sequential sampling","Physio", "Eyetrack_raw"),
 #            here::here("Sequential sampling","Physio", "Eyetrack_asc"))
 
-# lapply(list.files(here::here("Sequential sampling","Physio", "Eyetrack_asc"), 
-                  # pattern = "\\.asc$", full.names = TRUE), Load_and_plot_eyetrack)
+# lapply(list.files(here::here("Sequential sampling","Physio", "Eyetrack_asc"),
+# pattern = "\\.asc$", full.names = TRUE), Load_and_plot_eyetrack)
 
 # combine_pngs_to_pdf()
 
@@ -36,10 +36,17 @@ source(here::here("Sequential sampling","Physio","scripts", "blink_re.R"))
 # data wrangling:
 
 ```{r, fig.width = 10, fig.height=8}
-dfall = read.csv(here::here("Sequential sampling", "Physio", "pupil_data_all.csv")) %>% 
-  filter(!((subject == 15 & trial >= 181 & trial <= 217) |(subject == 16 & trial > 109))) %>% 
-  filter(RTdec < 2.5)
+# dfall = read.csv(here::here("Sequential sampling", "Physio", "pupil_data_all_downsample_50_smooth.csv")) %>% 
+#   filter(!((subject == 15 & trial >= 181 & trial <= 217) |(subject == 16 & trial > 109))) %>% 
+#   filter(RTdec < 2.5)
+# 
+# dfall = read.csv(here::here("Sequential sampling", "Physio", "pupil_data_all_downsample_10_smooth.csv")) %>% 
+#   dplyr::filter(!((subject == 15 & trial >= 181 & trial <= 217) |(subject == 16 & trial > 109))) %>% 
+#   dplyr::filter(RTdec < 2.5)
 
+dfall = read.csv(here::here("Sequential sampling", "Physio", "pupil_data_all_downsample_100_smooth.csv")) %>%
+  dplyr::filter(!((subject == 15 & trial >= 181 & trial <= 217) |(subject == 16 & trial > 109))) %>%
+  dplyr::filter(RTdec < 2.5)
 ## procentage of trial that is a blink for the trial to be excluded.
 blink_threshold <- 0.30
 # minimum number of trials for a subject to be in the analysis
@@ -50,7 +57,7 @@ dfall %>%
   group_by(ID, trial) %>%
   summarise(blink_prop = mean(blink_mask == 1, na.rm = TRUE),
             .groups = "drop") %>%
-  filter(blink_prop > blink_threshold) %>% group_by(ID) %>% summarize(n = n()) %>% 
+  dplyr::filter(blink_prop > blink_threshold) %>% group_by(ID) %>% summarize(n = n()) %>% 
   ggplot(aes(x = ID, y = n))+geom_point()+
   labs(x = "ID",y = "number of excluded trials")+
   theme_minimal(base_size = 14)
@@ -59,7 +66,7 @@ dfall <- dfall %>%
   group_by(ID, trial) %>%
   mutate(blink_prop = mean(blink_mask == 1, na.rm = TRUE)) %>%
   ungroup() %>%
-  filter(blink_prop <= blink_threshold) %>%
+  dplyr::filter(blink_prop <= blink_threshold) %>%
   select(-blink_prop)
 
 
@@ -67,7 +74,7 @@ dfall <- dfall %>%
 ntrials = dfall %>% select(ID,trial) %>% distinct() %>% 
   group_by(ID) %>% 
   summarize(n = n()) %>% 
-  filter(n > n_subjs)
+  dplyr::filter(n > n_subjs)
 
 dfall %>% select(ID,trial) %>% distinct() %>% group_by(ID) %>% 
   summarize(n = n()) %>% 
@@ -77,7 +84,7 @@ dfall %>% select(ID,trial) %>% distinct() %>% group_by(ID) %>%
 
   
 
-dfall = dfall %>% filter(ID %in% ntrials$ID)
+dfall = dfall %>% dplyr::filter(ID %in% ntrials$ID)
 ```
 
 # blinks
@@ -392,7 +399,7 @@ dfall %>%
 group_conf2 = dfall %>%     
   filter(phase == "conf_wait") %>% 
   group_by(subject, trial) %>% 
-  mutate(time = (1:n()) * 50) %>% 
+  mutate(time = (1:n()) * 10) %>% 
   ungroup() %>% 
   group_by(subject) %>%
   mutate(
@@ -420,7 +427,7 @@ group_conf2 = dfall %>%
 dfall %>%    
   filter(phase == "conf_wait") %>% 
   group_by(subject, trial) %>% 
-  mutate(time = (1:n()) * 50) %>% 
+  mutate(time = (1:n()) * 10) %>% 
   ungroup() %>% 
   group_by(subject) %>%
   mutate(
@@ -458,7 +465,9 @@ dfall %>%
 # aggregated across the first 3s after the action:
 
 ```{r, fig.height=6, fig.width=8}
-pp2 = group_conf2 %>% filter(time < 2700) %>% 
+pp2 = group_conf2 %>%
+  # mutate(time = time/100) %>% 
+  filter(time < 2700) %>% 
   filter(cohernece %in% c("Highest","Middle","Next Lowest")) %>% 
   mutate(cohernece = ifelse(cohernece == "Highest","Easy",ifelse(cohernece == "Next Lowest","Hard","Medium"))) %>% 
   mutate(cohernece = factor(cohernece, levels = c("Easy","Medium","Hard"))) %>% 
@@ -476,9 +485,229 @@ pp2 = group_conf2 %>% filter(time < 2700) %>%
   theme(legend.position = "bottom",
         legend.title = element_blank())
 pp2
-ggsave(here::here("pupil.tiff"),pp2,height = 6,width = 8, dpi = 300)
+ggsave(here::here("pupil.tiff"),pp2,height = 25,width = 43, units = "cm", dpi = 300)
 ```
 
+```{r}
+ddq = dfall %>%     
+  dplyr::filter(phase == "conf_wait") %>% 
+  group_by(subject, trial) %>% 
+  mutate(time = (1:n()) * 100) %>% 
+  ungroup() %>% 
+  group_by(subject) %>%
+  mutate(
+    cohernece = dense_rank(desc(coherence)),
+        cohernece = factor(
+      cohernece,
+      levels = 1:5,
+      labels = c(
+        "Highest",
+        "Next Highest",
+        "Middle",
+        "Next Lowest",
+        "Lowest"
+      )
+    )
+  )%>%
+  ungroup() %>% 
+  mutate(pupil = interp - mean_stim_pupil) %>% 
+  mutate(Correct2 = as.factor(ifelse(Correct == 1,"Correct","Incorrect"))) %>% 
+  mutate(subject = as.factor(subject)) %>% 
+  mutate(trial = as.factor(trial)) %>% 
+  mutate(event = interaction(subject,trial,drop = TRUE))
+
+
+
+mm = mgcv::bam(pupil ~ cohernece*Correct2 + s(time, by = Correct2, k = 20), data = ddq, discrete = F)
+library(itsadug)
+
+gam.check(mm)
+
+plot_smooth(mm, view="time", plot_all="Correct2", rm.ranef=TRUE, v0=0)
+
+plot_smooth(mm, view="time", plot_all="cohernece",
+            cond = list(Correct2 = "Correct"),
+            rm.ranef=TRUE, v0=0)
+
+plot_smooth(mm, view="time", plot_all="cohernece",
+            cond = list(Correct2 = "Incorrect"),
+            rm.ranef=TRUE, v0=0)
+
+summary(mm)
+```
+
+```{r}
+RhpcBLASctl::blas_get_num_procs()
+RhpcBLASctl::omp_get_num_procs()
+
+RhpcBLASctl::blas_set_num_threads(1)
+RhpcBLASctl::omp_set_num_threads(1)
+
+system.time(mgcv::bam(pupil ~ cohernece*Correct2 + 
+                s(time, by = Correct2, k = 5)+ 
+                s(time, by = cohernece, k = 5) + 
+                s(time, event, bs = "fs", m = 2),
+                data = ddq2,
+                discrete = TRUE, nthreads = 5))
+
+system.time(mgcv::bam(pupil ~ cohernece*Correct2 + 
+                s(time, by = Correct2, k = 20)+ 
+                s(time, by = cohernece, k = 20) + 
+                s(time, event, bs = "fs", m = 2),
+                data = ddq2,
+                discrete = TRUE, nthreads = 5))
+
+system.time(mgcv::bam(pupil ~ cohernece*Correct2 + 
+                s(time, by = Correct2)+ 
+                s(time, by = cohernece) + 
+                s(time, event, bs = "fs", m = 2),
+                data = ddq2,
+                discrete = TRUE, nthreads = 5))
+
+
+```
+
+```{r}
+library(itsadug)
+
+library(mgcv)
+library(parallel)
+
+
+ddq2 = ddq %>% dplyr::filter(subject %in% c(3))  %>% dplyr::filter(time < 2500)
+
+
+mm = mgcv::bam(pupil ~ cohernece*Correct2 + 
+                s(time, by = Correct2, k = 15)+ 
+                s(time, by = cohernece, k = 15) + 
+                s(time, event, bs = "fs", m = 1),
+               
+                # fs is facetor smooth say a smooth oveer the continous for each factor in the category
+               
+                # s(time, event, bs = "gp", m = 2), #gaussian processes spline
+                # s(time,  bs = "re", m = 2), # random effects (with discrete time this estimates a mean for each category.)
+               
+                nthreads  = 5,
+                data = ddq2,
+                discrete = TRUE,
+               #student - t - familky
+               family=scat(link="identity")
+               )
+
+# save.image("~/RDM-metacognition/test.RData")
+
+gam.check(mm)
+
+plot_smooth(mm, view="time", plot_all="Correct2", rm.ranef=TRUE, v0=0)
+
+plot_smooth(mm, view="time", plot_all="cohernece",
+            cond = list(Correct2 = "Correct"),
+            rm.ranef=TRUE, v0=0)
+
+plot_smooth(mm, view="time", plot_all="cohernece",
+            cond = list(Correct2 = "Incorrect"),
+            rm.ranef=TRUE, v0=0)
+
+# summary(mm)
+
+# inspect_random(mm)
+
+# set.seed(12321)
+tmp <- mm$model
+tmp$Event <- interaction(tmp$event, drop=TRUE)
+plot_modelfit(mm, view="time", event=tmp$Event,n = 10)
+
+
+```
+
+
+
+```{r}
+group_conf2 = dfall %>%     
+  filter(phase == "conf_wait") %>% 
+  group_by(subject, trial) %>% 
+  mutate(time = (1:n()) * 10) %>% 
+  ungroup() %>% 
+  group_by(subject) %>%
+  mutate(
+    cohernece = dense_rank(desc(coherence)),
+        cohernece = factor(
+      cohernece,
+      levels = 1:5,
+      labels = c(
+        "Highest",
+        "Next Highest",
+        "Middle",
+        "Next Lowest",
+        "Lowest"
+      )
+    )
+  )%>%
+  ungroup() %>%
+  group_by(time, Y, cohernece,D) %>% 
+  summarize(
+    pupil_ref = mean(interp - mean_stim_pupil, na.rm = TRUE),
+    pupil_se = sd(interp - mean_stim_pupil, na.rm = TRUE)/sqrt(n()),
+    .groups = "drop"
+  )
+
+```
+
+
+# aggregated across the first 3s after the action:
+
+```{r, fig.height=6, fig.width=8}
+pp2 = group_conf2 %>%
+  # mutate(time = time/100) %>% 
+  filter(time < 2700) %>% 
+  filter(cohernece %in% c("Highest","Middle","Next Lowest")) %>% 
+  mutate(cohernece = ifelse(cohernece == "Highest","Easy",ifelse(cohernece == "Next Lowest","Hard","Medium"))) %>% 
+  mutate(cohernece = factor(cohernece, levels = c("Easy","Medium","Hard"))) %>% 
+  mutate(Action = ifelse(Y == 1, "Up","Down")) %>% 
+  mutate(D = ifelse(D == 1, "Up","Down")) %>% 
+  mutate(Action = as.factor(Action)) %>% 
+  ggplot(aes(x = time, y = pupil_ref, col = Action, fill = Action)) +
+  geom_ribbon(aes(ymin = pupil_ref-2*pupil_se,ymax = pupil_ref+2*pupil_se), col = "grey", alpha = 0.7)+
+  geom_line(aes(col = Action)) +
+  facet_wrap(D~cohernece) +
+  # scale_color_manual(values = c("#ebd28f","#a2c0da"))+
+  scale_color_manual(values = c("orange","blue"))+
+  scale_fill_manual(values = c("#ebd28f","#a2c0da"))+
+  labs(x = "Time (ms)",y = "Pupil size (A.U)")+
+  scale_x_continuous(labels = c("0","750","1500","2250"), breaks = c(0,750,1500,2250))+
+  theme_minimal(base_size = 14)+
+  theme(legend.position = "bottom",
+         strip.text = element_blank())
+pp2
+ggsave(here::here("pupil.tiff"),pp2,height = 25,width = 43, units = "cm", dpi = 300)
+```
+
+
+```{r, fig.height=6, fig.width=8}
+pp2 = group_conf2 %>%
+  # mutate(time = time/100) %>% 
+  filter(time < 2700) %>% 
+  filter(cohernece %in% c("Highest","Middle","Next Lowest")) %>% 
+  mutate(cohernece = ifelse(cohernece == "Highest","Easy",ifelse(cohernece == "Next Lowest","Hard","Medium"))) %>% 
+  mutate(cohernece = factor(cohernece, levels = c("Easy","Medium","Hard"))) %>% 
+  mutate(Action = ifelse(Y == 1, "Up","Down")) %>% 
+  mutate(D = ifelse(D == 1, "Up","Down")) %>% 
+  mutate(Action = as.factor(Action)) %>% 
+  ggplot(aes(x = time, y = pupil_ref, col = Action, fill = Action)) +
+  geom_ribbon(aes(ymin = pupil_ref-2*pupil_se,ymax = pupil_ref+2*pupil_se), col = "grey", alpha = 0.4)+
+  geom_line(aes(col = Action)) +
+  facet_wrap(D~cohernece) +
+  # scale_color_manual(values = c("#ebd28f","#a2c0da"))+
+  scale_color_manual(values = c("orange","blue"))+
+  scale_fill_manual(values = c("#ebd28f","#a2c0da"))+
+  labs(x = "Time (ms)",y = "Pupil size (A.U)")+
+  scale_x_continuous(labels = c("0","750","1500","2250"), breaks = c(0,750,1500,2250))+
+  theme_minimal(base_size = 18)+
+  theme(legend.position = "bottom",
+         strip.text = element_blank())
+pp2
+ggsave(here::here("pupil.tiff"),pp2,height = 25,width = 43, units = "cm", dpi = 300)
+```
 
 
 ```{r, fig.height=6, fig.width=8}

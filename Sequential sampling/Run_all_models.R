@@ -82,48 +82,48 @@ fit_and_save_model = function(dd, model,name){
   
   
 }
-
-model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_nolapse_clamped_standard.stan"))
-n_ids <- c(15, 20, 25, 30, 35, 40, 45, 50)
-all_ids <- unique(dd$ID)
-
-for (n in n_ids) {
-  
-  ids_use <- all_ids[1:n]   # first n IDs
-  
-  dd_sub <- dd %>%
-    filter(ID %in% ids_use)
-  
-  fit_and_save_model(
-    dd = dd_sub,
-    model = model,
-    name = "standard"
-  )
-}
-
-
-
-model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_nolapse_clamped_wide.stan"))
-n_ids <- c(15, 20, 25, 30, 35, 40, 45, 50)
-all_ids <- unique(dd$ID)
-
-for (n in n_ids) {
-  
-  ids_use <- all_ids[1:n]   # first n IDs
-  
-  dd_sub <- dd %>%
-    filter(ID %in% ids_use)
-  
-  fit_and_save_model(
-    dd = dd_sub,
-    model = model,
-    name = "wide"
-  )
-}
+# 
+# model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_nolapse_clamped_standard.stan"))
+# n_ids <- c(15, 20, 25, 30, 35, 40, 45, 50)
+# all_ids <- unique(dd$ID)
+# 
+# for (n in n_ids) {
+#   
+#   ids_use <- all_ids[1:n]   # first n IDs
+#   
+#   dd_sub <- dd %>%
+#     filter(ID %in% ids_use)
+#   
+#   fit_and_save_model(
+#     dd = dd_sub,
+#     model = model,
+#     name = "standard"
+#   )
+# }
+# 
+# 
+# 
+# model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_nolapse_clamped_wide.stan"))
+# n_ids <- c(15, 20, 25, 30, 35, 40, 45, 50)
+# all_ids <- unique(dd$ID)
+# 
+# for (n in n_ids) {
+#   
+#   ids_use <- all_ids[1:n]   # first n IDs
+#   
+#   dd_sub <- dd %>%
+#     filter(ID %in% ids_use)
+#   
+#   fit_and_save_model(
+#     dd = dd_sub,
+#     model = model,
+#     name = "wide"
+#   )
+# }
 
 
 model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_nolapse_clamped_narrow.stan"))
-n_ids <- c(35, 40, 45, 50)
+n_ids <- c(25,30)
 all_ids <- unique(dd$ID)
 
 for (n in n_ids) {
@@ -141,43 +141,43 @@ for (n in n_ids) {
 }
 
 
-
-model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_nolapse_clamped_supernarrow.stan"))
-n_ids <- c(15, 20, 25, 30, 35, 40, 45, 50)
-all_ids <- unique(dd$ID)
-
-for (n in n_ids) {
-  
-  ids_use <- all_ids[1:n]   # first n IDs
-  
-  dd_sub <- dd %>%
-    filter(ID %in% ids_use)
-  
-  fit_and_save_model(
-    dd = dd_sub,
-    model = model,
-    name = "super_narrow"
-  )
-}
-
-
-
-
-
-model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_nolapse_clamped_superdupernarrow.stan"))
-n_ids <- c(15, 20, 25, 30, 35, 40, 45, 50)
-all_ids <- unique(dd$ID)
-
-for (n in n_ids) {
-  
-  ids_use <- all_ids[1:n]   # first n IDs
-  
-  dd_sub <- dd %>%
-    filter(ID %in% ids_use)
-  
-  fit_and_save_model(
-    dd = dd_sub,
-    model = model,
-    name = "superduper_narrow"
-  )
-}
+# 
+# model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_nolapse_clamped_supernarrow.stan"))
+# n_ids <- c(15, 20, 25, 30, 35, 40, 45, 50)
+# all_ids <- unique(dd$ID)
+# 
+# for (n in n_ids) {
+#   
+#   ids_use <- all_ids[1:n]   # first n IDs
+#   
+#   dd_sub <- dd %>%
+#     filter(ID %in% ids_use)
+#   
+#   fit_and_save_model(
+#     dd = dd_sub,
+#     model = model,
+#     name = "super_narrow"
+#   )
+# }
+# 
+# 
+# 
+# 
+# 
+# model = cmdstanr::cmdstan_model(here::here("Sequential sampling","Stanmodels","Hierarchical_nolapse_clamped_superdupernarrow.stan"))
+# n_ids <- c(15, 20, 25, 30, 35, 40, 45, 50)
+# all_ids <- unique(dd$ID)
+# 
+# for (n in n_ids) {
+#   
+#   ids_use <- all_ids[1:n]   # first n IDs
+#   
+#   dd_sub <- dd %>%
+#     filter(ID %in% ids_use)
+#   
+#   fit_and_save_model(
+#     dd = dd_sub,
+#     model = model,
+#     name = "superduper_narrow"
+#   )
+# }

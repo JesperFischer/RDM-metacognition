@@ -688,6 +688,47 @@ pA
 
 ```
 
+```{r}
+# sigma_m_vals_A <- c(0.2)
+# 
+# df_A <- expand.grid(sm = sigma_m_vals_A) %>%
+#   rowwise() %>%
+#   mutate(data = list(simulate_components(0.5, 0.5, sm, beta = 0, n = 20000))) %>%
+#   unnest(data) %>%
+#   select(-sm)
+# 
+# pA <- df_A %>%
+#   # filter(XD > 0.1) %>%
+#     mutate(bin    = cut(XD, breaks = breaks, include.lowest = TRUE, labels = FALSE),
+#            XD_bin = (breaks[bin] + breaks[bin + 1]) / 2,
+#            action_label  = ifelse(a == 1, "up", "down")) %>%
+#     group_by(XD_bin, action_label) %>%
+#     summarise(mean_S = mean(S_i), .groups = "drop") %>%
+#     ggplot(aes(x = XD_bin, y = mean_S,
+#                color = action_label)) +
+#     annotate("rect", xmin = 0,    xmax =  Inf, ymin = 0,    ymax =  Inf, fill = "green", alpha = .15) +
+#     annotate("rect", xmin = -Inf, xmax =  0,   ymin = -Inf, ymax =  0,   fill = "green", alpha = .15) +
+#     annotate("rect", xmin = -Inf, xmax =  0,   ymin = 0,    ymax =  Inf, fill = "red",   alpha = .15) +
+#     annotate("rect", xmin = 0,    xmax =  Inf, ymin = -Inf, ymax =  0,   fill = "red",   alpha = .15) +
+# 
+#     geom_hline(yintercept = 0, linetype = 2, colour = "grey50", linewidth = 0.4) +
+#     geom_vline(xintercept = 0, linetype = 2, colour = "grey50", linewidth = 0.4) +
+# 
+#     geom_line(linewidth = 1.2) +
+#     scale_colour_viridis_d(option = "C", end = 0.85) +
+#       scale_color_manual(values = c("orange","blue"))+
+#     labs(x = "Signed Stimulus (XD)", y = expression(S[i]),
+#          colour = NULL, linetype = NULL) +
+#   # scale_x_continuous(limits = c(0.01,1))+
+#     theme_classic(base_size = 24)+
+#   theme(legend.position = "none")
+# pA
+
+# ggsave(here::here("tester_up.tiff"),pA,height = 16,width = 43, units = "cm", dpi = 300)
+
+```
+
+
 In the above plot, each quadrant corresponds to a different state of the decision process. Green quadrants indicate correct responses; red quadrants indicate errors. Line color represents different levels of metacognitive noise $\sigma_m$. The magnitude of $S_i$ is uniformly attenuated as $\sigma_m$ increases.
 
 ```{r, fig.height=6, fig.width=10,warning=F,message=F}

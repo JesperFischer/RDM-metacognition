@@ -1,0 +1,213 @@
+
+<!-- Part x: Current Model -->
+
+# Part x: Current Model
+
+
+```{r load packages, warning = F, message = F, echo = F, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  dpi = 300,
+  fig.align = 'center'
+)
+
+set.seed(123)
+
+
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load("here", "knitr","yaml","cowplot", "magick",
+               "tidyverse", "flextable","ordbetareg","patchwork","truncnorm")
+```
+
+In this section, we first describe the general structure of ideas of static models of perceptual decision making and confidence ratings. We then describe, derive and simulate from our proposed model, demonstrating that it can produce key patterns of perceptual decision making with confidence judgements.
+
+## Static models of metacognition
+
+In SDT, an actor makes a binary choice on each trial $i$, $a_i \in \{-1,+1\}$ based on some internal evidence $e_i$. The action reflects the actor's inference about the true state of the stimulus $D_i \in \{-1,+1\}$. 
+
+Evidence is drawn from a normal distribution, reflecting the noisy nature of perception. The mean of this distribution reflects the true state and scales with stimulus intensity $X_i$. 
+$$
+e_i \sim \mathcal{N}(X_iD_i,\sigma_e)
+$$
+
+The actor then produces an action by comparing the internal evidence to a criterion $c$:
+
+$$
+a_i = \begin{cases}+1 & \text{if } e_i > c \\ -1 & \text{if } e_i \le c\end{cases}
+$$
+
+Within most frameworks, this criterion is thought to be static within an experimental setting for each agent.
+
+### Choices
+
+Below we argue that independent information is not required to explain error monitoring if we instead assume that agents show variability in their choices given the evidence. Unlike the deterministic decision policy usually assumed in SDT, we propose that agents have a noisy decision process that can produce errors even when the evidence favors the correct choice. Such errors could arise under speed stress or, more generally, from motor noise. By introducing a stochastic choice policy into the standard SDT framework, agents can display error monitoring without independent information. One way to implement this is to assume that the criterion varies from trial to trial: $c_i \sim \mathcal{N}(0,\sigma_c)$. This gives us:
+
+
+$$
+a_i = \begin{cases}+1 & \text{if } e_i > c_i \\ -1 & \text{if } e_i \le c_i\end{cases}
+$$
+
+Because both $e_i$ and $c_i$ are normally distributed, their difference is also normally distributed and can be marginalized to obtain the probability of the action:
+
+$$
+P(a = 1 \mid D_i, X_i) = \Phi\left(\frac{D_i \cdot X_i}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)
+$$
+
+Before moving on to confidence ratings, we will also assume that the evidence distribution may be biased for each participant. This assumption helps explain the observation that shifts in the psychometric function of choices are accompanied by corresponding shifts in other behavioral variables such as confidence ratings [@CAZIOTPerceptualConfidenceJudgmentsReflectSelfconsistency2021; @SANCHEZ-FUENZALIDAConfidenceReportsPerceptualDecisionMakingDissociate2025; @MIHALIIntrospectiveInferenceCounteractsPerceptualDistortion2023a; @NAVAJASIdiosyncraticNatureConfidence2017].
+
+
+This leads to:
+
+$$
+e_i \sim \mathcal{N}(X_iD_i- \beta,\sigma_e)
+$$
+And when marginalized:
+
+$$
+P(a = 1 \mid D_i, X_i) = \Phi\left(\frac{D_i \cdot X_i - \beta}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right) \tag{1}
+$$
+
+From choices alone, only the sum $\sigma_e^2 + \sigma_c^2$ can be identified, as both noise sources equivalently flatten the psychometric function. However, including confidence ratings allows the two to be disentangled.
+
+## Extension: Choices with Serial Dependence via Dynamic Priors
+
+### Bayesian Foundation
+
+The above model assumes a uniform prior $P(D) = 0.5$. However, agents can learn the stimulus distribution across trials. We now extend the model to incorporate trial-by-trial learning using Bayesian updating.
+
+An agent maintains a belief about the probability that the stimulus belongs to category $D = 1$. This belief, denoted $P(D)$, represents the agent's subjective prior and updates across trials based on observed evidence.
+
+### Derivation: From Bayes' Rule to Choice Probability
+
+**Step 1: Apply Bayes' Rule**
+
+When the agent observes evidence $e_i$, they compute the posterior probability:
+
+$$
+P(D = 1 | e_i, P(D)) = \frac{P(e_i | D = 1) \cdot P(D = 1)}{P(e_i)}
+$$
+
+$$
+P(D = -1 | e_i, P(D)) = \frac{P(e_i | D = -1) \cdot P(D = -1)}{P(e_i)}
+$$
+
+**Step 2: Compute the Posterior Odds**
+
+Taking the ratio and canceling $P(e_i)$:
+
+$$
+\frac{P(D = 1 | e_i, P(D))}{P(D = -1 | e_i, P(D))} = \frac{P(e_i | D = 1)}{P(e_i | D = -1)} \cdot \frac{P(D = 1)}{1 - P(D = 1)}
+$$
+
+**Step 3: Take the Natural Log**
+
+$$
+\log \frac{P(D = 1 | e_i, P(D))}{P(D = -1 | e_i, P(D))} = \log \frac{P(e_i | D = 1)}{P(e_i | D = -1)} + \log \frac{P(D = 1)}{1 - P(D = 1)}
+$$
+
+**Step 4: Compute the Log-Likelihood Ratio**
+
+Given $e_i \sim \mathcal{N}(D_i X_i, \sigma_e)$:
+
+- When $D = 1$: $P(e_i | D = 1) = \mathcal{N}(e_i; X_i, \sigma_e)$
+- When $D = -1$: $P(e_i | D = -1) = \mathcal{N}(e_i; -X_i, \sigma_e)$
+
+The log-likelihood ratio is:
+
+$$
+\log \frac{P(e_i | D = 1)}{P(e_i | D = -1)} = \frac{1}{2\sigma_e^2}[(e_i + X_i)^2 - (e_i - X_i)^2]
+$$
+
+Expanding $(e_i + X_i)^2 - (e_i - X_i)^2 = 4e_i X_i$:
+
+$$
+\log \frac{P(e_i | D = 1)}{P(e_i | D = -1)} = \frac{2e_i X_i}{\sigma_e^2}
+$$
+
+**Step 5: Full Log-Posterior-Odds**
+
+$$
+\log \frac{P(D = 1 | e_i, P(D))}{P(D = -1 | e_i, P(D))} = \frac{2e_i X_i}{\sigma_e^2} + \log \frac{P(D = 1)}{1 - P(D = 1)}
+$$
+
+**Step 6: Decision Threshold**
+
+A Bayesian agent chooses $a_i = 1$ when this log-posterior-odds is positive. Rearranging:
+
+$$
+a_i = 1 \text{ if } e_i > -\frac{\sigma_e^2}{2X_i}\log \frac{P(D = 1)}{1 - P(D = 1)}
+$$
+
+**Step 7: Incorporate Criterion Noise**
+
+With stochastic criterion $c_i \sim \mathcal{N}(0, \sigma_c)$, the effective threshold becomes:
+
+$$
+c_i^{\text{eff}} = c_i + \frac{\sigma_e^2}{2X_i}\log \frac{P(D = 1)}{1 - P(D = 1)}
+$$
+
+**Step 8: Final Choice Probability**
+
+$$
+P(a_i = 1 | D_i, X_i, P(D)) = P(e_i - c_i^{\text{eff}} > 0)
+$$
+
+Since $e_i - c_i^{\text{eff}}$ is normally distributed with mean $D_i X_i - \frac{\sigma_e^2}{2X_i}\log \frac{P(D)}{1 - P(D)}$ and variance $\sigma_e^2 + \sigma_c^2$:
+
+$$
+\boxed{P(a_i = 1 | D_i, X_i, P(D)) = \Phi\left(\frac{D_i X_i - \frac{\sigma_e^2}{2X_i}\log \frac{P(D = 1)}{1 - P(D = 1)}}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)} \tag{1-SD}
+$$
+
+### Comparison to Original Model
+
+- **Original (Eq. 1)**: $\Phi\left(\frac{D_i X_i}{\sqrt{\sigma_e^2 + \sigma_c^2}}\right)$ — assumes uniform prior ($P(D) = 0.5$)
+- **With serial dependence (Eq. 1-SD)**: Includes dynamic prior term $-\frac{\sigma_e^2}{2X_i}\log \frac{P(D)}{1 - P(D)}$
+
+When $P(D) = 0.5$, the log-odds term equals zero and the equation reduces to the original model.
+
+### Prior Updates: Inference from Previous Choice and Confidence
+
+Since the agent does not receive explicit feedback about the true stimulus $D$, they must infer it from their own previous choice and the confidence rating they assigned. An optimal agent would weight their previous choice by their confidence in that choice, using confidence as a reliability signal.
+
+**Optimal inference combining choice and confidence:**
+
+The agent's posterior probability that their previous choice was correct is reflected in their confidence rating. Specifically, if confidence ranges from 0 to 1 (where 0.5 represents guessing), then:
+
+$$
+P(\text{correct}_{i-1}) = c_{i-1}
+$$
+
+Given this assessment of choice correctness, the agent can infer the likelihood of the stimulus category. If they believe their choice was correct with probability $c_{i-1}$, then:
+
+- The probability that the category they chose is correct: $c_{i-1}$
+- The probability that the opposite category is correct: $1 - c_{i-1}$
+
+**Bayesian update using Beta-Bernoulli conjugacy with individual learning rate:**
+
+The agent maintains a Beta-distributed posterior over $P(D = 1)$:
+
+$$
+P(D = 1) = \frac{\alpha}{\alpha + \beta}
+$$
+
+After each trial, the agent updates the counts based on the previous choice weighted by confidence:
+
+- If $a_{i-1} = 1$: $\alpha_i = \alpha_{i-1} + \eta c_{i-1}$ and $\beta_i = \beta_{i-1} + \eta(1-c_{i-1})$
+- If $a_{i-1} = -1$: $\alpha_i = \alpha_{i-1} + \eta(1-c_{i-1})$ and $\beta_i = \beta_{i-1} + \eta c_{i-1}$
+
+The learning rate $\eta$ is a **subject-level parameter** that captures individual differences in how quickly agents update their beliefs about the stimulus distribution:
+
+- **High $\eta$ (e.g., $\eta = 0.9$)**: Agent is a "quick learner"; after just 2 trials with matching choices, they strongly believe the distribution is skewed
+- **Low $\eta$ (e.g., $\eta = 0.1$)**: Agent is a "conservative learner"; requires many trials (possibly 10+) to substantially shift their belief away from $P(D) = 0.5$
+- **Intermediate $\eta$ (e.g., $\eta = 0.5$)**: Agent shows typical learning speed
+
+**Interpretation:**
+
+- If the agent chose $a_{i-1} = 1$ with high confidence $c_{i-1} = 0.9$ and has high learning rate $\eta = 0.8$, they add $0.8 \times 0.9 = 0.72$ to $\alpha$
+- If the same choice and confidence but with low learning rate $\eta = 0.2$, they add only $0.2 \times 0.9 = 0.18$ to $\alpha$
+- If confidence is at the neutral point $c_{i-1} = 0.5$ (guessing), the update adds equal weight to both categories regardless of $\eta$, leaving the posterior unchanged
+
+

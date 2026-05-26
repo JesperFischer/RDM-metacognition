@@ -321,7 +321,7 @@ for (model in models){
   print(model)
   fit = readRDS(model)
 
-  type = str_extract(model, "standard|narrow|super_narrow|wide")
+  type = str_extract(model, "standard|narrow|super_narrow|superduper_narrow|wide")
   subs = str_extract(model, "(?<=nolapse_)\\d+")
   
   if(type == "standard"){
@@ -339,6 +339,12 @@ for (model in models){
   }else if(type == "super_narrow"){
     bf_sigmam = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[7]")) %>% .$`gm[7]`),prior = rnorm(4000,0,0.05))
     bf_metabias = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[8]")) %>% .$`gm[8]`),prior = rnorm(4000,0,0.05))
+    
+    Bayesfactor_data = data.frame(variable = c("sigmam_beta","metabias_beta"),BF = c(bf_sigmam,bf_metabias), subs = subs)
+
+  }else if(type == "superduper_narrow"){
+    bf_sigmam = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[7]")) %>% .$`gm[7]`),prior = rnorm(4000,0,0.01))
+    bf_metabias = get_bf(post = as.numeric(as_draws_df(fit$draws("gm[8]")) %>% .$`gm[8]`),prior = rnorm(4000,0,0.01))
     
     Bayesfactor_data = data.frame(variable = c("sigmam_beta","metabias_beta"),BF = c(bf_sigmam,bf_metabias), subs = subs)
 
@@ -361,29 +367,139 @@ for (model in models){
 }
 
 
-estimates = df %>% filter(variable %in% c("sigmam_beta","metabias_beta")) %>% 
-  ggplot(aes(x = as.numeric(subs), y = mean, ymin = q5, ymax = q95, col = type))+
-  geom_pointrange(position = position_dodge(width = 1))+
-  theme_classic(base_size = 16)+
-  facet_wrap(~variable)
+dq = data.frame(means = rep(rep(0,5),each = 2), 
+           sd = rep(c(1,0.5,0.25,0.05,0.01),each = 2), 
+           type = rep(c("wide","reference","narrow","super_narrow","extremely_narrow"),each = 2),
+           variable = rep(c("sigmam_beta","metabias_beta")),
+           subs = rep(0,5*2))
 
-ggsave(here::here("Sequential sampling" , "figures","estimates_v2.png"),estimates, dpi = 300, width = 14, height = 10)
 
-Bayesfactors =  df %>% filter(variable %in% c("sigmam_beta","metabias_beta")) %>% 
-  select(subs,BF,type, variable) %>% 
-    group_by(type, variable) %>%
+draws <- dq  %>% 
+  rowwise() %>% 
+  mutate(draws = list(rnorm(4000, means, sd))) %>% 
+  unnest(draws)
+
+# stan-like summary
+summary_df <- draws %>% 
+  group_by(variable, subs,type) %>% 
+  summarise(
+    mean = mean(draws),
+    q5 = hdi(draws, .width = 0.90)[1],
+    q95 = hdi(draws, .width = 0.90)[2],
+    .groups = "drop"
+  )
+
+summary_df
+
+summary_df$type = factor(
+  summary_df$type,
+  levels = c("wide", "reference", "narrow", "super_narrow","extremely_narrow")
+)
+
+pp2 = summary_df %>% filter(variable == "sigmam_beta") %>% 
+    rename(Prior = type) %>% 
+  ggplot(aes(x = as.numeric(subs), y = mean, ymin = q5, ymax = q95))+
+  geom_pointrange(aes(fill = Prior),col = "black",shape = 21, position = position_dodge(width = 0.1))+
+  theme_classic(base_size = 14)+
+  scale_y_continuous(breaks = c(-2.0, -1.5, -1.0, -0.5, -0.15, 0.15,  0.5,  1.0,  1.5,  2.0),
+                     labels = c(-2.0, -1.5, -1.0, -0.5, -0.15, 0.15,  0.5,  1.0,  1.5,  2.0))+
+  coord_cartesian(ylim = c(-1.5,1.5))+
+  scale_x_continuous(limits = c(-0.1,0.1))+
+  geom_hline(yintercept = 0, linetype = 2)+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.line.x = element_blank(),
+        axis.line.y = element_line(linewidth = 1.1),
+        legend.position = "none")+
+  ylab("Mean 90%HDI")
+
+
+
+df = df %>% 
+  mutate(type2 = ifelse(type == "superduper_narrow","extremely_narrow",type)) %>% 
+  mutate(type2 = ifelse(type2 == "standard","reference",type2))
+
+df$type2 = factor(
+  df$type2,
+  levels = c("wide", "reference", "narrow", "super_narrow","extremely_narrow")
+)
+linewidth = 0.3
+text = 2
+# estimates = 
+estimates = rbind(df %>% filter(variable %in% c("sigmam_beta","metabias_beta")) %>% 
+        filter(variable == "sigmam_beta")%>% 
+        select(variable,subs,type2,q5,q95,mean)) %>% 
+  rename(Prior = type2) %>% 
+  ggplot(aes(x = as.numeric(subs), y = mean, ymin = q5, ymax = q95))+
+  geom_pointrange(aes(fill = Prior),position = position_dodge(width = 3), shape = 21, col = "black")+
+  theme_classic(base_size = 14)+
+  
+  scale_x_continuous(limits = c(-2,52), breaks = c(0, 15,20,25,30,35,40,45,50), labels = c(0, 15,20,25,30,35,40,45,50))+
+  scale_y_continuous(breaks = seq(-0.1,0.1,by = 0.05))+
+  coord_cartesian(ylim = c(-0.153,0.15))+
+  geom_hline(yintercept = 0, linetype = 2)+
+  geom_segment(aes(x = 12, xend = 12, y = -0.16, yend = 0.16), col = "black",linewidth = 1.1)+
+  geom_segment(aes(x = 12-linewidth, xend = 12, y = -0.15, yend = -0.15), col = "black",linewidth = 0.8)+
+  geom_segment(aes(x = 12-linewidth, xend = 12, y = -0.1, yend = -0.1), col = "black",linewidth = 0.8)+
+  geom_segment(aes(x = 12-linewidth, xend = 12, y = -0.05, yend = -0.05), col = "black",linewidth = 0.8)+
+  # geom_segment(aes(x = 10-linewidth, xend = 10, y = 0, yend = 0), col = "black",linewidth = 0.9)+
+  geom_segment(aes(x = 12-linewidth, xend = 12, y = 0.05, yend = 0.05), col = "black",linewidth = 0.8)+
+  geom_segment(aes(x = 12-linewidth, xend = 12, y = 0.1, yend = 0.1), col = "black",linewidth = 0.8)+
+  geom_segment(aes(x = 12-linewidth, xend = 12, y = 0.15, yend = 0.15), col = "black",linewidth = 0.8)+
+  
+  geom_label(aes(x = 12-linewidth-text, y = -0.15, label = "-0.15"), col = "black",  linewidth = 0, size = 4.1)+
+  geom_label(aes(x = 12-linewidth-text, y = -0.1, label = "-0.10"), col = "black",  linewidth = 0, size = 4.1)+
+  geom_label(aes(x = 12-linewidth-text, y = -0.05, label = "-0.05"), col = "black",  linewidth = 0, size = 4.1)+
+  geom_label(aes(x = 12-linewidth-text, y =  0.05, label = "0.05"), col = "black",  linewidth = 0, size = 4.1)+
+  geom_label(aes(x = 12-linewidth-text, y = 0.1, label = "0.10"), col = "black",  linewidth = 0, size = 4.1)+
+  geom_label(aes(x = 12-linewidth-text, y = 0.15, label = "0.15"), col = "black",  linewidth = 0, size = 4.1)+
+  # facet_wrap(~variable)+
+    theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.y = element_blank(),
+        legend.position = "top")+
+  labs(x = "N Subjects")+
+  labs(x = "")
+  
+
+
+p2 = (estimates + inset_element(pp2, left = 0, bottom = 0.01, right = 0.2, top = 1))
+
+p2
+ggsave(here::here("Sequential sampling" , "figures","estimates_v2.png"),combined_estimates, dpi = 300, width = 14, height = 10)
+```
+
+
+```{r,fig.height=8.4, fig.width=15}
+pq = rbind(df %>% filter(variable %in% c("sigmam_beta","metabias_beta")) %>% 
+        filter(variable == "sigmam_beta")%>% 
+        select(variable,subs,type2,q5,q95,mean,BF)) %>% 
+  rename(Prior = type2) %>% 
+    group_by(Prior, variable) %>%
   group_modify(~ add_row(.x, subs = "0", BF = 1)) %>%
   ungroup() %>% 
-  ggplot(aes(x = as.numeric(subs), y = log(BF), col = type))+
-  geom_line()+
-  geom_point()+
-  theme_classic(base_size = 16)+
-   labs(y = "Log(BF)", x = "N_subjects")+
+  ggplot(aes(x = as.numeric(subs), y = log(BF)))+
+  geom_line(aes(col = Prior,
+              linetype = ifelse(Prior == "reference", "dashed","solid")))+
+  geom_pointrange(aes(fill = Prior, ymin = log(BF), ymax = log(BF)),shape = 21, col = "black")+
+  theme_classic(base_size = 14)+
+   labs(y = "Log(Bayes Factor)", x = "N subjects")+
   geom_hline(yintercept = c(log(1/30),log(30)), linetype = 2)+
   scale_y_continuous(breaks = c(round(log(1/30),2),0,round(log(30),2)))+
-  scale_x_continuous(limits = c(0,50), breaks = seq(0,50,by = 10), labels = seq(0,50,by = 10))+
-  facet_wrap(~variable)
+  scale_x_continuous(limits = c(-2,52), breaks = c(0, 15,20,25,30,35,40,45,50), labels = c(0, 15,20,25,30,35,40,45,50))+
+  # facet_wrap(~variable)+
+  theme(legend.position = "none")
 
-ggsave(here::here("Sequential sampling" , "figures","Bayesfactors_v2.png"),Bayesfactors, dpi = 300, width = 14, height = 10)
+
+fullplot = p2/ pq
+
+fullplot
+
+ggsave(here::here("Sequential sampling" , "figures","Bayesfactors_v2_both.tiff"),fullplot, dpi = 300, width = 37.56, height = 21.04, units = "cm")
+
+ggsave(here::here("Sequential sampling" , "figures","Bayesfactors_v2_p1.tiff"),p2, dpi = 300, width = 37.56, height = 21.04/3, units = "cm")
+ggsave(here::here("Sequential sampling" , "figures","Bayesfactors_v2_p2.tiff"),pq, dpi = 300, width = 37.56, height = 21.04/2, units = "cm")
 
 ```
