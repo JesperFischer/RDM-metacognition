@@ -7,8 +7,7 @@ load_data = function(){
   df = data.frame()
   for(path in paths){
     print(path)
-    subjectID = strsplit(path, '/')[[1]][[7]]
-    # subjectID = strsplit(path, '/')[[1]][[8]]
+    subjectID = strsplit(path, '/')[[1]][[9]]
     
     
     dd = read.csv(path) %>% mutate(X = NULL) %>% 
@@ -18,17 +17,15 @@ load_data = function(){
              D = ifelse(dots.direction == 270,-1,1),
              stim = ifelse(dots.direction == 270, -coherence,coherence)) %>%
       mutate(ACC = ifelse(resp == 1 & stim > 0, 1,
-                          ifelse(resp == 0 & stim < 0, 1,0)))
-    # filter(Trialtype == "Main") %>%
-    # filter(SR_conf != "None") %>%
-    # filter(scale == "conf") %>%
+                          ifelse(resp == 0 & stim < 0, 1,0))) %>% filter(Trialtype == "Main") %>% 
+      filter(SR_conf != "None") %>% filter(scale == "conf")
     
     if ("sub" %in% names(dd)) {
       names(dd)[names(dd) == "sub"] = "subject"
     }
     
     dd = dd %>% mutate(SR_conf = as.numeric(SR_conf)) %>%
-      rename(X = stim, RT = RTdec, Correct = cor, Y = resp, Confidence = SR_conf) %>%
+      rename(X = stim, RT = RTdec, Correct = cor, Y = resp, Confidence = SR_conf) %>% mutate(subject = as.numeric(sub(".*sub(\\d{3})\\.csv$", "\\1", path))) %>% 
       select(X,Correct,Y,RT,Confidence,scale,D, coherence,Trialtype,ACC,RTrating,
              interval,interTrial.interval,
              subject,age,gender,ID)
